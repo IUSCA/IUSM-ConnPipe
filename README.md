@@ -1,6 +1,8 @@
 # IUSM-ConnPipe
 Refactored version of the IU School of Medicine neuroscience connectivity pipeline that executes pre-processing of anatomical, functional, and diffusion Magnetic Resonance Imaging data (written in Python and Bash).
 
+NOTE: The legacy version of this pipeline written in Matlab is available here: https://github.com/IUSCA/IUSM-connectivity-pipeline. 
+
 ## Contributors:
    * Andrea Avena Koenigsberger, IU SCA, 2020
    * Evgeny Chumin, Indiana University School of Medicine, 2020
