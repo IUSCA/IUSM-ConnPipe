@@ -56,7 +56,7 @@ This code has been developed to operate with the following software:
 
 ### Installing
 
-Prerequisite software are loaded as environment modules. Provided you have prepared all of the prerequisite software, IUSM-ConnPipe comes ready to run with a Unix system. 
+Prerequisite software are loaded as environment modules. Provided you have prepared all of the prerequisite software, IUSM-ConnPipe comes ready to run with a Linux system. 
 
 ---
 
@@ -104,7 +104,7 @@ Assuming all configurations have been set-up as needed, the pipeline should begi
 
 ## Versions
 
-We have provided a legacy [MATLAB version](https://github.com/IUSCA/IUSM-connectivity-pipeline.) available for download via GitHub.
+We have provided a legacy [MATLAB version](https://github.com/IUSCA/IUSM-connectivity-pipeline) available for download via GitHub.
 
 
 ## Authors
