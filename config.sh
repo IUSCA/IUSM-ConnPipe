@@ -13,13 +13,13 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ################################################################################
 ############################  PATH TO DATA  ###################################
 
-#export path2data="/N/dc2/scratch/aiavenak/testdata"
+# USER INSTRUCTIONS- PLEASE SET THIS PATH TO POINT TO YOUR DATA DIRECTORY
 export path2data="/N/dc2/projects/connectivitypipeline/example_for_andrea/SUBJECTS"
 
 ################################################################################
 #####################  SET UP DIRECTORY STRUCTURE  #############################
 
-# The following diagrapm is a sample directory tree for a single subject.
+# USER INSTRUCTIONS - The following diagrapm is a sample directory tree for a single subject.
 # Following that are configs you can use to set your own names if different
 # from sample structure.
 
@@ -64,7 +64,11 @@ export configs_niiFiles="nii" # Nifti-1 file extension
 ################################ TEMPLATES #####################################
 
 export pathFSLstandard="${FSLDIR}/data/standard"
+
 ## path to Supplementary Materials (SM)
+
+## FOR IUSM USERS ONLY - DURING DEVELOPMENT PHASE, PLEASE USE THIS "pathSM" AS THE 
+## SUPPLEMENTARY MATERIALS PATH. THIS WILL EVENTUALLY LIVE IN A REPOSITORY 
 export pathSM="/N/dc2/projects/connectivitypipeline/example_for_andrea/ConnPipelineSM"
 export pathMNItmplates="${pathSM}/MNI_templates"
 export pathBrainmaskTemplates="${pathSM}/brainmask_templates"
@@ -111,12 +115,20 @@ export PARC3pnodal=0;
 # parcs.pcort(2).true=1;
 # parcs.pnodal(2).true=1;
 
+
+## USER INSTRUCTIONS - SET THE NUMBER OF PARCELLATIONS THAT YOU WANT TO USE
+## FROM THE OPTIONS LISTED ABOVE. YOU MAY ADD YOUR OWN PARCELLATIONS BY FOLLOWING
+## THE NAMING FORMAT. NOTE THAT PARCELLATIONS ARE RUN IN THE ORDER IN WHICH THEY ARE 
+## LISTED ABOVE. FOR EXAMPLE IF numParcs is set to 1, ONLY CSF AND PARC1="shen_278"
+## WILL BE USED
 export numParcs=3  # CSF doesn't count; numParcs cannot be less than 1. Shen is the defailt parc
 
 
 ################################################################################
 ############################# T1_PREPARE_A #####################################
 
+## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
+## ALL FLAGS ARE SET TO DEFAULT SETTINGS
 export T1_PREPARE_A=true
 
 if $T1_PREPARE_A; then
@@ -141,7 +153,8 @@ if $T1_PREPARE_A; then
 
 fi 
 
-#DON'T MODIFY
+# =========================================================================================
+# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
 #===========================================================================================
 	# Set denoising option
 	export flag_ANTS=true # other option available is FSL's SUSAN, set flag_ANTS=false to use SUSAN instead 
@@ -155,6 +168,8 @@ fi
 ################################################################################
 ############################# T1_PREPARE_B #####################################
 
+## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
+## ALL FLAGS ARE SET TO DEFAULT SETTINGS
 export T1_PREPARE_B=true
 
 if $T1_PREPARE_B; then
@@ -182,6 +197,8 @@ fi
 ################################################################################
 ############################# fMRI_A #####################################
 
+## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
+## ALL FLAGS ARE SET TO DEFAULT SETTINGS
 export fMRI_A=true
 
 if $fMRI_A; then
@@ -228,7 +245,7 @@ if $fMRI_A; then
 
 	export flags_EPI_IntNorm4D=true; # Intensity normalization to global 4D mean of 1000
 
-########## MOTION AND OUTLIER CORRECTION ###############
+	########## MOTION AND OUTLIER CORRECTION ###############
 	export flags_EPI_NuisanceReg=true
 	## Nuisance Regressors. There are two options that user can select from:
 	# 1) ICA-based denoising; WARNING: This will smooth your data.
@@ -255,7 +272,7 @@ if $fMRI_A; then
 					export configs_EPI_scrub=true    # perform scrubbing based on FD and DVARS criteria
 			fi
 
-########## PHYSIOLOGICAL REGRESSORS ###############
+	########## PHYSIOLOGICAL REGRESSORS ###############
 	export flags_EPI_PhysiolReg=true;  
 	# Two options that the user can select from:
 	# 1) flags_PhysiolReg_aCompCorr=true - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
@@ -294,6 +311,8 @@ fi
 ################################################################################
 ############################# DWI processing ###################################
 
+## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
+## ALL FLAGS ARE SET TO DEFAULT SETTINGS
 export DWI_A=true
 
 if $DWI_A; then
