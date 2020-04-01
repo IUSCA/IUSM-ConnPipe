@@ -17,7 +17,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 function f_percent_variance() {
-fIn1="$1" fIn2="$2" ${python3_7} - <<END
+fIn1="$1" fIn2="$2" python - <<END
 import os
 import numpy as np
 
@@ -165,14 +165,14 @@ echo "## Starting ICA-AROMA"
 
 AROMAout="${AROMApath}/AROMA-output"
 
-# if [[ -d "${AROMAout}" ]]; then
-#     cmd="rm -rf ${AROMAout}"
-#     log $cmd
-#     eval $cmd     
-# fi
+if [[ -d "${AROMAout}" ]]; then
+    cmd="rm -rf ${AROMAout}"
+    log $cmd
+    eval $cmd     
+fi
 
-#cmd="${EXEDIR}/src/func/ICA-AROMA/ICA_AROMA.py \
-cmd="${ICA_AROMA_path}/ICA_AROMA.py \
+#cmd="${ICA_AROMA_path}/ICA_AROMA.py \
+cmd="ICA_AROMA.py \
 -in ${fileSmooth} \
 -out ${AROMAout} \
 -mc ${fileMovePar} \

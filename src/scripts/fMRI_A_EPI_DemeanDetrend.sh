@@ -17,7 +17,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 function demean_detrend() {
-path="$1" ${python3_7} - <<END
+path="$1" python - <<END
 import os
 import nibabel as nib
 import numpy as np

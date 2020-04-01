@@ -17,7 +17,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ###############################################################################
 
 function read_bvals_bvecs() {
-path="$1" ${python3_7} - <<END
+path="$1" python - <<END
 import os
 from dipy.io import read_bvals_bvecs
 import nibabel as nib

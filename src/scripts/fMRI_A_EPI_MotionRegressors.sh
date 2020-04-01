@@ -17,7 +17,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 function f_load_motion_reg() {
-path="$1" numReg="$2" ${python3_7} - <<END
+path="$1" numReg="$2" python - <<END
 import os
 import numpy as np
 

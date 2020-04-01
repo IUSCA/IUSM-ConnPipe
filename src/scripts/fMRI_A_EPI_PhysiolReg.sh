@@ -17,7 +17,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 function read_data() {
-EPIpath="$1" ${python3_7} - <<END
+EPIpath="$1" python - <<END
 import os
 import numpy as np
 import nibabel as nib
@@ -42,7 +42,7 @@ END
 }
 
 function time_series() {
-EPIpath="$1" fileIN="$2" aCompCorr="$3" num_comp="$4" PhReg_path="$5" numGS="$6" ${python3_7} - <<END
+EPIpath="$1" fileIN="$2" aCompCorr="$3" num_comp="$4" PhReg_path="$5" numGS="$6" python - <<END
 import os
 import numpy as np
 import nibabel as nib

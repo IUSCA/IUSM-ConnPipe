@@ -18,7 +18,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 function extract_b0_images() {
-path="$1" ${python3_7} - <<END
+path="$1" python - <<END
 import os
 import numpy as np
 
@@ -57,7 +57,7 @@ END
 
 
 function get_B0_temoral_info() {
-path="$1" ${python3_7} - <<END
+path="$1" python - <<END
 import os
 import nibabel as nib
 import numpy as np
@@ -94,7 +94,7 @@ END
 }
 
 function delta_EDDY() {
-path="$1" ${python3_7} - <<END
+path="$1" python - <<END
 import os
 import nibabel as nib
 import numpy as np

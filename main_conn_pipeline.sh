@@ -7,6 +7,7 @@ module load fsl/6.0.1;
 module load mricrogl
 module load afni/18.3.03
 module load ants
+module load ica-aroma/0.4.4
 # module load singularity
 
 # FSL
