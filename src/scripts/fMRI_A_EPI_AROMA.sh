@@ -184,11 +184,10 @@ log "$out"
 
 if [[ ! -e "${AROMAout}/denoised_func_data_nonaggr.nii.gz" ]]; then
 
-    log "# WARNING AROMA output file not found! Exiting..."
-    log "# Posible causes of failure:$'\n' \
-        - Files are not in AROMA directoy, but in melodic ICA direcotry$'\n' \
-        - There are too many components and AROMA did not filter porperly. If this is the case \ 
-            then fslfilt can be ran manually. "
+    echo "# WARNING AROMA output file not found! Exiting..."
+    echo "# Posible causes of failure:"
+    echo "    - Files are not in AROMA directoy, but in melodic ICA direcotry"
+    echo "    - There are too many components and AROMA did not filter porperly. If this is the case then fslfilt can be ran manually. "
 
 else
     echo "### ICA-AROMA Done."
