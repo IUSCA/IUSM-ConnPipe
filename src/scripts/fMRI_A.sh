@@ -165,7 +165,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 
             if ${flags_EPI_RegOthers}; then
 
-                source activate /N/u/aiavenak/Carbonate/miniconda3/envs/CONNpipeline_py37_clone
+                source activate ${path2env}
                 
                 cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_RegOthers.sh"
                 echo $cmd
@@ -201,7 +201,8 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 
                 if ${flags_NuisanceReg_AROMA}; then
 
-                    source activate /N/u/aiavenak/Carbonate/miniconda3/envs/CONNpipeline_py37_clone
+                    source activate ${path2env}
+
                     cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_AROMA.sh"
                     echo $cmd
                     eval $cmd
