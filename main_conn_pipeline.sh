@@ -7,6 +7,7 @@ module load fsl/6.0.1;
 module load mricrogl
 module load afni/18.3.03
 module load ants
+module load ica-aroma/0.4.4
 # module load singularity
 
 # FSL
@@ -28,8 +29,10 @@ export EXEDIR=$(dirname "$(readlink -f "$0")")
 source ${EXEDIR}/src/func/bash_funcs.sh
 source ${EXEDIR}/config.sh
 
-export python3_7="${EXEDIR}/../miniconda3/bin/python3.7"
-
+## these paths will be updted once code is running in a container
+#export python3_7="${EXEDIR}/../miniconda3/bin/python3.7"
+export python3_7="/N/u/aiavenak/Carbonate/miniconda3/bin/python3.7"
+export path2env="/N/u/aiavenak/Carbonate/miniconda3/envs/CONNpipeline_py37_clone"
 
 #################################################################################
 #################################################################################

@@ -109,6 +109,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 
 
             if ${flags_EPI_SpinEchoUnwarp}; then 
+            
                 cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_SpinEchoUnwarp.sh"
                 echo $cmd
                 eval $cmd
@@ -165,7 +166,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 
             if ${flags_EPI_RegOthers}; then
 
-                source activate /N/u/aiavenak/Carbonate/miniconda3/envs/CONNpipeline_py37_clone
+                source activate ${path2env}
                 
                 cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_RegOthers.sh"
                 echo $cmd
@@ -201,7 +202,8 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 
                 if ${flags_NuisanceReg_AROMA}; then
 
-                    source activate /N/u/aiavenak/Carbonate/miniconda3/envs/CONNpipeline_py37_clone
+                    #source activate ${path2env}
+
                     cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_AROMA.sh"
                     echo $cmd
                     eval $cmd
@@ -211,7 +213,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                         echoerr "problem at fMRI_A_EPI_AROMA. exiting."
                         exit 1
                     fi                
-                    source deactivate
+                    #source deactivate
                    
                 elif ${flags_NuisanceReg_HeadParam}; then
 
@@ -244,8 +246,9 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             else
                 log "WARNING Skipping Physiological Regressors. Please set flags_EPI_PhysiolReg=true to run Phys Regression"
             fi   
-### THIS HAS TO BE UNCOMMNETED; IT IS COMMENTED NOW TO AVOID HAVING TO RUN NUISANCE REG
-            #if ${flags_EPI_PhysiolReg} || ${flags_EPI_NuisanceReg}; then
+
+            ### AAK - COMMENT OUT THIS SECTION WHEN TESTING TO AVOID HAVING TO RUN NUISANCE REG
+            if ${flags_EPI_PhysiolReg} || ${flags_EPI_NuisanceReg}; then
 
                 echo "APPLYING REGRESSORS"
 
@@ -258,7 +261,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                     echoerr "problem at fMRI_A_EPI_ApplyReg. exiting."
                     exit 1
                 fi  
-           # fi             
+            fi             
 
 
             # if ${flags_EPI_DemeanDetrend}; then

@@ -256,7 +256,7 @@ if $fMRI_A; then
 		export flags_NuisanceReg_AROMA=true;  
 			if ${flags_NuisanceReg_AROMA}; then # if using ICA-AROMA
 				export flags_NuisanceReg_HeadParam=false
-				export ICA_AROMA_path="${PYpck}/ICA-AROMA"
+				export ICA_AROMA_path="${PYpck}/ICA-AROMA" #ONLY NEEDED IF NOT USING HCP ica-aroma MODULE
 				if [[ -e "${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz" ]]; then
 					fileMNI2mm="${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz"
 				else
@@ -297,7 +297,7 @@ if $fMRI_A; then
 			export configs_EPI_numGS=4 # 1-orig; 2-orig+deriv; 4-orig+deriv+sq
 
 	#### UNDER DEVELOPMENT - DON'T RUN THIS SECTION #####
-	export flags_EPI_DemeanDetrend=false;
+	export flags_EPI_DemeanDetrend=true;
 
 	export flags_EPI_MotionRegressors=false
 		export configs_EPI_scrubtime=15
@@ -313,7 +313,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export DWI_A=true
+export DWI_A=false
 
 if $DWI_A; then
 

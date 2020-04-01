@@ -17,7 +17,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 function apply_reg() {
-EPIpath="$1" nuisanceReg="$2" config_param="$3" numReg="$4" numGS="$5" physReg="$6" scrub="$7" postfix="$8" ${python3_7} - <<END
+EPIpath="$1" nuisanceReg="$2" config_param="$3" numReg="$4" numGS="$5" physReg="$6" scrub="$7" postfix="$8" python - <<END
 import os
 import numpy as np
 import nibabel as nib

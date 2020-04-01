@@ -17,7 +17,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 function f_percent_variance() {
-fIn1="$1" fIn2="$2" ${python3_7} - <<END
+fIn1="$1" fIn2="$2" python - <<END
 import os
 import numpy as np
 
@@ -165,14 +165,14 @@ echo "## Starting ICA-AROMA"
 
 AROMAout="${AROMApath}/AROMA-output"
 
-# if [[ -d "${AROMAout}" ]]; then
-#     cmd="rm -rf ${AROMAout}"
-#     log $cmd
-#     eval $cmd     
-# fi
+if [[ -d "${AROMAout}" ]]; then
+    cmd="rm -rf ${AROMAout}"
+    log $cmd
+    eval $cmd     
+fi
 
-#cmd="${EXEDIR}/src/func/ICA-AROMA/ICA_AROMA.py \
-cmd="${ICA_AROMA_path}/ICA_AROMA.py \
+#cmd="${ICA_AROMA_path}/ICA_AROMA.py \
+cmd="ICA_AROMA.py \
 -in ${fileSmooth} \
 -out ${AROMAout} \
 -mc ${fileMovePar} \
@@ -184,11 +184,10 @@ log "$out"
 
 if [[ ! -e "${AROMAout}/denoised_func_data_nonaggr.nii.gz" ]]; then
 
-    log "# WARNING AROMA output file not found! Exiting..."
-    log "# Posible causes of failure:$'\n' \
-        - Files are not in AROMA directoy, but in melodic ICA direcotry$'\n' \
-        - There are too many components and AROMA did not filter porperly. If this is the case \ 
-            then fslfilt can be ran manually. "
+    echo "# WARNING AROMA output file not found! Exiting..."
+    echo "# Posible causes of failure:"
+    echo "    - Files are not in AROMA directoy, but in melodic ICA direcotry"
+    echo "    - There are too many components and AROMA did not filter porperly. If this is the case then fslfilt can be ran manually. "
 
 else
     echo "### ICA-AROMA Done."

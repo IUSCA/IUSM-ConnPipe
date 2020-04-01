@@ -13,7 +13,7 @@
 ############################################################################### 
 
 function add_subcort_parc() {
-path="$1" pnodal="$2" ${python3_7} - <<END
+path="$1" pnodal="$2" python - <<END
 
 import os.path
 import numpy as np

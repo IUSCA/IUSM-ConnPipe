@@ -33,7 +33,7 @@
 ###############################################################################
 
 function get_private_tags() {
-RedoutTime=$(${python3_7} - "$1"<<END
+RedoutTime=$(python - "$1"<<END
 import pydicom
 #import os
 import sys

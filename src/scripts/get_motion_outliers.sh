@@ -3,7 +3,7 @@
 ############################################################################### 
 
 function f_load_motion_reg() {
-path="$1" ${python3_7} - <<END
+path="$1" python - <<END
 import os
 import numpy as np
 
