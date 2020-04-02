@@ -22,8 +22,6 @@ import os
 import nibabel as nib
 import numpy as np
 from scipy import signal
-from pathlib import Path
-
 
 fileIn=os.environ['fileIn']
 fileOut=os.environ['fileOut']
