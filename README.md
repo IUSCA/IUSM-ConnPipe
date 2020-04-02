@@ -6,6 +6,8 @@ The IU School of Medicine Neuroscience Connectivity Pipeline (IUSM-ConnPipe) exe
 
 ## Features
 
+For a more detailed overview of the different features, please visit our [wiki](https://github.com/IUSCA/IUSM-ConnPipe/wiki).
+
 #### Process T1 Data 
 * Denoise T1 data
 * Perform brain extraction
