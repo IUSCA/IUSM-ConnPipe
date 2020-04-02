@@ -236,55 +236,32 @@ echo "# =========================================================="
 echo "# 5.3 APPLY REGRESSORS "
 echo "# =========================================================="
 
-### THIS HAS TO BE UNCOMMNETED; IT IS COMMENTED NOW TO AVOID HAVING TO RUN NUISANCE REG
-# if ${flags_EPI_NuisanceReg}; then
-    if ${flags_NuisanceReg_AROMA}; then
-        log "nuisanceReg AROMA"
-        nuisanceReg="AROMA"
-        configs_EPI_numReg=0
-        configs_EPI_scrub=false
-        nR="aroma"   # set filename postfix for output image
-    elif ${flags_NuisanceReg_HeadParam}; then
-        log "nuisanceReg HMParam"
-        nuisanceReg="HMPreg"  
-        nR="hmp${configs_EPI_numReg}"   # set filename postfix for output image
-        if ${configs_EPI_scrub}; then
-            nR="scrubbed_${nR}"
-        fi
-    fi
-# else 
-#     nuisanceReg="none"
-#     configs_EPI_numReg=0
-#     configs_EPI_scrub=false
-# fi 
-
-if [[ ! ${flags_EPI_GS} ]]; then
-    configs_EPI_numGS=0
-else 
-    nR="${nR}_Gs${configs_EPI_numGS}"
+if ${flags_NuisanceReg_AROMA}; then
+    log "nuisanceReg AROMA"
+    nuisanceReg="AROMA"
+    configs_EPI_numReg=0
+    configs_EPI_scrub=false
+elif ${flags_NuisanceReg_HeadParam}; then
+    log "nuisanceReg HMParam"
+    nuisanceReg="HMPreg"  
 fi
 
 
-# if ${flags_EPI_PhysiolReg}; then
-    if ${flags_PhysiolReg_aCompCorr}; then  
-        log "PhysiolReg - aCompCorr"
-        physReg="aCompCorr"
-        config_param=${configs_EPI_numPC}
-        if [[ "${configs_EPI_numPC}" -ge 0 && "${configs_EPI_numPC}" -le 6 ]]; then
-            nR="${nR}_pca${configs_EPI_numPC}"
-        elif [[ "${configs_EPI_numPC}" -ge 5 ]]; then
-            nR="${nR}_pca"
-        fi 
-    elif ${flags_PhysiolReg_WM_CSF}; then
-        log "PhysiolReg - Mean CSF & WM signal"
-        physReg="PhysReg" #"Mn_WM_CSF"
-        config_param=${configs_EPI_numPhys}
-        nR="${nR}_mPhys${configs_EPI_numPhys}"
-    fi 
-# else
-#     physReg="none"
-#     config_param=0
-# fi
+if [[ ! ${flags_EPI_GS} ]]; then
+    configs_EPI_numGS=0
+fi
+
+
+if ${flags_PhysiolReg_aCompCorr}; then  
+    log "PhysiolReg - aCompCorr"
+    physReg="aCompCorr"
+    config_param=${configs_EPI_numPC}
+
+elif ${flags_PhysiolReg_WM_CSF}; then
+    log "PhysiolReg - Mean CSF & WM signal"
+    physReg="PhysReg" #"Mn_WM_CSF"
+    config_param=${configs_EPI_numPhys}    
+fi 
 
 
 log "filename postfix for output image -- ${nR}"

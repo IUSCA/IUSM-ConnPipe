@@ -255,6 +255,7 @@ if $fMRI_A; then
 
 		export flags_NuisanceReg_AROMA=true;  
 			if ${flags_NuisanceReg_AROMA}; then # if using ICA-AROMA
+				nR="aroma" # set filename postfix for output image
 				export flags_NuisanceReg_HeadParam=false
 				export ICA_AROMA_path="${PYpck}/ICA-AROMA" #ONLY NEEDED IF NOT USING HCP ica-aroma MODULE
 				if [[ -e "${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz" ]]; then
@@ -264,12 +265,14 @@ if $fMRI_A; then
 				fi
 			else                         # if using Head Motion Parameters
 				export flags_NuisanceReg_HeadParam=true
+					nR="hmp${configs_EPI_numReg}"   # set filename postfix for output image
 					export configs_EPI_numReg=24  # 12 (orig and deriv) or 24 (+sq of 12)
 						if [[ "${configs_EPI_numReg}" -ne 12 && "${configs_EPI_numReg}" -ne 24 ]]; then
 							log "WARNING the variable config_EPI_numReg must have values '12' or '24'. \
 								Please set the corect value in the config.sh file"
 						fi			
 					export configs_EPI_scrub=true    # perform scrubbing based on FD and DVARS criteria
+						nR="scrubbed_${nR}"
 			fi
 
 	########## PHYSIOLOGICAL REGRESSORS ###############
@@ -282,8 +285,14 @@ if $fMRI_A; then
 			export flags_PhysiolReg_WM_CSF=false
 			export configs_EPI_numPC=4; # 1-5; the maximum and recommended number is 5 
 										  # set to 6 to include all 
+				if [[ "${configs_EPI_numPC}" -ge 0 && "${configs_EPI_numPC}" -le 5 ]]; then
+					nR="${nR}_pca${configs_EPI_numPC}"
+				elif [[ "${configs_EPI_numPC}" -ge 5 ]]; then
+					nR="${nR}_pca"
+				fi 
 		else
 			export flags_PhysiolReg_WM_CSF=true  ### if using mean WM and CSF signal reg
+				nR="${nR}_mPhys${configs_EPI_numPhys}"
 				export configs_EPI_numPhys=8; # 2-orig; 4-orig+deriv; 8-orig+deriv+sq
 					if [[ "${configs_EPI_numPhys}" -ne "2" \
 					&& "${configs_EPI_numPhys}" -ne 4 \
@@ -293,11 +302,29 @@ if $fMRI_A; then
 					fi	
 		fi
 
+		if ${flags_NuisanceReg_AROMA}; then   
+			if ${flags_PhysiolReg_aCompCorr}; then  
+				export regPath="AROMA/aCompCorr"    
+			elif ${flags_PhysiolReg_WM_CSF}; then
+				export regPath="AROMA/PhysReg"
+			fi          
+		elif ${flags_NuisanceReg_HeadParam}; then 
+			if ${flags_PhysiolReg_aCompCorr}; then  
+				log "PhysiolReg - Combining aCompCorr with HMP regressors"
+				export regPath="HMPreg/aCompCorr"    
+			elif ${flags_PhysiolReg_WM_CSF}; then
+				log "PhysiolReg - Combining Mean CSF & WM signal with HMP regressors"
+				export regPath="HMPreg/PhysReg"
+			fi          
+		fi
+
 		export flags_EPI_GS=true # global signal regression 
+			nR="${nR}_Gs${configs_EPI_numGS}"
 			export configs_EPI_numGS=4 # 1-orig; 2-orig+deriv; 4-orig+deriv+sq
 
+		export nR 
 	#### UNDER DEVELOPMENT - DON'T RUN THIS SECTION #####
-	export flags_EPI_DemeanDetrend=false;
+	export flags_EPI_DemeanDetrend=true;
 
 	export flags_EPI_MotionRegressors=false
 		export configs_EPI_scrubtime=15

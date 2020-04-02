@@ -264,18 +264,18 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             fi             
 
 
-            # if ${flags_EPI_DemeanDetrend}; then
+            if ${flags_EPI_DemeanDetrend}; then
 
-            #     cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_DemeanDetrend.sh"
-            #     echo $cmd
-            #     eval $cmd
-            #     exitcode=$?
+                cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_DemeanDetrend.sh"
+                echo $cmd
+                eval $cmd
+                exitcode=$?
 
-            #     if [[ ${exitcode} -ne 0 ]] ; then
-            #         echoerr "problem at fMRI_A_EPI_DemeanDetrend. exiting."
-            #         exit 1
-            #     fi  
-            # fi             
+                if [[ ${exitcode} -ne 0 ]] ; then
+                    echoerr "problem at fMRI_A_EPI_DemeanDetrend. exiting."
+                    exit 1
+                fi  
+            fi             
 
             # if ${flags_EPI_MotionRegressors}; then
 
