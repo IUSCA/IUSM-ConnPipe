@@ -90,6 +90,23 @@ export DWI_A=false
 
 Analysis specifications will depend on the type of content available in the neuroimaging dataset you are analyzing. IUSM ConnPipe provides several options for flexible analysis specifications. For example, one clinical research group may require preprocessing only for T1 data, while another might require preprocessing for T1, fMRI, and DWI altogether. IUSM ConnPipe provides options to limit analysis to as few or as many features as is desired by the researcher. 
 
+#### Preparing packages and modules
+To check what python packages are available, run the following command in a terminal:
+```module unload python/2.7.16
+module load python/3.6.8
+pip list 
+```
+The last command should list all the python packages that are by default available to you. They should be listed in alphabetical order. The two packages needed are nibabel and scikit-image. If you don't have them listed there, then do the following:
+```
+pip install nibabel --user
+pip install scikit-image --user
+```
+After installing these, type again:
+```
+pip list
+```
+And you should be able to see the packages listed now. 
+
 ### Running the Pipeline
 
 After the desired configurations have been set, the pipeline can be run by executing the **main_conn_pipeline.sh** script. On a Linux terminal, after navigating to the directory containing corresponding pipeline, files run the following command:
