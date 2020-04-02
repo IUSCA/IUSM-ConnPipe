@@ -181,11 +181,10 @@ if ${flags_NuisanceReg_AROMA}; then
 
     fileIN="${EPIpath}/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz"
     if  [[ -e ${fileIN} ]]; then
-        log "PhysiolReg - Using AROMA output data"
         if ${flags_PhysiolReg_aCompCorr}; then  
-            PhReg_path="${EPIpath}/AROMA/aCompCorr"    
+            log "PhysiolReg - Combining aCompCorr with AROMA output data"
         elif ${flags_PhysiolReg_WM_CSF}; then
-            PhReg_path="${EPIpath}/AROMA/PhysReg"
+            log "PhysiolReg - Combining Mean CSF & WM signal with AROMA output data"
             configs_EPI_numPC=0
         fi          
     else
@@ -195,21 +194,19 @@ if ${flags_NuisanceReg_AROMA}; then
 elif ${flags_NuisanceReg_HeadParam}; then 
 
     fileIN="${EPIpath}/4_epi.nii.gz"
-    HMPpath="${EPIpath}/HMPreg"
-    if  [[ -e ${fileIN} ]] && [[ -d ${HMPpath} ]]; then
+    if  [[ -e ${fileIN} ]] && [[ -d "${EPIpath}/HMPreg" ]]; then
         if ${flags_PhysiolReg_aCompCorr}; then  
             log "PhysiolReg - Combining aCompCorr with HMP regressors"
-            PhReg_path="${HMPpath}/aCompCorr"    
         elif ${flags_PhysiolReg_WM_CSF}; then
             log "PhysiolReg - Combining Mean CSF & WM signal with HMP regressors"
-            PhReg_path="${HMPpath}/PhysReg"
             configs_EPI_numPC=0
         fi          
     else
-        log "ERROR ${fileIN} and or ${HMPpath} not found. Connot perform physiological regressors analysis"
+        log "ERROR ${fileIN} and or ${EPIpath}/HMPreg not found. Connot perform physiological regressors analysis"
     fi 
 fi
 
+PhReg_path="${EPIpath}/${regPath}"
 
 if [[ ! -d ${PhReg_path} ]]; then
     cmd="mkdir ${PhReg_path}"
