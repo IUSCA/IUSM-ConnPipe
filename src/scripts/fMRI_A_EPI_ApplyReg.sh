@@ -25,6 +25,26 @@ from scipy import stats
 
 print("inside Python script")
 
+def apply_reg(data, mask, regressors,scrubbing):
+
+    # remove identical regressors (rows) if present
+    unique_regressors = np.vstack({tuple(row) for row in regressors})
+    [sizeX,sizeY,sizeZ,numTimePoints] = data.shape
+    resid = np.zeros(data.shape)
+
+    for i in range(0,sizeX):
+        for j in range(0,sizeY):
+            for k in range(0,sizeZ):
+                if mask[i,j,k]:
+                    TSvoxel = data[i,j,k]                                            
+                    B = np.linalg.lstsq(unique_regressors.T,TSvoxel)
+                    coeffs = B[0]
+                    Yhat = np.sum(np.multiply(coeffs[:,None],unique_regressors),axis=0)
+                    resid[i,j,k,:] = TSvoxel - Yhat
+        if i % 25 == 0:
+            print("--", i/sizeX, "-- done")
+
+    return resid
 
 EPIpath=os.environ['EPIpath']
 nuisanceReg=os.environ['nuisanceReg']
@@ -45,8 +65,6 @@ scrub=os.environ['scrub']
 print("scrub",scrub)
 
 print("REGRESSORS -- Creating regressor matrix with the follwing:")
-
-volBrain_file = ''.join([EPIpath,'rT1_brain_mask_FC.nii.gz'])
 
 if nuisanceReg == "AROMA":
     print("1. Applying AROMA regressors")
@@ -181,7 +199,31 @@ fname = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
 volGS = nib.load(fname)
 volGS_vol = volGS.get_data()
 
+for i in range(0,numTimePoints):
+    rv = resting_vol[:,:,:,i]
+    rv[volGS_vol==0]=0
+    resting_vol[:,:,:,i] = rv
 
+volBrain_file = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
+volBrain = nib.load(volBrain_file)
+volBrain_vol = volBrain.get_data()
+
+if scrub == 'true' and nuisanceReg == "HMPreg":
+    fname=''.join([EPIpath,'/scrubbing_goodvols.npz'])
+    scrubvar = np.load(fname) 
+    scrubvar = scrubvar['scrub']
+else:
+    scrubvar = np.ones(numTimePoints, dtype=int)
+
+resid = []
+for r in range(0,len(zRegressMat)):
+    rr = apply_reg(resting_vol,volBrain_vol,zRegressMat[r],scrubvar)
+    resid.append(rr)
+
+## save data (for header info), regressors, and residuals
+fname = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output.npz'])
+np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol,zRegressMat=zRegressMat,resid=resid,postfix=postfix)
+print("Saved aCompCor PCA regressors")
 
 END
 }

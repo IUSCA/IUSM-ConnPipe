@@ -166,7 +166,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 
             if ${flags_EPI_RegOthers}; then
 
-                source activate ${path2env}
+                #source activate ${path2env}
                 
                 cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_RegOthers.sh"
                 echo $cmd
@@ -178,7 +178,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                     exit 1
                 fi  
 
-                source deactivate
+                #source deactivate
             fi 
 
 
