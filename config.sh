@@ -276,7 +276,7 @@ if $fMRI_A; then
 			fi
 
 	########## PHYSIOLOGICAL REGRESSORS ###############
-	export flags_EPI_PhysiolReg=false;  
+	export flags_EPI_PhysiolReg=true;  
 	# Two options that the user can select from:
 	# 1) flags_PhysiolReg_aCompCorr=true - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
 	# 2) flags_PhysiolReg_aCompCorr=false - mean WM and CSF signal regression
@@ -302,13 +302,15 @@ if $fMRI_A; then
 					fi	
 		fi
 
-		if ${flags_NuisanceReg_AROMA}; then   
+		if ${flags_NuisanceReg_AROMA}; then  
+			export configs_EPI_resting_file='/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz' 
 			if ${flags_PhysiolReg_aCompCorr}; then  
 				export regPath="AROMA/aCompCorr"    
 			elif ${flags_PhysiolReg_WM_CSF}; then
 				export regPath="AROMA/PhysReg"
 			fi          
 		elif ${flags_NuisanceReg_HeadParam}; then 
+			export configs_EPI_resting_file='/4_epi.nii.gz' 
 			if ${flags_PhysiolReg_aCompCorr}; then  
 				log "PhysiolReg - Combining aCompCorr with HMP regressors"
 				export regPath="HMPreg/aCompCorr"    
@@ -323,16 +325,15 @@ if $fMRI_A; then
 			export configs_EPI_numGS=4 # 1-orig; 2-orig+deriv; 4-orig+deriv+sq
 
 		export nR 
-	#### UNDER DEVELOPMENT - DON'T RUN THIS SECTION #####
-	export flags_EPI_DemeanDetrend=true;
 
-	export flags_EPI_MotionRegressors=false
-		export configs_EPI_scrubtime=15
-	# GS is a subflag of Motion Regressors. 
-	# If equals 1 global signal regression is done, if 0 it is not done.
+	export flags_EPI_DemeanDetrend=false
+
+	export flags_EPI_BandPass=true
+		export configs_EPI_fMin=0.009
+		export configs_EPI_fMax=0.08	
 		
-		export configs_EPI_FDth='0.20';
-	####################################################
+	export flags_EPI_ROIs=true
+
 fi
 
 ################################################################################

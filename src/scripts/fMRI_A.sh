@@ -277,33 +277,34 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                 fi  
             fi             
 
-            # if ${flags_EPI_MotionRegressors}; then
+            if ${flags_EPI_BandPass}; then
 
-            #     cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_MotionRegressors.sh"
-            #     echo $cmd
-            #     eval $cmd
-            #     exitcode=$?
+                cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_BandPass.sh"
+                echo $cmd
+                eval $cmd
+                exitcode=$?
 
-            #     if [[ ${exitcode} -ne 0 ]] ; then
-            #         echoerr "problem at fMRI_A_EPI_MotionRegressors. exiting."
-            #         exit 1
-            #     fi  
-            # fi             
+                if [[ ${exitcode} -ne 0 ]] ; then
+                    echoerr "problem at fMRI_A_EPI_BandPass. exiting."
+                    exit 1
+                fi  
+            fi   
 
 
+            if ${flags_EPI_ROIs}; then
 
-            # if ${flags_EPI_MelodicUnwarped}; then 
+                cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_ROIs.sh"
+                echo $cmd
+                eval $cmd
+                exitcode=$?
 
-            #     echo "0. Merge Melodic Unwarpped Images"
+                if [[ ${exitcode} -ne 0 ]] ; then
+                    echoerr "problem at fMRI_A_EPI_ROIs. exiting."
+                    exit 1
+                fi  
+            fi           
 
-            #     path_EPIMelodicUnwarped=${EPIpath}/${configs_melodicUnwarpedFolder}
 
-            #     if [[ -d ${path_EPIMelodicUnwarped} ]]; then
-            #         cmd="fslmerge -tr ${EPIpath}/0_epi_unwarped ${path_EPIMelodicUnwarped}/uf*.nii.gz ${TR}"
-            #     else
-            #         log "ERROR MELODIC UNWARPED folder does not exist"
-            #     fi
-            # fi 
 
 
         fi

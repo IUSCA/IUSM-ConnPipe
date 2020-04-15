@@ -17,7 +17,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 function apply_reg() {
-EPIpath="$1" nuisanceReg="$2" config_param="$3" numReg="$4" numGS="$5" physReg="$6" scrub="$7" postfix="$8" python - <<END
+EPIpath="$1" nuisanceReg="$2" config_param="$3" numReg="$4" numGS="$5" physReg="$6" scrub="$7" postfix="$8" resting_file="$9" python - <<END
 import os
 import numpy as np
 import nibabel as nib
@@ -63,17 +63,30 @@ postfix=os.environ['postfix']
 print("postfix",postfix)
 scrub=os.environ['scrub']
 print("scrub",scrub)
+resting_file=os.environ['resting_file']
+print("resting_file",resting_file)
+resting_file = ''.join([EPIpath,resting_file]) 
+print("full resting file is ",resting_file)
 
 print("REGRESSORS -- Creating regressor matrix with the follwing:")
 
+# # save name of resting_file
+# fname = ''.join([PhReg_path,'/resting_file.txt'])
+# text_file = open(fname, "w")
+
+
 if nuisanceReg == "AROMA":
     print("1. Applying AROMA regressors")
-    resting_file = ''.join([EPIpath,'/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'])
+    # resting_file = ''.join([EPIpath,'/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'])
+    # text_file.write('/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz')
+    # text_file.close()
     regressors = np.array([])
 
 elif nuisanceReg == "HMPreg":
     print("1. Applying Head Motion Param regressors")
-    resting_file = ''.join([EPIpath,'/4_epi.nii.gz'])    
+    # resting_file = ''.join([EPIpath,'/4_epi.nii.gz'])  
+    # text_file.write('/4_epi.nii.gz')
+    # text_file.close()  
 
     if numReg == 24:
         print(" -- 24 Head motion regressors")
@@ -225,6 +238,7 @@ fname = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output.npz'])
 np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol,zRegressMat=zRegressMat,resid=resid,postfix=postfix)
 print("Saved aCompCor PCA regressors")
 
+
 END
 }
 
@@ -271,6 +285,6 @@ log "calling python script"
 cmd="apply_reg ${EPIpath} \
     ${nuisanceReg} ${config_param} \
     ${configs_EPI_numReg} ${configs_EPI_numGS} \
-    ${physReg} ${configs_EPI_scrub} ${nR}"
+    ${physReg} ${configs_EPI_scrub} ${nR} ${configs_EPI_resting_file}"
 log $cmd
 eval $cmd      
