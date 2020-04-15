@@ -70,23 +70,13 @@ print("full resting file is ",resting_file)
 
 print("REGRESSORS -- Creating regressor matrix with the follwing:")
 
-# # save name of resting_file
-# fname = ''.join([PhReg_path,'/resting_file.txt'])
-# text_file = open(fname, "w")
-
 
 if nuisanceReg == "AROMA":
     print("1. Applying AROMA regressors")
-    # resting_file = ''.join([EPIpath,'/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'])
-    # text_file.write('/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz')
-    # text_file.close()
     regressors = np.array([])
 
 elif nuisanceReg == "HMPreg":
-    print("1. Applying Head Motion Param regressors")
-    # resting_file = ''.join([EPIpath,'/4_epi.nii.gz'])  
-    # text_file.write('/4_epi.nii.gz')
-    # text_file.close()  
+    print("1. Applying Head Motion Param regressors") 
 
     if numReg == 24:
         print(" -- 24 Head motion regressors")
