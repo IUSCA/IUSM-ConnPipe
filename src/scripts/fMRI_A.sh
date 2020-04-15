@@ -277,18 +277,18 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                 fi  
             fi             
 
-            # if ${flags_EPI_MotionRegressors}; then
+            if ${flags_EPI_BandPass}; then
 
-            #     cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_MotionRegressors.sh"
-            #     echo $cmd
-            #     eval $cmd
-            #     exitcode=$?
+                cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_BandPass.sh"
+                echo $cmd
+                eval $cmd
+                exitcode=$?
 
-            #     if [[ ${exitcode} -ne 0 ]] ; then
-            #         echoerr "problem at fMRI_A_EPI_MotionRegressors. exiting."
-            #         exit 1
-            #     fi  
-            # fi             
+                if [[ ${exitcode} -ne 0 ]] ; then
+                    echoerr "problem at fMRI_A_EPI_BandPass. exiting."
+                    exit 1
+                fi  
+            fi             
 
 
 

@@ -66,14 +66,23 @@ print("scrub",scrub)
 
 print("REGRESSORS -- Creating regressor matrix with the follwing:")
 
+# save name of resting_file
+fname = ''.join([PhReg_path,'/resting_file.txt'])
+text_file = open(fname, "w")
+
+
 if nuisanceReg == "AROMA":
     print("1. Applying AROMA regressors")
     resting_file = ''.join([EPIpath,'/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'])
-    regressors = np.array([])
+    text_file.write('/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz')
+    text_file.close()
+    regressors = np.array([])f
 
 elif nuisanceReg == "HMPreg":
     print("1. Applying Head Motion Param regressors")
-    resting_file = ''.join([EPIpath,'/4_epi.nii.gz'])    
+    resting_file = ''.join([EPIpath,'/4_epi.nii.gz'])  
+    text_file.write('/4_epi.nii.gz')
+    text_file.close()  
 
     if numReg == 24:
         print(" -- 24 Head motion regressors")
@@ -92,6 +101,9 @@ elif nuisanceReg == "HMPreg":
         print(sorted(m12reg.files))
         regressors = np.vstack((m12reg['motion'].T,m12reg['motion_deriv'].T))
         print("regressors shape ",regressors.shape)
+
+
+
 
 
 if numGS > 0:
@@ -224,6 +236,7 @@ for r in range(0,len(zRegressMat)):
 fname = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output.npz'])
 np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol,zRegressMat=zRegressMat,resid=resid,postfix=postfix)
 print("Saved aCompCor PCA regressors")
+
 
 END
 }

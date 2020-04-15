@@ -323,16 +323,15 @@ if $fMRI_A; then
 			export configs_EPI_numGS=4 # 1-orig; 2-orig+deriv; 4-orig+deriv+sq
 
 		export nR 
-	#### UNDER DEVELOPMENT - DON'T RUN THIS SECTION #####
-	export flags_EPI_DemeanDetrend=true;
 
-	export flags_EPI_MotionRegressors=false
-		export configs_EPI_scrubtime=15
-	# GS is a subflag of Motion Regressors. 
-	# If equals 1 global signal regression is done, if 0 it is not done.
+	export flags_EPI_DemeanDetrend=false
+
+	export flags_EPI_BandPass=true
+		export configs_EPI_fMin=0.009
+		export configs_EPI_fMax=0.08	
 		
-		export configs_EPI_FDth='0.20';
-	####################################################
+		#export configs_EPI_FDth='0.20';
+
 fi
 
 ################################################################################
