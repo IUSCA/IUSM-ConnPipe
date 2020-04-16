@@ -83,21 +83,20 @@ for pc in range(0,len(resid)):
     tsf = signal.filtfilt(b, a, GSts_resid)
     
     for ind in range(0,numTimePoints):
-        # rrvol = resting_vol[:,:,:,ind]
-        # rrvol[GSmask[0],GSmask[1],GSmask[2]] = tsf[ind,:]
         resting_vol[GSmask[0],GSmask[1],GSmask[2],ind] = tsf[ind,:]
 
+    if len(resid)==1:
+        fileOut = "7_epi_%s.nii.gz" % postfix 
+    else:
+        fileOut = "7_epi_%s%d.nii.gz" % (postfix,pc)
 
-if len(resid)==1:
-    fileOut = "7_epi_%s.nii.gz" % postfix 
-else:
-    fileOut = "7_epi_%s%d.nii.gz" % (postfix,pc-1)
+    fileOut = ''.join([PhReg_path,fileOut])
+    print("Nifti file to be saved is: ",fileOut)
 
-fileOut = ''.join([PhReg_path,fileOut])
 
-# save new resting file
-resting_new = nib.Nifti1Image(resting_vol.astype(np.float32),resting.affine,resting.header)
-nib.save(resting_new,fileOut) 
+    # save new resting file
+    resting_new = nib.Nifti1Image(resting_vol.astype(np.float32),resting.affine,resting.header)
+    nib.save(resting_new,fileOut) 
 
 
 END
@@ -113,7 +112,7 @@ echo "# =========================================================="
 
 
 
-PhReg_path="${EPIpath}/${regPath}"
+PhReg_path="${EPIpath}/${regPath}/"
 fileIn="${PhReg_path}/NuisanceRegression_${nR}_output.npz"
 fileIn_dmdt="${PhReg_path}/NuisanceRegression_${nR}_output_dmdt.npz"
 
@@ -123,6 +122,6 @@ if [[ ! -e "${fileIn_dmdt}" ]]; then
 fi 
 
 
-echo "apply_bandpass ${EPIpath} ${PhReg_path} ${nR} ${TR} ${configs_EPI_fMin} ${configs_EPI_fMax}"
+echo "apply_bandpass ${EPIpath} ${PhReg_path} ${nR} ${TR} ${configs_EPI_fMin} ${configs_EPI_fMax} ${configs_EPI_resting_file}"
 apply_bandpass ${EPIpath} ${PhReg_path} ${nR} ${TR} ${configs_EPI_fMin} ${configs_EPI_fMax} ${configs_EPI_resting_file}
 

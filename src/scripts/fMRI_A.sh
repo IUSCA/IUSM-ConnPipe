@@ -304,9 +304,6 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                 fi  
             fi           
 
-
-
-
         fi
     fi 
 done
