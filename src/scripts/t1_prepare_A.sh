@@ -27,7 +27,9 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 			# if .IMA or .IMA.dcm or .dcm files exis inside T1/DICOMS
 			dicomfiles=`find $T1path/${configs_dcmFolder} -maxdepth 1 -name "*.${configs_dcmFiles}*" | wc -l`
 			if [[ $dicomfiles -eq 0 ]]; then 
-				log "WARNING No dicom (.IMA or .dcm) images found. Skipping further analysis"
+				echo "No dicom (.${configs_dcmFiles}) images found."
+				echo "Please specify the correct file extension of dicom files by setting the configs_dcmFiles flag in the config file"
+				echo "Skipping further analysis"
 				exit 1				
 			fi
 

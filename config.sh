@@ -56,7 +56,7 @@ export configs_DWI="DWI"
         export configs_dcmPA="B0_PA_DCM" #b0 opposite phase encoding
 
 export configs_dcmFolder="DICOMS"
-export configs_dcmFiles="IMA.dcm" # Dicom file extension
+export configs_dcmFiles="IMA.dcm" # specify Dicom file extension
 export configs_niiFiles="nii" # Nifti-1 file extension
 
 
