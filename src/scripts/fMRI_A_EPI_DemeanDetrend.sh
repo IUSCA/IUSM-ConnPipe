@@ -77,19 +77,19 @@ fi
 # read data, demean and detrend
 demean_detrend ${fileIn} ${fileOut}
 
-# fill holes in the brain mask, without changing FOV
-fileOut="${EPIpath}/rT1_brain_mask_FC.nii.gz"
-cmd="fslmaths ${fileOut} -fillh ${fileOut}"
-log $cmd
-eval $cmd 
 
-fileOut2="${EPIpath}/6_epi.nii.gz"
-cmd="fslmaths ${fileOut2} -mas ${fileOut} ${fileOut2}"
-log $cmd
-eval $cmd 
-
-# cmd="python ${EXEDIR}/src/scripts/test_python_scripts.py"
+## OLD VERSION OF PIPELINE
+# # fill holes in the brain mask, without changing FOV
+# fileOut="${EPIpath}/rT1_brain_mask_FC.nii.gz"
+# cmd="fslmaths ${fileOut} -fillh ${fileOut}"
 # log $cmd
-# eval $cmd
+# eval $cmd 
+
+# fileOut2="${EPIpath}/6_epi.nii.gz"
+# cmd="fslmaths ${fileOut2} -mas ${fileOut} ${fileOut2}"
+# log $cmd
+# eval $cmd 
+
+
 
 

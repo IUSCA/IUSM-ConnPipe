@@ -189,7 +189,9 @@ source ${EXEDIR}/src/func/bash_funcs.sh
             done < <(find ${path_EPI_GREmagdcm} -iname "*.${configs_dcmFiles}" -print0 | sort -z)
 
             if [ ${#dicom_files[@]} -eq 0 ]; then 
-                echo "No dicom (.IMA or .dcm) images found. Skipping further analysis"
+                echo "No dicom (.${configs_dcmFiles}) images found."
+                echo "Please specify the correct file extension of dicom files by setting the configs_dcmFiles flag in the config file"
+                echo "Skipping further analysis"
                 exit 1
             else
                 # Extract TE1 and TE2 from the first image of Gradient Echo Magnitude Series

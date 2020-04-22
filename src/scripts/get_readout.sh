@@ -88,7 +88,9 @@ if [ "$(ls -A ${dicomPath})" ]; then
     done < <(find ${dicomPath} -iname "*.${configs_dcmFiles}" -print0 | sort -z)
 
     if [ ${#dicom_files[@]} -eq 0 ]; then 
-        echo "No dicom (.IMA or .dcm) images found. Skipping further analysis"
+        echo "No dicom (.${configs_dcmFiles}) images found."
+        echo "Please specify the correct file extension of dicom files by setting the configs_dcmFiles flag in the config file"
+        echo "Skipping further analysis"
         exit 1
     else
         #echo "There are ${#dicom_files[@]} dicom files in this EPI-series "
