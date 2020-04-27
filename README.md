@@ -102,6 +102,8 @@ The last command should list all the python packages that are by default availab
 ```
 pip install nibabel --user
 pip install scikit-image --user
+pip install dipy --user
+
 ```
 After installing these, type again:
 ```
