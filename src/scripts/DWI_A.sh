@@ -34,12 +34,12 @@ bvals, bvecs = read_bvals_bvecs(pbval,pbvec)
 # print("bvecs size", bvecs.shape)
 
 if bvals.shape[0] > 1:
-    # vector is vertical, needs to be transposed
+    # vector is horizontal, needs to be transposed
     bvals = bvals.reshape((1,bvals.size)) 
     # print("bvals size", bvals.shape)
 
 if bvecs.shape[0] > 3:
-     # vector is vertical, needs to be transposed
+    # vector is horizontal, needs to be transposed
     bvecs = bvecs.T 
     # print("bvecs size", bvecs.shape)
 
@@ -53,8 +53,8 @@ DWI=nib.load(DWIp)
 # print('DWI.shape[3] ',DWI.shape[3])
 
 if bvals.shape[1] == DWI.shape[3] and bvecs.shape[1] == DWI.shape[3]:
-    np.savetxt(pbval,bvals,delimiter='\t',fmt='%u')
-    np.savetxt(pbvec,bvecs,delimiter='\t',fmt='%f')
+    np.savetxt(pbval,bvals,delimiter='\n',fmt='%u')
+    np.savetxt(pbvec,bvecs.T,delimiter='\t',fmt='%f')
     print('1')
 else:
     print('0')
@@ -69,7 +69,7 @@ if [[ -d ${DWIpath} ]]; then
     log "DWI_A processing for subject ${SUBJ}"
 
     # Generate an acqparams text file based on number of field maps.
-    if [ !-z ${WI_readout} ]; then
+    if [ !-z ${configs_DWI_readout} ]; then
         cmd="${EXEDIR}/src/scripts/get_readout.sh ${DWIpath}" 
         log $cmd
         export configs_DWI_readout=`$cmd`
@@ -119,7 +119,7 @@ if [[ -d ${DWIpath} ]]; then
             eval $cmd 
         fi
 
-        # Check if the readout time is consistent with the readout-time contained in teh json file
+        # Check if the readout time is consistent with the readout-time contained in the json file
         dcm2niix_json="${DWIpath}/0_DWI.json"
 
         if [[ -e ${dcm2niix_json} ]]; then
@@ -140,11 +140,12 @@ if [[ -d ${DWIpath} ]]; then
         echo "0.5. Bvec & Bval File Format"
         echo "=================================="
 
-        if [[ -e "${WDIpath}/0_DWI.bval" ]] && [[ -e "${WDIpath}/0_DWI.bvec" ]]; then
+        if [[ ! -e "${DWIpath}/0_DWI.bval" ]] && [[ ! -e "${DWIpath}/0_DWI.bvec" ]]; then
             log "WARNIGN Bvec and/or Bval files do not exist. Skipping further analyses"
             exit 1
         else
             out=$(read_bvals_bvecs ${DWIpath})
+            log "out is ${out}"
             if [[ $out -eq 1 ]]; then
                 log "# Bvec and Bval files written in column format with tab delimiter"
             else

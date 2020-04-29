@@ -56,7 +56,7 @@ END
 
 
 
-function get_B0_temoral_info() {
+function get_B0_temporal_info() {
 path="$1" python - <<END
 import os
 import nibabel as nib
@@ -64,7 +64,7 @@ import numpy as np
 
 DWIpath=os.environ['path']
 
-# read in DWI daa and find number of volumes
+# read in DWI data and find number of volumes
 fname=''.join([DWIpath,'/0_DWI.nii.gz'])
 DWI=nib.load(fname)  
 ss=DWI.shape
@@ -188,7 +188,7 @@ else
     log $cmd
     eval $cmd 
 
-    ## Inputs if topup was nto done
+    ## Inputs if topup was not done
     fileIn="${path_DWI_EDDY}/all_b0_raw.nii.gz"
     fileMean="${path_DWI_EDDY}/meanb0.nii.gz"
 fi 
@@ -236,7 +236,7 @@ for ((i = 0; i < $nB0; i++)); do
 done
 
 # Index file
-get_B0_temoral_info ${DWIpath}
+get_B0_temporal_info ${DWIpath}
 
 # State EDDY inputs
 fileIn="${DWIpath}/0_DWI.nii.gz"
