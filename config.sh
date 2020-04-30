@@ -345,15 +345,27 @@ export DWI_A=true
 
 if $DWI_A; then
 
-	export flags_DWI_dcm2niix=true # dicom to nifti coversion
+	export flags_DWI_dcm2niix=false # dicom to nifti coversion
 		export configs_DWI_readout=[] # if empty get from dicom; else specify value
-	export flags_DWI_topup=true # FSL topup destortion field estimation
+	export flags_DWI_topup=false # FSL topup destortion field estimation
 		export configs_DWI_b0cut=1 # maximum B-value to be considered B0
-	export flags_DWI_eddy=true # FSL EDDY distortion correction
+	export flags_DWI_eddy=false # FSL EDDY distortion correction
 		export configs_DWI_EDDYf='0.3' # fsl bet threshold for b0 brain mask used by EDDY
 		export configs_DWI_repolON=true # use eddy_repol to interpolate missing/outlier data
-	export flags_DWI_DTIfit=false  # Tensor estimation and generation of scalar maps
+	export flags_DWI_DTIfit=true  # Tensor estimation and generation of scalar maps
 		export configs_DWI_DTIfitf='0.4' # brain extraction (FSL bet -f) parameter 
+
+fi 
+
+
+
+export DWI_B=false
+
+if $DWI_B; then
+
+	export flags_DWI_regT1_2DWI=false
+	export flags_DWI_MRtrix=false
+	export flags_DWI_connMatrix=false 
 
 fi 
 

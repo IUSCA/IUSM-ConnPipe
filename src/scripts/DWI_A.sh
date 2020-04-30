@@ -198,7 +198,6 @@ if [[ -d ${DWIpath} ]]; then
     fi
 
 
-
 else 
 
     log "WARNING Subject DWI directory does not exist; skipping DWI processing for subject ${SUBJ}"

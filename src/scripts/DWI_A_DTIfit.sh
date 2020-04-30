@@ -108,7 +108,9 @@ fileBvec="${path_DWI_EDDY}/eddy_output.eddy_rotated_bvecs"
 
 # Create a brain mask of EDDY corrected data
 b0_1st=$(extract_b0_1st)
-if [[ ${res} -ne "1" ]]; then
+echo ${b0_1st}
+
+if [[ "${b0_1st}" == "err" ]]; then
     log "WARNING: No b0 volumes identified. Check quality of 0_DWI.bval"
     exit 1
 else
@@ -129,7 +131,7 @@ else
     fileOut="${path_DWI_DTIfit}/3_DWI"
 
     #run DTIfit
-    cmd = "dtifit -k ${fileDWI} \
+    cmd="dtifit -k ${fileDWI} \
         -o ${fileOut} \
         -m ${fileMask} \
         -r ${fileBvec} \

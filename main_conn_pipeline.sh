@@ -156,10 +156,35 @@ find ${path2data} -maxdepth 1 -mindepth 1 -type d | while read SUBJdir; do
                 fi
                         
             else
-                echo "T1 directory doesn't exist; skipping subject $SUBJ"
+                echo "DWI directory doesn't exist; skipping subject $SUBJ"
             fi
         else
             log "SKIP DWI_A for subject $SUBJ"
+        fi 
+
+    ######################################################################################
+    log "# ############################ DWI_B ############################################"
+
+
+        if $DWI_B; then
+
+            if [[ -d "${DWIpath}" ]]; then 
+
+                cmd="${EXEDIR}/src/scripts/DWI_B.sh"
+                echo $cmd
+                eval $cmd
+                exitcode=$?
+
+                if [[ ${exitcode} -ne 0 ]] ; then
+                    echoerr "problem at DWI_B. exiting."
+                    exit 1
+                fi
+                        
+            else
+                echo "DWI directory doesn't exist; skipping subject $SUBJ"
+            fi
+        else
+            log "SKIP DWI_B for subject $SUBJ"
         fi 
 
     # ################################################################################
