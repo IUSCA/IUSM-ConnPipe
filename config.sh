@@ -363,8 +363,8 @@ export DWI_B=true
 
 if $DWI_B; then
 
-	export flags_DWI_regT1_2DWI=true
-	export flags_DWI_MRtrix=false
+	export flags_DWI_regT1_2DWI=false
+	export flags_DWI_MRtrix=true
 	export flags_DWI_connMatrix=false 
 
 fi 

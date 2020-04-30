@@ -93,6 +93,20 @@ if [[ -d ${DWIpath} ]]; then
         fi  
     fi
 
+    #### MRtrix
+    if ${flags_DWI_MRtrix}; then
+
+        cmd="${EXEDIR}/src/scripts/DWI_B_MRtrix.sh"
+        echo $cmd
+        eval $cmd
+        exitcode=$?
+
+        if [[ ${exitcode} -ne 0 ]] ; then
+            echoerr "problem at DWI_B_MRtrix. exiting."
+            exit 1
+        fi  
+    fi
+
 else 
 
     log "WARNING Subject DWI directory does not exist; skipping DWI processing for subject ${SUBJ}"
