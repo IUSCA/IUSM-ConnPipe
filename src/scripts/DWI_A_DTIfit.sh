@@ -16,12 +16,12 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ############################################################################### 
 
-function extract_b0_images() {
-path="$1" python - <<END
+function extract_b0_1st() {
+python - <<END
 import os
 import numpy as np
 
-DWIpath=os.environ['path']
+DWIpath=os.environ['DWIpath']
 # print(DWIpath)
 
 def is_empty(any_struct):
@@ -30,25 +30,43 @@ def is_empty(any_struct):
     else:
         return True 
 
-# DWIpath='/N/dc2/scratch/aiavenak/testdata/10692_1_AAK/DWI'
-
 pbval=''.join([DWIpath,'/0_DWI.bval'])
 bval = np.loadtxt(pbval)
-# print(bval)
 
 B0_index = np.where(bval<=1)
-# print(B0_index)
-
 if is_empty(B0_index):    
     #print("No B0 volumes identified. Check quality of 0_DWI.bval") 
-    print(0)
+    print("err")
 else:   
-    b0file = ''.join([DWIpath,"/b0file.txt"])
-    ff = open(b0file,"w+")
-    for i in np.nditer(B0_index):
-        ff.write("%s\n" % i)
-    ff.close()
-    print(1)
+    b0_1st = np.argmin(bval)
+    print(b0_1st)
+
+END
+}
+
+function format_row_bval() {
+DTIfit="$1" python - <<END
+import os
+from dipy.io import read_bvals_bvecs
+import nibabel as nib
+import numpy as np
+
+DTIfit=os.environ['DTIfit']
+print("DTIfit ",DTIfit)
+
+DWIpath=os.environ['DWIpath']
+print("DWIpath ",DWIpath)
+
+pbval=''.join([DWIpath,'/0_DWI.bval'])
+pbvec=''.join([DWIpath,'/0_DWI.bvec'])
+
+bvals, bvecs = read_bvals_bvecs(pbval,pbvec)
+ 
+bvals = bvals.reshape((bvals.size,1))
+
+pbval_row=''.join([DTIfit,'/3_DWI.bval'])
+
+np.savetxt(pbval_row,bvals.T,delimiter='\t',fmt='%u')
 
 END
 }
@@ -82,26 +100,49 @@ fi
 fileDWI="${path_DWI_EDDY}/eddy_output.nii.gz"
 
 # Format Bval file (row format)
-res=$(extract_b0_images ${DWIpath})
+format_row_bval ${path_DWI_DTIfit}
+fileBval="${path_DWI_DTIfit}/3_DWI.bval"
 
+# Rotated Bvec from EDDY will be used here.
+fileBvec="${path_DWI_EDDY}/eddy_output.eddy_rotated_bvecs"
+
+# Create a brain mask of EDDY corrected data
+b0_1st=$(extract_b0_1st)
 if [[ ${res} -ne "1" ]]; then
     log "WARNING: No b0 volumes identified. Check quality of 0_DWI.bval"
+    exit 1
 else
-    log "B0 indices identified: "
-    B0_indices="${DWIpath}/b0file.txt"
-    fileIn="${DWIpath}/0_DWI.nii.gz"
-    nB0=0
+    echo "FSL index of 1st b0 volume is ${b0_1st}"
+    fileb0="${path_DWI_DTIfit}/b0_1st.nii.gz"  #file out b0
+    # extract b0 into 3D volume
+    cmd="fslroi ${fileDWI} ${fileb0} ${b0_1st} 1"
+    log $cmd
+    eval $cmd
 
-    while IFS= read -r b0_index
-    do 
-        echo "$b0_index"
-        nB0=$(echo $nB0+1 | bc) ## number of B0 indices 
+    # brain extraction of b0
+    cmd="bet ${fileb0} ${fileb0} -f ${configs_DWI_DTIfitf} -m"
+    log $cmd
+    eval $cmd
 
-        fileOut="${path_DWI_EDDY}/AP_b0_${b0_index}.nii.gz"
+    fileMask="${path_DWI_DTIfit}/b0_1st_mask.nii.gz"
+    # output base name
+    fileOut="${path_DWI_DTIfit}/3_DWI"
 
-        cmd="fslroi ${fileIn} ${fileOut} ${b0_index} 1"
-        log $cmd
-        eval $cmd
-    done < "$B0_indices"
+    #run DTIfit
+    cmd = "dtifit -k ${fileDWI} \
+        -o ${fileOut} \
+        -m ${fileMask} \
+        -r ${fileBvec} \
+        -b ${fileBval} --save_tensor -V"
+    log $cmd
+    eval $cmd > "${path_DWI_DTIfit}/dtifit.log"
 
+    # Preproc DWI_A is done.
+    echo "DWI_A is done."
+    echo "QC recommendations:"
+    echo "1. Check topup_field.nii.gz in UNWARP"
+    echo "2. Check delta_DWI.nii.gz in EDDY"
+    echo "   2b. If eddy_correct was ran check eddy_output also"
+    echo "3. Check 3_DWI_V1.nii.gz in DTIfit, with FSLeyes"
+   
 fi 
