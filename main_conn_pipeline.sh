@@ -8,6 +8,7 @@ module load mricrogl
 module load afni/18.3.03
 module load ants
 module load ica-aroma/0.4.4
+module load mrtrix/3.0
 # module load singularity
 
 # FSL
