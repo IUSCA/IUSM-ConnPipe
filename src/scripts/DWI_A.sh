@@ -45,8 +45,6 @@ if bvecs.shape[0] > 3:
 
 DWIp=''.join([p,'/0_DWI.nii.gz'])
 DWI=nib.load(DWIp)  
-# DWI_vol=DWI.get_data()
-# print(DWI.shape)
 
 # print('bvals.shape[1] ',bvals.shape[1])
 # print('bvecs.shape[1] ',bvecs.shape[1])
@@ -198,7 +196,6 @@ if [[ -d ${DWIpath} ]]; then
             exit 1
         fi  
     fi
-
 
 
 else 
