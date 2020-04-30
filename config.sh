@@ -341,7 +341,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export DWI_A=true
+export DWI_A=false
 
 if $DWI_A; then
 
@@ -359,11 +359,11 @@ fi
 
 
 
-export DWI_B=false
+export DWI_B=true
 
 if $DWI_B; then
 
-	export flags_DWI_regT1_2DWI=false
+	export flags_DWI_regT1_2DWI=true
 	export flags_DWI_MRtrix=false
 	export flags_DWI_connMatrix=false 
 
