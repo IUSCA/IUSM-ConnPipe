@@ -110,7 +110,7 @@ log $cmd
 eval $cmd 
 
 if [[ -f "${fileStreamlines2}" ]]; then
-    cmd="rm -f ${fileStreamlines2}"
+    cmd="rm -f ${fileStreamlines}"
     log $cmd
     eval $cmd
 fi 
