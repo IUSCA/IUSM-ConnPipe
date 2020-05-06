@@ -365,7 +365,7 @@ if $DWI_B; then
 
 	export flags_DWI_regT1_2DWI=true
 	export flags_DWI_MRtrix=true
-	export flags_DWI_connMatrix=false 
+	export flags_DWI_connMatrix=true # generate connectivity matrices
 
 fi 
 

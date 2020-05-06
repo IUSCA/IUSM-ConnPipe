@@ -113,7 +113,10 @@ if [[ -f "${fileStreamlines2}" ]]; then
     cmd="rm -f ${fileStreamlines}"
     log $cmd
     eval $cmd
-fi 
+else
+    log "WARNING file ${fileStreamlines2} not generated. Exiting..."
+    exit 1
+fi
 
 
 ## filter streamlines
