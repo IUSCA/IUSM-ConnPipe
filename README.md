@@ -52,9 +52,9 @@ For a more detailed overview of the different features, please visit our [wiki](
 This code has been developed to operate with the following software:
   * [FSL version 5.0.10/11](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki)         
   * [AFNI](https://afni.nimh.nih.gov/)                          
-  * [dcm2niix (part of MRIcroGL)](https://github.com/rordenlab/dcm2niix)   
-  * [Camino](http://camino.cs.ucl.ac.uk/)                       
-  * [Camino-TrackVis](https://www.nitrc.org/projects/camino-trackvis/)               
+  * [dcm2niix (part of MRIcroGL)](https://github.com/rordenlab/dcm2niix)  
+  * [ICA-AROMA](https://www.ncbi.nlm.nih.gov/pubmed/25770991)                       
+  * [MRtrix3](https://www.mrtrix.org/)                       
 
 ### Installing
 
