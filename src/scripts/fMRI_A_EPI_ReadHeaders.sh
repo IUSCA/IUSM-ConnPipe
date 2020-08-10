@@ -160,6 +160,14 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         echo "HEADER extracted TE is: ${TE}" 
         echo "export TE=${TE}" >> ${EPIpath}/0_param_dcm_hdr.sh
 
+        ## GRAPPA acceleration factor could be used in conjunction with BWPPE   
+        cmd="dicom_hinfo -tag 0051,1011 ${dcm_file}"
+        log $cmd
+        out=`$cmd`
+        GRAPPAacc=`echo $out | awk -F' ' '{ print $2}'`
+        echo "HEADER extracted Acceleration factor is: ${TE}" 
+        echo "export GRAPPAacc=${GRAPPAacc}" >> ${EPIpath}/0_param_dcm_hdr.sh
+
     fi
     
     # ##esp

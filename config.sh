@@ -26,16 +26,16 @@ export path2data="/N/dc2/projects/connectivitypipeline/example_for_andrea/SUBJEC
 # SUBJECT1 -- T1 -- DICOMS
 #          |
 #          -- EPI(#) -- DICOMS (May have multiple EPI scans)
-#          |         |
-#          |         |               (SPIN-ECHO)       (GRADIENT ECHO)
-#          |         -- UNWARP -- SEFM_AP_DICOMS (OR) GREFM_MAG_DICOMS
-#          |         |         | 
-#          |         |         -- SEFM_PA_DICOMS (OR) GREFM_PHASE_DICOMS
-#          |         |
-#          |         -- UNWARPED uf*.nii.gz (MELODIC UNWARPED IMAGES)
-#          |         |
-#          |         |
-#          |         -- FEAT -- FEAT_PREP
+#          |         
+#          |                        (SPIN-ECHO)       (GRADIENT ECHO)
+#          -- UNWARP1 -- SEFM_AP_DICOMS (OR) GREFM_MAG_DICOMS
+#          |         
+#          |          -- SEFM_PA_DICOMS (OR) GREFM_PHASE_DICOMS
+#          |         
+#          |                       (SPIN-ECHO)       (GRADIENT ECHO)
+#          -- UNWARP2 -- SEFM_AP_DICOMS (OR) GREFM_MAG_DICOMS
+#          |          
+#          |          -- SEFM_PA_DICOMS (OR) GREFM_PHASE_DICOMS
 #          |
 #          -- DWI -- DICOMS
 #                 |
@@ -46,11 +46,11 @@ export configs_epiFolder="EPI"
     export configs_sefmFolder="UNWARP" # Reserved for Field Mapping series
         export configs_APdcm="SEFM_AP_DICOMS" # Spin Echo A-P
         export configs_PAdcm="SEFM_PA_DICOMS" # Spin Echo P-A
-        export configs_GREmagdcm="GREFM_MAG_DICOMS" # Gradient echo FM magnitude series
-        export configs_GREphasedcm="GREFM_PHASE_DICOMS" # Gradient echo FM phase map series
-	# export configs_melodicUnwarpedFolder="UNWARPED"
-	# export configs_FEAT="FEAT"	
-		# export configs_FEAT_PREP="FEAT_PREP"
+
+export configs_grefmFolder="GREFM_GUST"  # Reserved for Field Mapping series
+	export configs_GREmagdcm="MAG_DICOMS" # Gradient echo FM magnitude series
+	export configs_GREphasedcm="PHASE_DICOMS" # Gradient echo FM phase map series
+
 export configs_DWI="DWI"
     export configs_unwarpFolder="UNWARP"
         export configs_dcmPA="B0_PA_DCM" #b0 opposite phase encoding
