@@ -87,6 +87,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                     export flags_EPI_ReadHeaders=false
                 else
                     log "File ${EPIpath}/0_param_dcm_hdr.sh not found; Exiting..."
+                    exit 1
                 fi 
             fi
 

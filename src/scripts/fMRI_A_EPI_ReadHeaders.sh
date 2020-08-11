@@ -168,6 +168,33 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         echo "HEADER extracted Acceleration factor is: ${TE}" 
         echo "export GRAPPAacc=${GRAPPAacc}" >> ${EPIpath}/0_param_dcm_hdr.sh
 
+
+### AAK - MAKE SURE THAT awk IS PICKING UP THIS PARAMETER AS $2 MAY NOT EXIST
+        cmd="mrinfo -quiet -property TotalReadoutTime ${dcm_file}"
+        log $cmd
+        out=`$cmd`
+        TotalReadoutTime=`echo $out | awk -F' ' '{ print $2}'`
+        echo "HEADER extracted TotalReadoutTime is: ${TotalReadoutTime}" 
+        echo "export TotalReadoutTime=${TotalReadoutTime}" >> ${EPIpath}/0_param_dcm_hdr.sh
+
+
+        cmd="dicom_hinfo -tag 0051,100b ${dcm_file}"
+        log $cmd
+        out=`$cmd`
+        MATSIZPHASE=`echo $out | awk -F' ' '{ print $2}'`  # sed 's/*.*//' or awk '{sub(/*.*/, ""); print}' filename
+        echo "HEADER extracted MATSIZPHASE is: ${MATSIZPHASE}" 
+        echo "export MATSIZPHASE=${MATSIZPHASE}" >> ${EPIpath}/0_param_dcm_hdr.sh
+
+        if [ "${MATSIZPHASE}" -ge "2" ]; then
+            MSP=$(bc <<< "scale=4 ; $MATSIZPHASE - 1") 
+            EPI_EffectiveEchoSpacing=$(bc <<< "scale=4 ; $TotalReadoutTime / $MSP")
+            echo "CALCULATED EffectiveEchoSpacing is: ${EPI_EffectiveEchoSpacing}" 
+            echo "export EPI_EffectiveEchoSpacing=${EPI_EffectiveEchoSpacing}" >> ${EPIpath}/0_param_dcm_hdr.sh
+        else
+            log "WARNING EffectiveEchoSpacing could not be calculated! ${MATSIZPHASE} < 2"
+            exit 1
+        fi
+
     fi
     
     # ##esp
