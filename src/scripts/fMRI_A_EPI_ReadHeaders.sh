@@ -169,11 +169,10 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         echo "export GRAPPAacc=${GRAPPAacc}" >> ${EPIpath}/0_param_dcm_hdr.sh
 
 
-### AAK - MAKE SURE THAT awk IS PICKING UP THIS PARAMETER AS $2 MAY NOT EXIST
         cmd="mrinfo -quiet -property TotalReadoutTime ${dcm_file}"
         log $cmd
         out=`$cmd`
-        TotalReadoutTime=`echo $out | awk -F' ' '{ print $2}'`
+        TotalReadoutTime=`echo $out | awk -F' ' '{ print $1}'`
         echo "HEADER extracted TotalReadoutTime is: ${TotalReadoutTime}" 
         echo "export TotalReadoutTime=${TotalReadoutTime}" >> ${EPIpath}/0_param_dcm_hdr.sh
 
@@ -181,7 +180,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         cmd="dicom_hinfo -tag 0051,100b ${dcm_file}"
         log $cmd
         out=`$cmd`
-        MATSIZPHASE=`echo $out | awk -F' ' '{ print $2}'`  # sed 's/*.*//' or awk '{sub(/*.*/, ""); print}' filename
+        MATSIZPHASE=`echo $out | awk '{ print $2}' | sed 's/*.*//'` 
         echo "HEADER extracted MATSIZPHASE is: ${MATSIZPHASE}" 
         echo "export MATSIZPHASE=${MATSIZPHASE}" >> ${EPIpath}/0_param_dcm_hdr.sh
 
