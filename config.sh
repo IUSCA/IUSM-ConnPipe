@@ -219,17 +219,30 @@ if $fMRI_A; then
 		export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
 
 	export flags_EPI_SpinEchoUnwarp=true # Requires UNWARP directory and approporiate dicoms.
+    	# # Allow multiple UNWARP directories (0: UNWARP; 1: UNWARP1, 2: UNWARP2) 
+    	export configs_EPI_SEindex=1 # Appends index to configs_sefmFolder name
+    	export configs_EPI_skipSEmap4EPI=1 # Skip SEmap calculation for EPInum > configs_EPI_skipGREmap4EPI
+                ##  e.g.; 1 to skip redoing SEmap for EPIs 2-6; 5 to skip for EPI6
+
 	# # SPIN ECHO PAIRS (A-P, P-A) Acquistion on the Prisma
 		export configs_EPI_SEnumMaps=3; # Fallback Number of PAIRS of AP and PA field maps.
 	# # Defaults to reading *.dcm/ima files in SE AP/PA folders
+
 	# # topup (see www.mccauslanddenter.sc.edu/cml/tools/advanced-dti - Chris Rorden's description
-		export flags_EPI_RunTopup=true # 1=Run topup (1st pass), 0=Do not rerun if previously completed.       
+		export flags_EPI_RunTopup=true # 1=Run topup (1st pass), 0=Do not rerun if previously completed. 
+    	export configs_EPI_skipGREmap4EPI=true # Skip GREmap calculation for EPInum > configs_EPI_skipGREmap4EPI
+                # false to ignore. true to skip redoing GREmap for EPIs 2-6
+
 	# # Gradient recalled echo Field Map Acquisition
-	# configs.EPI.GREbetf=0.5; # GRE-specific bet values. Do not change
-	# configs.EPI.GREbetg=0;   # GRE-specific bet input. Change if needed 
-	# configs.EPI.GREdespike=1; # Perform FM despiking
-	# configs.EPI.GREsmooth=3; # GRE phase map smoothing (Gaussian sigma, mm)
-	# configs.EPI.EPIdwell=0.000308; # Dwell time (sec) for the EPI to be unwarped 
+	export flags_EPI_GREFMUnwarp=false # Requires GREfieldmap directory and appropriate dicoms
+	
+		export configs_EPI_GREbetf=0.5; # GRE-specific bet values. Do not change
+		export configs_EPI_GREbetg=0;   # GRE-specific bet input. Change if needed 
+		export configs_EPI_GREdespike=1; # Perform FM despiking
+		export configs_EPI_GREsmooth=3; # GRE phase map smoothing (Gaussian sigma, mm)
+		# Do not use configs.EPI.EPIdwell. Use params.EPI.EffectiveEchoSpacing extracted from the json header
+     	# export configs_EPI_EPIdwell = 0.000308; # Dwell time (sec) for the EPI to be unwarped 
+
 	export flags_EPI_SliceTimingCorr=true
 		#export flags_EPI_UseUnwarped=true # Use unwarped EPI if both warped and unwarped are available.
 		export configs_EPI_UseTcustom=1;# 1: use header-extracted times (suggested)

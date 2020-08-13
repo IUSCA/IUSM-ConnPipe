@@ -21,7 +21,7 @@ log "fMRI_A"
 declare -a epiList
 while IFS= read -r -d $'\0' REPLY; do 
     epiList+=( "$REPLY" )
-done < <(find ${path2data}/${SUBJ} -maxdepth 1 -type d -iname "*${configs_epiFolder}*" -print0)
+done < <(find ${path2data}/${SUBJ} -maxdepth 1 -type d -iname "*${configs_epiFolder}*" -print0 | sort -z)
 
 
 if [ ${#epiList[@]} -eq 0 ]; then 
@@ -41,8 +41,19 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             && [ $((i+1)) -le "${configs_EPI_epiMax}" ]; then
 
             export EPIpath="${epiList[$i]}"
+            ind=`echo ${EPIpath} | sed 's/.*\EPI//'`
+            # check if en is a number or not
+            re='^[0-9]+$'
+            if ! [[ $ind =~ $re ]] ; then
+                echo "EPI directory has no session number"
+            else
+                echo "Setting EPInum variable to ${ind}"
+                export EPInum=${ind}
+            fi
+
             log "fMRI_A on subject ${SUBJ}"
             log "EPI-series ${EPIpath}"
+            log "EPI session number ${EPInum}"
 
             ## functional connectivity
 
@@ -122,6 +133,22 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                 fi
               
             fi 
+
+            #### ASK MARIO IF GREFMUnwarp MUST BE FALSE IF SpinEchoUnwarp = true. In his code tehy are in a if-elseif statement but not documented in configs
+
+            if ${flags_EPI_GREFMUnwarp}; then 
+              
+                cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_GREFMUnwarp.sh"
+                echo $cmd
+                eval $cmd
+                exitcode=$?
+
+                if [[ ${exitcode} -ne 0 ]] ; then
+                    echoerr "problem at fMRI_A_EPI_SpinEchoUnwarp. exiting."
+                    exit 1
+                fi
+                
+            fi
 
             if ${flags_EPI_SliceTimingCorr}; then 
 
