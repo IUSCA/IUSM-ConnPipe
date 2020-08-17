@@ -235,10 +235,10 @@ if $fMRI_A; then
 
 	# # Gradient recalled echo Field Map Acquisition
 	export flags_EPI_GREFMUnwarp=false # Requires GREfieldmap directory and appropriate dicoms
-	
+
 		export configs_EPI_GREbetf=0.5; # GRE-specific bet values. Do not change
 		export configs_EPI_GREbetg=0;   # GRE-specific bet input. Change if needed 
-		export configs_EPI_GREdespike=1; # Perform FM despiking
+		export configs_EPI_GREdespike=true # Perform FM despiking
 		export configs_EPI_GREsmooth=3; # GRE phase map smoothing (Gaussian sigma, mm)
 		# Do not use configs.EPI.EPIdwell. Use params.EPI.EffectiveEchoSpacing extracted from the json header
      	# export configs_EPI_EPIdwell = 0.000308; # Dwell time (sec) for the EPI to be unwarped 
