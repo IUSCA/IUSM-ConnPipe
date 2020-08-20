@@ -185,12 +185,26 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                 cmd="fugue -i ${fileIn} --dwell=${EPI_EffectiveEchoSpacing} --loadfmap=${fileFMapRadOut} --unwarpdir=y- -u ${fileOut}"
                 log "fugue Applying fugue to unwarp 0_epi.nii.gz."
                 log $cmd
-                eval $cmd 
+                eval $cmd
 
-                
+                if [[  -f "${fileOut}.nii.gz" ]]; then
+                    log "fugue o_epi_unwarped.nii.gz successfully created"
+                else
+                    log "WARNING fugue unwarping failed. Exiting..."
+                    exit 1
+                fi 
 
 
+            else 
+                log "WARNING  0_epi.nii.gz not found. Exiting... "
+                exit 1
 
+            fi 
+
+        else 
+        
+            log "WARNING UNWARP DICOMS folders or nii images do not exist. Field Map correction failed. Exiting..."
+            exit 1
 
         fi
 
