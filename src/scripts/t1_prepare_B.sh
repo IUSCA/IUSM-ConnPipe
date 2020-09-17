@@ -2,7 +2,7 @@
 #!/bin/bash
 #
 # Script: T1_PREPARE_B adaptaion from Matlab script 
-#
+# 9/13/20 - integrated updates from Jenya's opt-subcort branch
 
 ###############################################################################
 #
@@ -13,7 +13,7 @@
 ############################################################################### 
 
 function add_subcort_parc() {
-path="$1" pnodal="$2" python - <<END
+path="$1" pnodal="$2" subcortUser="$3" python - <<END
 
 import os.path
 import numpy as np
@@ -26,6 +26,10 @@ print("parcpath is: ",parcpath)
 pnodal=int(os.environ['pnodal'])
 print("pnodal is: ",pnodal)
 print(type(pnodal))
+
+subcortUser=int(os.environ['subcortUser'])
+print("subcortUser is: ",subcortUser)
+print(type(subcortUser))
 
 head_tail = os.path.split(parcpath)
 
@@ -46,9 +50,10 @@ subcort_vol = subcort.get_data()
 #ind = np.argwhere(subcort_vol == 16)
 #print(ind)
 
-subcort_vol[subcort_vol == 16] = 0
-#ind = np.argwhere(subcort_vol == 16)
-#print(ind)
+if subcortUser == "false":  # FSL-provided subcortical
+    subcort_vol[subcort_vol == 16] = 0
+    #ind = np.argwhere(subcort_vol == 16)
+    #print(ind)
 
 if pnodal == 1:
     print("pnodal is 1")
@@ -556,7 +561,9 @@ if ${flags_T1_parc}; then
         pcort="PARC${i}pcort"
         pcort="${!pcort}"  
         pnodal="PARC${i}pnodal"  
-        pnodal="${!pnodal}"       
+        pnodal="${!pnodal}" 
+        psubcortonly="PARC${i}psubcortonly"    
+        psubcortonly="${!psubcortonly}"
 
         log "${parc} parcellation intersection with GM; pcort is -- ${pcort}"
 
@@ -730,31 +737,73 @@ if ${flags_T1_parc}; then
             rm -vf ${T1path}/R_cerebellum_*  
 
             ## Add subcortical fsl parcellation to cortical parcellations
-            if ${configs_T1_addsubcort}; then 
+            if [[ ${configs_T1_addsubcort} ]] && [[ "${psubcortonly}" -eq 0 ]]; then 
 
+                if [[ ! ${configs_T1_subcortUser} ]]; then  # default FSL subcortical
+
+                    fileSubcort="${T1path}/T1_subcort_seg.nii.gz"
+
+                else
+
+                    nsubcor=0 
+
+                    for ((ii=1; ii<=numParcs; ii++)); do  # exclude PARC0 - CSF - here
+
+                        parcii="PARC${ii}"
+                        parcii="${!parcii}"
+                        psubcortonlyii="PARC${ii}psubcortonly"    
+                        psubcortonlyii="${!psubcortonlyii}"
+
+                        if [[ ${psubcortonlyii} -eq 1 ]]; then  # find subcortical-onnly parcellation
+
+                            if [ ${nsubcor} -eq 0 ]; then
+                                # check that parcellation is available in T1 space
+                                fileSubcortUser="T1_parc_${parc}.nii.gz"
+
+                                if [[ -f "${T1path}/fileSubcortUser" ]]; then
+
+                                    fileSubcort="${T1path}/${fileSubcortUser}"
+                                    nsubcort=1
+
+                                fi
+                            fi
+
+                        fi 
+
+                    done
+
+                    if [ ${nsubcor} -eq 0 ]; then   # for-loop conditions not met so default to FSL subcortical 
+                        fileSubcort="${T1path}/T1_subcort_seg.nii.gz"
+                    fi
+
+                fi
+                
+                
                 log "ADD_SUBCORT_PARC using ${FileIn}"
                 # call python script
-                add_subcort_parc ${FileIn} ${pnodal}
+                add_subcort_parc ${FileIn} ${pnodal} ${configs_T1_subcortUser}
 
             fi        
 
         fi 
 
-
-## !!!!!!!!!!!!!!!!! this section of code was originally inside the if-statement above. 
-        #-------------------------------------------------------------------------#
         # 07.26.2017 EJC Dilate the final GM parcellations. 
         # NOTE: They will be used by f_functiona_connectivity
         #  to bring parcellations into epi space.
 
-        fileOut4="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
-        cmd="fslmaths ${fileOut2} -dilD ${fileOut4}"
-        log $cmd
-        eval $cmd 
-        exitcode=$?
-        if [[ ${exitcode} -ne 0 ]]; then
-            echoerr "Dilation of ${parc} parcellation error! Exist status is ${exitcode}."
-        fi   
+        if [[ ${psubcortonlyii} -ne 1 ]]; then
+
+            fileOut4="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
+            cmd="fslmaths ${fileOut2} -dilD ${fileOut4}"
+            log $cmd
+            eval $cmd 
+            exitcode=$?
+            if [[ ${exitcode} -ne 0 ]]; then
+                echoerr "Dilation of ${parc} parcellation error! Exist status is displayed below, for details"
+                log "exitcode: ${exitcode}"
+            fi  
+
+        fi 
 
     done
 

@@ -84,36 +84,37 @@ export PARC0="CSFvent"
 export PARC0dir="${pathMNItmplates}/MNI152_T1_1mm_VentricleMask.nii.gz"
 export PARC0pcort=0;
 export PARC0pnodal=0;
+export PARC1psubcortonly=0;
 
-# required parc
-export PARC1="shen_278"
-export PARC1dir="shen_MNI152_org"
-export PARC1pcort=0;
+# required
+# Schaefer parcellation of yeo17 into 200 nodes
+export PARC1="schaefer200_yeo17"
+export PARC1dir="Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm"
+export PARC1pcort=1;
 export PARC1pnodal=1;
+export PARC1psubcortonly=0;
 
-# optional
-export PARC2="yeo7"
-export PARC2dir="yeo7_MNI152"
+# Schaefer parcellation of yeo17 into 300 nodes
+export PARC2="schaefer300_yeo17"
+export PARC2dir="Schaefer2018_300Parcels_17Networks_order_FSLMNI152_1mm"
 export PARC2pcort=1;
-export PARC2pnodal=0;
+export PARC2pnodal=1;
+export PARC2psubcortonly=0;
 
 # optional
 export PARC3="yeo17"
 export PARC3dir="yeo17_MNI152"
 export PARC3pcort=1;
 export PARC3pnodal=0;
+export PARC1psubcortonly=0;
 
-# # Schaefer parcellation of yeo17 into 200 nodes
-# parcs.plabel(1).name='schaefer200_yeo17';
-# parcs.pdir(1).name='Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm';
-# parcs.pcort(1).true=1;
-# parcs.pnodal(1).true=1;
+# optional
+export PARC4="tian_subcortical_S3"
+export PARC4dir="Tian_Subcortex_S3_7T_FSLMNI152_1mm"
+export PARC4pcort=0;
+export PARC4pnodal=1;
+export PARC4psubcortonly=1;
 
-# # Schaefer parcellation of yeo17 into 300 nodes
-# parcs.plabel(2).name='schaefer300_yeo17';
-# parcs.pdir(2).name='Schaefer2018_300Parcels_17Networks_order_FSLMNI152_1mm';
-# parcs.pcort(2).true=1;
-# parcs.pnodal(2).true=1;
 
 
 ## USER INSTRUCTIONS - SET THE NUMBER OF PARCELLATIONS THAT YOU WANT TO USE
@@ -121,7 +122,7 @@ export PARC3pnodal=0;
 ## THE NAMING FORMAT. NOTE THAT PARCELLATIONS ARE RUN IN THE ORDER IN WHICH THEY ARE 
 ## LISTED ABOVE. FOR EXAMPLE IF numParcs is set to 1, ONLY CSF AND PARC1="shen_278"
 ## WILL BE USED
-export numParcs=3  # CSF doesn't count; numParcs cannot be less than 1. Shen is the defailt parc
+export numParcs=3  # CSF doesn't count; numParcs cannot be less than 1. Schaefer is the defailt parc
 
 
 ################################################################################
@@ -187,7 +188,12 @@ if $T1_PREPARE_B; then
 	# parcellation flags
 	export flags_T1_parc=true
 		export configs_T1_numDilReMask=3
-		export configs_T1_addsubcort=true # ad FSL subcortical to cortial parcellations ONLY
+		export configs_T1_addsubcort=true # add FSL subcortical to cortial parcellations 	
+										  # but ONLY to nodal parcellation as individual regions
+										  # To others add as a single subcortical network.
+		export configs_T1_subcortUser=false   # false = default FSL; true = user-provided
+											  # Name of user-provided subcortical parcellation (assumed to be found in ConnPipeSM folder)
+											  # should be set in the desired parcellation name for index "N" with "psubcortonly=1"
 
 	export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm.nii.gz"
 
