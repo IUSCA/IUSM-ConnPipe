@@ -79,8 +79,9 @@ for pc in range(0,len(resid)):
     for k in range(0,numParcs):
         parc_label=os.environ["PARC%d" % k]
         parc_nodal=os.environ["PARC%dpnodal" % k]
+        parc_subcortonly=os.environ["PARC%dpsubcortonly" % k]
 
-        if parc_nodal == "1":
+        if parc_nodal == "1" and parc_subcortonly == "0":
             print(" Processing nodes for %s parcellation" % parc_label)
 
             parcGM_file = ''.join([EPIpath,'/rT1_GM_parc_',parc_label,'_clean.nii.gz'])

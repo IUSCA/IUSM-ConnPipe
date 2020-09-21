@@ -127,86 +127,90 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
     pcort="PARC${p}pcort"
     pcort="${!pcort}"  
     pnodal="PARC${p}pnodal"  
-    pnodal="${!pnodal}"                        
+    pnodal="${!pnodal}" 
+    psubcortonly="PARC${p}psubcortonly"    
+    psubcortonly="${!psubcortonly}"                       
 
     echo "p is ${p} -- ${parc} parcellation -- pcort is -- ${pcort} -- pnodal is -- ${pnodal}"
 
-    if [ ${pnodal} -eq 1 ]; then   # treat as a parcelattion that will serve as noded for connectivity
-        
-        # transformation from T1 to epi space
-        fileIn="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
-        fileOut="${EPIpath}/rT1_parc_${parc}.nii.gz"
-
-        cmd="flirt -applyxfm -init ${fileInit} \
-        -interp nearestneighbour \
-        -in  ${fileIn} \
-        -ref ${fileRef} \
-        -out ${fileOut} -nosearch"
-        log $cmd
-        eval $cmd 
-
-        # masking Shen with GM
-        fileIn="${EPIpath}/rT1_parc_${parc}.nii.gz"                        
-        fileOut="${EPIpath}/rT1_GM_parc_${parc}.nii.gz"
-        fileMul="${EPIpath}/rT1_GM_mask.nii.gz"
-
-        cmd="fslmaths ${fileIn} \
-        -mas ${fileMul} ${fileOut}"
-        log $cmd
-        eval $cmd                         
-        
-        # removal of small clusters within ROIs
-        fileIn="/rT1_GM_parc_${parc}.nii.gz"                        
-        fileOut="/rT1_GM_parc_${parc}_clean.nii.gz"   
-
-        cmd="${EXEDIR}/src/scripts/get_largest_clusters.sh ${EPIpath} ${fileIn} ${fileOut} ${configs_EPI_minVoxelsClust}"                     
-        log $cmd
-        eval $cmd 
-
-    elif [ ${pnodal} -eq 0 ]; then # treat as an organizational parcellation to group nodes
-        # Added by MDZ; 10/06/2015
-        # transformation from T1 to epi space
-        fileIn="${T1path}/T1_GM_parc_${parc}.nii.gz"
-        fileOut="${EPIpath}/rT1_GM_parc_${parc}.nii.gz"
-
-        cmd="flirt -applyxfm -init ${fileInit} \
-        -interp nearestneighbour \
-        -in  ${fileIn} \
-        -ref ${fileRef} \
-        -out ${fileOut} -nosearch"
-        log $cmd
-        eval $cmd 
-
-        # dilate parcellation
-        fileIn="${EPIpath}/rT1_GM_parc_${parc}.nii.gz"                        
-        fileOut="${EPIpath}/rT1_GM_parc_${parc}.nii.gz"
-
-        cmd="fslmaths ${fileIn} \
-        -dilD ${fileOut}"
-        log $cmd
-        eval $cmd        
-
-        # masking parcellation with GM
-        fileIn="${EPIpath}/rT1_GM_parc_${parc}.nii.gz"                        
-        fileOut="${EPIpath}/rT1_GM_parc_${parc}.nii.gz"
-        fileMul="${EPIpath}/rT1_GM_mask.nii.gz"
-
-        cmd="fslmaths ${fileIn} \
-        -mas ${fileMul} ${fileOut}"
-        log $cmd
-        eval $cmd      
+    if [ ${psubcortonly} -ne 1 ]; then  # ignore subcortical-only parcellation
+        if [ ${pnodal} -eq 1 ]; then   # treat as a parcelattion that will serve as noded for connectivity
             
-        # removal of small clusters within ROIs
-        fileIn="/rT1_GM_parc_${parc}.nii.gz"                        
-        fileOut="/rT1_GM_parc_${parc}_clean.nii.gz"   
+            # transformation from T1 to epi space
+            fileIn="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
+            fileOut="${EPIpath}/rT1_parc_${parc}.nii.gz"
 
-        cmd="${EXEDIR}/src/scripts/get_largest_clusters.sh ${EPIpath} ${fileIn} ${fileOut} ${configs_EPI_minVoxelsClust}"                     
-        log $cmd
-        eval $cmd 
-                                                               
-    else
-        log "WARNING the pnodal property is not specified for ${parc} parcellation.\
-        Transformation to EPI not done"
-    fi 
+            cmd="flirt -applyxfm -init ${fileInit} \
+            -interp nearestneighbour \
+            -in  ${fileIn} \
+            -ref ${fileRef} \
+            -out ${fileOut} -nosearch"
+            log $cmd
+            eval $cmd 
+
+            # masking Shen with GM
+            fileIn="${EPIpath}/rT1_parc_${parc}.nii.gz"                        
+            fileOut="${EPIpath}/rT1_GM_parc_${parc}.nii.gz"
+            fileMul="${EPIpath}/rT1_GM_mask.nii.gz"
+
+            cmd="fslmaths ${fileIn} \
+            -mas ${fileMul} ${fileOut}"
+            log $cmd
+            eval $cmd                         
+            
+            # removal of small clusters within ROIs
+            fileIn="/rT1_GM_parc_${parc}.nii.gz"                        
+            fileOut="/rT1_GM_parc_${parc}_clean.nii.gz"   
+
+            cmd="${EXEDIR}/src/scripts/get_largest_clusters.sh ${EPIpath} ${fileIn} ${fileOut} ${configs_EPI_minVoxelsClust}"                     
+            log $cmd
+            eval $cmd 
+
+        elif [ ${pnodal} -eq 0 ]; then # treat as an organizational parcellation to group nodes
+            # Added by MDZ; 10/06/2015
+            # transformation from T1 to epi space
+            fileIn="${T1path}/T1_GM_parc_${parc}.nii.gz"
+            fileOut="${EPIpath}/rT1_GM_parc_${parc}.nii.gz"
+
+            cmd="flirt -applyxfm -init ${fileInit} \
+            -interp nearestneighbour \
+            -in  ${fileIn} \
+            -ref ${fileRef} \
+            -out ${fileOut} -nosearch"
+            log $cmd
+            eval $cmd 
+
+            # dilate parcellation
+            fileIn="${EPIpath}/rT1_GM_parc_${parc}.nii.gz"                        
+            fileOut="${EPIpath}/rT1_GM_parc_${parc}.nii.gz"
+
+            cmd="fslmaths ${fileIn} \
+            -dilD ${fileOut}"
+            log $cmd
+            eval $cmd        
+
+            # masking parcellation with GM
+            fileIn="${EPIpath}/rT1_GM_parc_${parc}.nii.gz"                        
+            fileOut="${EPIpath}/rT1_GM_parc_${parc}.nii.gz"
+            fileMul="${EPIpath}/rT1_GM_mask.nii.gz"
+
+            cmd="fslmaths ${fileIn} \
+            -mas ${fileMul} ${fileOut}"
+            log $cmd
+            eval $cmd      
+                
+            # removal of small clusters within ROIs
+            fileIn="/rT1_GM_parc_${parc}.nii.gz"                        
+            fileOut="/rT1_GM_parc_${parc}_clean.nii.gz"   
+
+            cmd="${EXEDIR}/src/scripts/get_largest_clusters.sh ${EPIpath} ${fileIn} ${fileOut} ${configs_EPI_minVoxelsClust}"                     
+            log $cmd
+            eval $cmd 
+                                                                
+        else
+            log "WARNING the pnodal property is not specified for ${parc} parcellation.\
+            Transformation to EPI not done"
+        fi 
+    fi
 
 done 

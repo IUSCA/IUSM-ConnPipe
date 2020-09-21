@@ -14,7 +14,8 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################  PATH TO DATA  ###################################
 
 # USER INSTRUCTIONS- PLEASE SET THIS PATH TO POINT TO YOUR DATA DIRECTORY
-export path2data="/N/dc2/projects/connectivitypipeline/example_for_andrea/SUBJECTS"
+export path2data="/N/project/hasda/TestDir"
+#export path2data="/N/project/hasda/DataDir"
 
 ################################################################################
 #####################  SET UP DIRECTORY STRUCTURE  #############################
@@ -42,8 +43,8 @@ export path2data="/N/dc2/projects/connectivitypipeline/example_for_andrea/SUBJEC
 #                 -- UNWARP -- B0_PA_DCM
 
 export configs_T1="T1"
-export configs_epiFolder="EPI"
-    export configs_sefmFolder="UNWARP" # Reserved for Field Mapping series
+export configs_epiFolder="EPI1"
+    export configs_sefmFolder="UNWARP1" # Reserved for Field Mapping series
         export configs_APdcm="SEFM_AP_DICOMS" # Spin Echo A-P
         export configs_PAdcm="SEFM_PA_DICOMS" # Spin Echo P-A
 
@@ -51,12 +52,12 @@ export configs_grefmFolder="GREFM_GUST"  # Reserved for Field Mapping series
 	export configs_GREmagdcm="MAG_DICOMS" # Gradient echo FM magnitude series
 	export configs_GREphasedcm="PHASE_DICOMS" # Gradient echo FM phase map series
 
-export configs_DWI="DWI"
-    export configs_unwarpFolder="UNWARP"
-        export configs_dcmPA="B0_PA_DCM" #b0 opposite phase encoding
+#export configs_DWI="DWI"
+    #export configs_unwarpFolder="UNWARP"
+        #export configs_dcmPA="B0_PA_DCM" #b0 opposite phase encoding
 
 export configs_dcmFolder="DICOMS"
-export configs_dcmFiles="IMA.dcm" # specify Dicom file extension
+export configs_dcmFiles="dcm" # specify Dicom file extension
 export configs_niiFiles="nii" # Nifti-1 file extension
 
 
@@ -69,7 +70,7 @@ export pathFSLstandard="${FSLDIR}/data/standard"
 
 ## FOR IUSM USERS ONLY - DURING DEVELOPMENT PHASE, PLEASE USE THIS "pathSM" AS THE 
 ## SUPPLEMENTARY MATERIALS PATH. THIS WILL EVENTUALLY LIVE IN A REPOSITORY 
-export pathSM="/N/dc2/projects/connectivitypipeline/example_for_andrea/ConnPipelineSM"
+export pathSM="/N/project/hasda/ConnPipelineSM"
 export pathMNItmplates="${pathSM}/MNI_templates"
 export pathBrainmaskTemplates="${pathSM}/brainmask_templates"
 export pathParcellations="${pathSM}/Parcellations"
@@ -106,7 +107,7 @@ export PARC3="yeo17"
 export PARC3dir="yeo17_MNI152"
 export PARC3pcort=1;
 export PARC3pnodal=0;
-export PARC1psubcortonly=0;
+export PARC3psubcortonly=0;
 
 # optional
 export PARC4="tian_subcortical_S3"
@@ -122,7 +123,7 @@ export PARC4psubcortonly=1;
 ## THE NAMING FORMAT. NOTE THAT PARCELLATIONS ARE RUN IN THE ORDER IN WHICH THEY ARE 
 ## LISTED ABOVE. FOR EXAMPLE IF numParcs is set to 1, ONLY CSF AND PARC1="shen_278"
 ## WILL BE USED
-export numParcs=3  # CSF doesn't count; numParcs cannot be less than 1. Schaefer is the defailt parc
+export numParcs=4  # CSF doesn't count; numParcs cannot be less than 1. Schaefer is the defailt parc
 
 
 ################################################################################
@@ -145,9 +146,9 @@ if $T1_PREPARE_A; then
 		export configs_T1_crop=0; # 0 = no; 1 = yes (lots already done by dcm2niix)
 
 	export flags_T1_bet=true; # brain extraction and mask generation (only needed for double BET)
-		export configs_antsTemplate="MICCAI"  # options are: MICCAI, NKI or bet
+		export configs_antsTemplate="MICCAI"  # options are: ANTS (MICCAI, NKI) or bet
 		export configs_T1_A_betF="0.35" # this are brain extraction parameters with FSL bet
-		export configs_T1_A_betG="0.15"  # see fsl bet help page for more details
+		export configs_T1_A_betG="-0.15"  # see fsl bet help page for more details
 		# ANTS does not require bet inputs
 	 
 	export flags_T1_re_extract=true; # brain extraction with mask
@@ -171,7 +172,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export T1_PREPARE_B=true
+export T1_PREPARE_B=false
 
 if $T1_PREPARE_B; then
 
@@ -191,7 +192,7 @@ if $T1_PREPARE_B; then
 		export configs_T1_addsubcort=true # add FSL subcortical to cortial parcellations 	
 										  # but ONLY to nodal parcellation as individual regions
 										  # To others add as a single subcortical network.
-		export configs_T1_subcortUser=false   # false = default FSL; true = user-provided
+		export configs_T1_subcortUser=true   # false = default FSL; true = user-provided
 											  # Name of user-provided subcortical parcellation (assumed to be found in ConnPipeSM folder)
 											  # should be set in the desired parcellation name for index "N" with "psubcortonly=1"
 
@@ -205,7 +206,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export fMRI_A=true
+export fMRI_A=false
 
 if $fMRI_A; then
 
@@ -360,7 +361,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export DWI_A=true
+export DWI_A=false
 
 if $DWI_A; then
 
@@ -378,7 +379,7 @@ fi
 
 
 
-export DWI_B=true
+export DWI_B=false
 
 if $DWI_B; then
 
