@@ -260,7 +260,7 @@ if ${flags_T1_reg2MNI}; then
             T1parc="${T1path}/T1_mask_${parc}.nii.gz"
             echo ${T1park}
         else            
-            parcdir="${pathParcellations}/${!parcdir}/${!parcdir}.nii.gz"  
+            parcdir="${pathParcellations}/${!parcdir}.nii.gz"  
             echo ${parcdir}      
             T1parc="${T1path}/T1_parc_${parc}.nii.gz"
             echo ${T1park}
