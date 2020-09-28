@@ -131,11 +131,11 @@ export numParcs=4  # CSF doesn't count; numParcs cannot be less than 1. Schaefer
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export T1_PREPARE_A=true
+export T1_PREPARE_A=false
 
 if $T1_PREPARE_A; then
 
-	export flags_T1_dcm2niix=true;  # dicom to nifti conversion 
+	export flags_T1_dcm2niix=true  # dicom to nifti conversion 
 		export configs_T1_useCropped=false; # use cropped field-of-view output of dcm2niix
 		
 	export flags_T1_denoiser=true # denoising
@@ -146,9 +146,9 @@ if $T1_PREPARE_A; then
 		export configs_T1_crop=0; # 0 = no; 1 = yes (lots already done by dcm2niix)
 
 	export flags_T1_bet=true; # brain extraction and mask generation (only needed for double BET)
-		export configs_antsTemplate="MICCAI"  # options are: ANTS (MICCAI, NKI) or bet
-		export configs_T1_A_betF="0.35" # this are brain extraction parameters with FSL bet
-		export configs_T1_A_betG="-0.15"  # see fsl bet help page for more details
+		export configs_antsTemplate="NKI"  # options are: ANTS (MICCAI, NKI) or bet
+		export configs_T1_A_betF="0.3" # this are brain extraction parameters with FSL bet
+		export configs_T1_A_betG="-0.1"  # see fsl bet help page for more details
 		# ANTS does not require bet inputs
 	 
 	export flags_T1_re_extract=true; # brain extraction with mask
@@ -172,7 +172,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export T1_PREPARE_B=false
+export T1_PREPARE_B=true
 
 if $T1_PREPARE_B; then
 
