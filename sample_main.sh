@@ -24,16 +24,8 @@ fi
 
 # where this package of scripts are
 export EXEDIR=$(dirname "$(readlink -f "$0")")
-# source bash funcs
-# source activate py37_connPipeline
-# source deactivate
 source ${EXEDIR}/src/func/bash_funcs.sh
 source ${EXEDIR}/config.sh
-
-## these paths will be updted once code is running in a container
-#export python3_7="${EXEDIR}/../miniconda3/bin/python3.7"
-#export python3_7="/N/u/aiavenak/Carbonate/miniconda3/bin/python3.7"
-#export path2env="/N/u/aiavenak/Carbonate/miniconda3/envs/CONNpipeline_py37_clone"
 
 #################################################################################
 #################################################################################
@@ -50,7 +42,6 @@ find ${path2data} -maxdepth 1 -mindepth 1 -type d -printf '%f\n'
 
 ######################################################################################################
 #### START PROCESSING SUBJECTS ###############
-## Not sure if this loop should be in a wrapper script that would allow running subjects in parallel.  
 
 find ${path2data} -maxdepth 1 -mindepth 1 -type d | while read SUBJdir; do
 
@@ -62,7 +53,6 @@ find ${path2data} -maxdepth 1 -mindepth 1 -type d | while read SUBJdir; do
 
     export T1path="${path2data}/${SUBJ}/${configs_T1}"
     export DWIpath="${path2data}/${SUBJ}/${configs_DWI}"
-    #export EPItemp="${path2data}/${SUBJ}/${configs_epiFolder}"
  
 
     log "# ############################ T1_PREPARE_A #####################################"

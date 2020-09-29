@@ -14,8 +14,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################  PATH TO DATA  ###################################
 
 # USER INSTRUCTIONS- PLEASE SET THIS PATH TO POINT TO YOUR DATA DIRECTORY
-export path2data="/N/project/hasda/TestDir"
-#export path2data="/N/project/hasda/DataDir"
+export path2data="/N/project/project_name/DataDir"
 
 ################################################################################
 #####################  SET UP DIRECTORY STRUCTURE  #############################
@@ -70,7 +69,7 @@ export pathFSLstandard="${FSLDIR}/data/standard"
 
 ## FOR IUSM USERS ONLY - DURING DEVELOPMENT PHASE, PLEASE USE THIS "pathSM" AS THE 
 ## SUPPLEMENTARY MATERIALS PATH. THIS WILL EVENTUALLY LIVE IN A REPOSITORY 
-export pathSM="/N/project/hasda/ConnPipelineSM"
+export pathSM="/N/project/project_name/ConnPipelineSM"
 export pathMNItmplates="${pathSM}/MNI_templates"
 export pathBrainmaskTemplates="${pathSM}/brainmask_templates"
 export pathParcellations="${pathSM}/Parcellations"
@@ -139,6 +138,7 @@ if $T1_PREPARE_A; then
 		export configs_T1_useCropped=false; # use cropped field-of-view output of dcm2niix
 		
 	export flags_T1_denoiser=true # denoising
+		# export configs_T1_denoised="T1_denoised_SUSAN"  ## this should eventually be an input param SUSAN vs ANTS
 	
 	export flags_T1_anat=true # run FSL_anat
 		export configs_T1_bias=1; # 0 = no; 1 = weak; 2 = strong
@@ -171,7 +171,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export T1_PREPARE_B=false
+export T1_PREPARE_B=true
 
 if $T1_PREPARE_B; then
 
@@ -205,7 +205,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export fMRI_A=false
+export fMRI_A=true
 
 if $fMRI_A; then
 
@@ -360,7 +360,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export DWI_A=false
+export DWI_A=true
 
 if $DWI_A; then
 
@@ -378,7 +378,7 @@ fi
 
 
 
-export DWI_B=false
+export DWI_B=true
 
 if $DWI_B; then
 
