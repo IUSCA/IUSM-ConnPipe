@@ -24,6 +24,10 @@ fi
 
 # where this package of scripts are
 export EXEDIR=$(dirname "$(readlink -f "$0")")
+
+# user may specify name of logfile
+export logfile_name="pipeline"
+
 source ${EXEDIR}/src/func/bash_funcs.sh
 source ${EXEDIR}/config.sh
 

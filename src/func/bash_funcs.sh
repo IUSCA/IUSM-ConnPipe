@@ -82,8 +82,11 @@ log() {
     echo "${msg[@]}"
     echo -e ${NC_}
 
-	echo "### $dateTime -" >> ${EXEDIR}/pipeline.log
-    echo "${msg[@]}" >> ${EXEDIR}/pipeline.log
+	# echo "### $dateTime -" >> ${EXEDIR}/pipeline.log
+    # echo "${msg[@]}" >> ${EXEDIR}/pipeline.log
+
+    echo "### $dateTime -" >> ${EXEDIR}/${logfile_name}.log
+    echo "${msg[@]}" >> ${EXEDIR}/${logfile_name}.log
 }
 
 # https://stackoverflow.com/questions/2990414/echo-that-outputs-to-stderr
