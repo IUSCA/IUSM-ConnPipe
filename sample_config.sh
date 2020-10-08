@@ -16,6 +16,19 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 # USER INSTRUCTIONS- PLEASE SET THIS PATH TO POINT TO YOUR DATA DIRECTORY
 export path2data="/N/project/project_name/DataDir"
 
+## USER: if running all subjects in the path2data directory, set this flag to true; 
+## set to false if you'd like to process a subset of subjects 
+export runAll=true 
+
+## USER: if running a subset of subjects, a list of subject ID's can be read from 
+## a text file located in path2data; user can name the file here:
+export subj2run="subj2run.txt"
+
+if runAll; then
+	find ${path2data} -maxdepth 1 -mindepth 1 -type d -printf '%f\n' \
+	> ${path2data}/${subj2run}	
+fi 
+
 ################################################################################
 #####################  SET UP DIRECTORY STRUCTURE  #############################
 
@@ -51,9 +64,9 @@ export configs_grefmFolder="GREFM_GUST"  # Reserved for Field Mapping series
 	export configs_GREmagdcm="MAG_DICOMS" # Gradient echo FM magnitude series
 	export configs_GREphasedcm="PHASE_DICOMS" # Gradient echo FM phase map series
 
-#export configs_DWI="DWI"
-    #export configs_unwarpFolder="UNWARP"
-        #export configs_dcmPA="B0_PA_DCM" #b0 opposite phase encoding
+export configs_DWI="DWI"
+    export configs_unwarpFolder="UNWARP"
+        export configs_dcmPA="B0_PA_DCM" #b0 opposite phase encoding
 
 export configs_dcmFolder="DICOMS"
 export configs_dcmFiles="dcm" # specify Dicom file extension
@@ -110,7 +123,7 @@ export PARC3psubcortonly=0;
 
 # optional
 export PARC4="tian_subcortical_S3"
-export PARC4dir="Tian_Subcortex_S3_7T_FSLMNI152_1mm"
+export PARC4dir="Tian_Subcortex_S3_3T_FSLMNI152_1mm"
 export PARC4pcort=0;
 export PARC4pnodal=1;
 export PARC4psubcortonly=1;

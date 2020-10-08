@@ -25,11 +25,9 @@ fi
 # where this package of scripts are
 export EXEDIR=$(dirname "$(readlink -f "$0")")
 
-# user may specify name of logfile
-export logfile_name="pipeline"
-
 source ${EXEDIR}/src/func/bash_funcs.sh
 source ${EXEDIR}/config.sh
+
 
 #################################################################################
 #################################################################################
@@ -40,23 +38,27 @@ main() {
 
 start=`date +%s`
 
-log "SUBJECTS running Connectivity Pipeline on the following subjects:"
+log "START running Connectivity Pipeline on the following subjects:"
 
-find ${path2data} -maxdepth 1 -mindepth 1 -type d -printf '%f\n'
+IFS=$'\r\n' GLOBIGNORE='*' command eval 'SUBJECTS=($(cat ${path2data}/${subj2run}))'
+log "subjects: ${SUBJECTS[@]}"
 
-######################################################################################################
-#### START PROCESSING SUBJECTS ###############
+echo "##################"
 
-find ${path2data} -maxdepth 1 -mindepth 1 -type d | while read SUBJdir; do
+# ######################################################################################################
+# #### START PROCESSING SUBJECTS ###############
 
-    echo "$SUBJdir"
+for SUBJdir in "${SUBJECTS[@]}"; do
+
+    export SUBJ=${SUBJdir}
     
-    export SUBJ=$(basename "${SUBJdir}")
-    
-    echo "${SUBJ}"
+    log "Subject ${SUBJ}"
 
     export T1path="${path2data}/${SUBJ}/${configs_T1}"
     export DWIpath="${path2data}/${SUBJ}/${configs_DWI}"
+
+    # user may specify name of logfile written inside each subjects dir
+    export logfile_name="${path2data}/${SUBJ}/out"
  
 
     log "# ############################ T1_PREPARE_A #####################################"
@@ -190,6 +192,9 @@ find ${path2data} -maxdepth 1 -mindepth 1 -type d | while read SUBJdir; do
         runtime=$((end-start))
         log "SUBJECT $SUBJ runtime: $runtime"
 
+    echo "#################################################################################"
+    echo "#################################################################################"
+    
 done    
 
 } # main

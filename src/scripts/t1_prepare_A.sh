@@ -194,6 +194,18 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 					log $cmd
 					eval $cmd 					
 					out=$?
+
+					## For QC purposes, we run bet anyway, to compare the bet mask with the one from ANTS
+					
+					fileOut_bet="$T1path/T1_brain_betQC.nii.gz"
+					log "QC - bet will be run anyway for QC purposes - output is saved as ${fileOut_bet}"
+
+					cmd="bet ${fileIn} ${fileOut_bet} \
+					-B -m -f ${configs_T1_A_betF} -g ${configs_T1_A_betG}"
+					log $cmd
+					eval $cmd 
+					qc_out=$?
+
 				fi 
 
 				fileOut2="$T1path/T1_brain_mask_filled.nii.gz"
@@ -241,6 +253,58 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 
 			fi
 		fi
+
+		######### QC of ANTS mask by comparison with bet mask #################
+
+		if [[ ${configs_antsTemplate} != "bet" ]]; then
+
+			fileIn2_bet="$T1path/T1_brain_betQC_mask.nii.gz"
+			fileOut="$T1path/T1_brain_betQC.nii.gz"
+
+			fileOut2_bet="$T1path/T1_brain_mask_filled_betQC.nii.gz"
+
+			if [[ $qc_out == 0 ]] && [[ -e ${fileIn2_bet} ]]; then
+				#fill holes in the brain mask
+				cmd="fslmaths ${fileIn2_bet} -fillh ${fileOut2_bet}"
+				log $cmd
+				eval $cmd	
+				out=$?
+				if [[ $out == 0 ]] && [[ -e ${fileOut2_bet} ]]; then
+					log "QC BET completed"
+				else
+					log "WARNING ${fileOut2_bet} not created. Exiting... "
+					exit 1					
+				fi
+			else
+				log "WARNING ${fileIn2_bet} not found. Exiting... "
+				exit 1					
+			fi
+
+
+			##### T1 Brain Re-Extract for QC ######
+			if ${flags_T1_re_extract}; then
+				fileIn="$T1path/T1_fov_denoised.nii"
+				fileMask="$T1path/T1_brain_mask_filled_betQC.nii.gz"
+				fileOut="$T1path/T1_brain_betQC.nii.gz"
+
+				if [[ -e "$fileIn" ]] && [[ -e "$fileMask" ]]; then
+					cmd="fslmaths ${fileIn} -mul ${fileMask} ${fileOut}"
+					log $cmd
+					eval $cmd
+					out=$?
+					if [[ $out == 0 ]] && [[ -e ${fileOut} ]]; then
+						log "QC ${fileOut} created"
+					else
+						log "WARNING ${fileOut} not created. Exiting... "
+						exit 1					
+					fi
+				fi
+			fi
+
+			## Compute the overlap between the ANTS mask and BET mask
+		fi 
+
+		#######################################################################
 
 	else
 		msg="WARNING T1 directory is empty; skipping subject $SUBJ"
