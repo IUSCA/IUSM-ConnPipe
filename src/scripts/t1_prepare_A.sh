@@ -132,11 +132,11 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 			fi 
 		fi 
 
-		##### T1 BET ######
+		##### T1 Brain Extraction and Masking ######
 		
-		if ${flags_T1_bet}; then
+		if ${flags_T1_extract_and_mask}; then
 
-			log "BET Brain Extraction and Masking"
+			log "Brain Extraction and Masking"
 
 			fileIn="$T1path/T1_fov_denoised.nii"
 			fileOutroot="$T1path/T1_"
@@ -206,6 +206,45 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 					eval $cmd 
 					qc_out=$?
 
+					bet_mask="$T1path/T1_brain_betQC_mask.nii.gz"
+
+					if [[ -e ${bet_mask} ]]; then
+
+						overlap_mask="$T1path/T1_overlap_mask.nii.gz"
+						## Find the overlap between the two masks - BET vs ANTS and compute the volume
+						cmd="fslmaths ${bet_mask} -mul ${fileIn2} -bin ${overlap_mask}"
+						log "$cmd"
+						eval $cmd
+
+						# COmpute the volume of the overlap
+						cmd="fslstats ${overlap_mask} -V"
+						log "$cmd"
+						out=`$cmd`
+						overlap_vol=`echo $out | awk -F' ' '{ print $2}'`
+
+						# Compute the volume of the ANTS mask 
+						cmd="fslstats ${fileIn2} -V"
+						log "$cmd"
+						out=`$cmd`
+						ANTS_vol=`echo $out | awk -F' ' '{ print $2}'`		
+
+						# Compute the proportion of the ANTS mask that is in the overlap
+						match=$(bc <<< "scale=2 ; ${overlap_vol} / ${ANTS_vol}")		
+
+						if (( $(echo "$match < 0.80" |bc -l) )); then
+							qc "WARNING the mismatch between the ANTS brain_mask and bet brain_mask is greater than 80%"
+							qc "QC is highly recommended. You may compare both masks with FSLeyes"
+							qc "ANTS mask is ${fileIn2}"
+							qc "BET mask is ${bet_mask}"
+							qc "The intersection of the masks is ${overlap_mask}"
+						fi 
+						
+
+					else
+						log "WARNING: BET mask not generated.. skipping brain extraction QC"
+						log "WARNING: We recommend doing a visual inspection of the brain mask" 
+					fi
+
 				fi 
 
 				fileOut2="$T1path/T1_brain_mask_filled.nii.gz"
@@ -226,6 +265,7 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 					log "WARNING ${fileIn2} not found. Exiting... "
 					exit 1					
 				fi
+
 			else
 				log "WARNING ${fileIn} not found. Exiting... "
 				exit 1					
@@ -253,58 +293,6 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 
 			fi
 		fi
-
-		######### QC of ANTS mask by comparison with bet mask #################
-
-		if [[ ${configs_antsTemplate} != "bet" ]]; then
-
-			fileIn2_bet="$T1path/T1_brain_betQC_mask.nii.gz"
-			fileOut="$T1path/T1_brain_betQC.nii.gz"
-
-			fileOut2_bet="$T1path/T1_brain_mask_filled_betQC.nii.gz"
-
-			if [[ $qc_out == 0 ]] && [[ -e ${fileIn2_bet} ]]; then
-				#fill holes in the brain mask
-				cmd="fslmaths ${fileIn2_bet} -fillh ${fileOut2_bet}"
-				log $cmd
-				eval $cmd	
-				out=$?
-				if [[ $out == 0 ]] && [[ -e ${fileOut2_bet} ]]; then
-					log "QC BET completed"
-				else
-					log "WARNING ${fileOut2_bet} not created. Exiting... "
-					exit 1					
-				fi
-			else
-				log "WARNING ${fileIn2_bet} not found. Exiting... "
-				exit 1					
-			fi
-
-
-			##### T1 Brain Re-Extract for QC ######
-			if ${flags_T1_re_extract}; then
-				fileIn="$T1path/T1_fov_denoised.nii"
-				fileMask="$T1path/T1_brain_mask_filled_betQC.nii.gz"
-				fileOut="$T1path/T1_brain_betQC.nii.gz"
-
-				if [[ -e "$fileIn" ]] && [[ -e "$fileMask" ]]; then
-					cmd="fslmaths ${fileIn} -mul ${fileMask} ${fileOut}"
-					log $cmd
-					eval $cmd
-					out=$?
-					if [[ $out == 0 ]] && [[ -e ${fileOut} ]]; then
-						log "QC ${fileOut} created"
-					else
-						log "WARNING ${fileOut} not created. Exiting... "
-						exit 1					
-					fi
-				fi
-			fi
-
-			## Compute the overlap between the ANTS mask and BET mask
-		fi 
-
-		#######################################################################
 
 	else
 		msg="WARNING T1 directory is empty; skipping subject $SUBJ"

@@ -59,6 +59,7 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
     # user may specify name of logfile written inside each subjects dir
     export logfile_name="${path2data}/${SUBJ}/out"
+    export QCfile_name="${path2data}/${SUBJ}/qc"
  
 
     log "# ############################ T1_PREPARE_A #####################################"

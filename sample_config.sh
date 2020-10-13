@@ -24,7 +24,7 @@ export runAll=true
 ## a text file located in path2data; user can name the file here:
 export subj2run="subj2run.txt"
 
-if runAll; then
+if ${runAll}; then
 	find ${path2data} -maxdepth 1 -mindepth 1 -type d -printf '%f\n' \
 	> ${path2data}/${subj2run}	
 fi 
@@ -157,11 +157,13 @@ if $T1_PREPARE_A; then
 		export configs_T1_bias=1; # 0 = no; 1 = weak; 2 = strong
 		export configs_T1_crop=0; # 0 = no; 1 = yes (lots already done by dcm2niix)
 
-	export flags_T1_bet=true; # brain extraction and mask generation (only needed for double BET)
+	export flags_T1_extract_and_mask=true; # brain extraction and mask generation (only needed for double BET)
 		export configs_antsTemplate="MICCAI"  # options are: ANTS (MICCAI, NKI) or bet
 		export configs_T1_A_betF="0.3" # this are brain extraction parameters with FSL bet
 		export configs_T1_A_betG="-0.1"  # see fsl bet help page for more details
-		# ANTS does not require bet inputs
+		
+		# USER if runnign ANTS, bet will be run anyway as a QC check for the brain maks.
+		# QC output will be printed out in the QC file for each subject. 
 	 
 	export flags_T1_re_extract=true; # brain extraction with mask
 

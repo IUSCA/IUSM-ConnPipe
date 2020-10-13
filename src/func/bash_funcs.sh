@@ -89,6 +89,22 @@ log() {
     echo "${msg[@]}" >> ${logfile_name}.log
 }
 
+## QC messages
+qc() {
+
+    local msg=($(echo "$@"))
+    local dateTime=`date`
+    echo -e ${CYAN_}
+    echo "# "$dateTime "-" ${msg[0]} "--->"
+    echo -e ${NC_}     
+    echo "${msg[@]}"
+    echo -e ${NC_}
+
+    echo "### $dateTime -" >> ${QCfile_name}.log
+    echo "${msg[@]}" >> ${QCfile_name}.log
+}
+
+
 # https://stackoverflow.com/questions/2990414/echo-that-outputs-to-stderr
 echoerr() {
     cat <<< "$(echo -e ${RED_}ERROR: $@ ${NC_})" 1>&2; 
