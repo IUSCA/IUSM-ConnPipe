@@ -243,7 +243,7 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 						match=$(bc <<< "scale=2 ; ${overlap_vol} / ${ANTS_vol}")	
 						qc "Proportion of the ANTS mask that overlaps with BET mask is ${match}"	
 
-						if (( $(echo "$match < 0.80" |bc -l) )); then
+						if (( $(echo "$match < ${config_brainmask_overlap_thr}" |bc -l) )); then
 							qc "WARNING the mismatch between the ANTS brain_mask and bet brain_mask is greater than 80%"
 							qc "QC is highly recommended. You may compare both masks with FSLeyes"
 							qc "ANTS mask is ${fileIn2}"
@@ -261,7 +261,7 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 
 				fileOut2="$T1path/T1_brain_mask_filled.nii.gz"
 
-				if [[ $out == 0 ]] && [[ -e ${fileIn2} ]]; then
+				if [[ -e ${fileIn2} ]]; then
 					#fill holes in the brain mask
 					cmd="fslmaths ${fileIn2} -fillh ${fileOut2}"
 					log $cmd

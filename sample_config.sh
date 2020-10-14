@@ -161,7 +161,7 @@ if $T1_PREPARE_A; then
 		export configs_antsTemplate="MICCAI"  # options are: ANTS (MICCAI, NKI, IXI) or bet
 		export configs_T1_A_betF="0.3" # this are brain extraction parameters with FSL bet
 		export configs_T1_A_betG="-0.1"  # see fsl bet help page for more details
-		
+		export config_brainmask_overlap_thr="0.90"  # this is the threshold to assess whether or not the ANTS and BET masks are similar 'ehough"'
 		# USER if runnign ANTS, bet will be run anyway as a QC check for the brain maks.
 		# QC output will be printed out in the QC file for each subject. 
 	 
