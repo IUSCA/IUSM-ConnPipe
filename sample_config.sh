@@ -158,7 +158,7 @@ if $T1_PREPARE_A; then
 		export configs_T1_crop=0; # 0 = no; 1 = yes (lots already done by dcm2niix)
 
 	export flags_T1_extract_and_mask=true; # brain extraction and mask generation (only needed for double BET)
-		export configs_antsTemplate="MICCAI"  # options are: ANTS (MICCAI, NKI) or bet
+		export configs_antsTemplate="MICCAI"  # options are: ANTS (MICCAI, NKI, IXI) or bet
 		export configs_T1_A_betF="0.3" # this are brain extraction parameters with FSL bet
 		export configs_T1_A_betG="-0.1"  # see fsl bet help page for more details
 		

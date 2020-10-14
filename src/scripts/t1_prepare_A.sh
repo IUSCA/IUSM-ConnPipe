@@ -155,6 +155,14 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 				fileTemplate="${pathBrainmaskTemplates}/NKI/T_template.nii.gz"
 				fileProbability="${pathBrainmaskTemplates}/NKI/T_template_BrainCerebellumProbabilityMask.nii.gz"
 
+			elif [[ ${configs_antsTemplate} == "IXI" ]]; then
+
+				log "${configs_antsTemplate} brain mask template selected"
+
+				fileTemplate="${pathBrainmaskTemplates}/IXI/T_template0.nii.gz"
+				fileProbability="${pathBrainmaskTemplates}/IXI/T_template_BrainCerebellumProbabilityMask.nii.gz"
+
+
 			elif [[ ${configs_antsTemplate} == "bet" ]]; then
 
 				log "${configs_antsTemplate} Using bet -f and -g inputs to perform fsl bet with -B option"
@@ -211,6 +219,7 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 					if [[ -e ${bet_mask} ]]; then
 
 						overlap_mask="$T1path/T1_overlap_mask.nii.gz"
+						qc "Computing the overlap between ANTS and bet brain masks"
 						## Find the overlap between the two masks - BET vs ANTS and compute the volume
 						cmd="fslmaths ${bet_mask} -mul ${fileIn2} -bin ${overlap_mask}"
 						log "$cmd"
@@ -220,16 +229,19 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 						cmd="fslstats ${overlap_mask} -V"
 						log "$cmd"
 						out=`$cmd`
+						qc "fslstats - Volume of overlap between ANTS and BET mask is $out"
 						overlap_vol=`echo $out | awk -F' ' '{ print $2}'`
 
 						# Compute the volume of the ANTS mask 
 						cmd="fslstats ${fileIn2} -V"
 						log "$cmd"
 						out=`$cmd`
+						qc "fslstats - Volume of ANTS mask is $out"
 						ANTS_vol=`echo $out | awk -F' ' '{ print $2}'`		
 
 						# Compute the proportion of the ANTS mask that is in the overlap
-						match=$(bc <<< "scale=2 ; ${overlap_vol} / ${ANTS_vol}")		
+						match=$(bc <<< "scale=2 ; ${overlap_vol} / ${ANTS_vol}")	
+						qc "Proportion of the ANTS mask that overlaps with BET mask is ${match}"	
 
 						if (( $(echo "$match < 0.80" |bc -l) )); then
 							qc "WARNING the mismatch between the ANTS brain_mask and bet brain_mask is greater than 80%"
