@@ -171,13 +171,28 @@ if [[ -d "${AROMAout}" ]]; then
     eval $cmd     
 fi
 
+# set number of components if user doesn't want automatic estimation
+if [[ ! -z "${flag_AROMA_dim}" ]]; then
+
+    re='^[0-9]+$'
+
+    if [[ ${flag_AROMA_dim} =~ $re ]] ; then  # check that it is a number 
+        AROMA_dim="-dim ${flag_AROMA_dim}"
+    else
+        log "WARNING flag_AROMA_dim should be a number; running AROMA with automatic estimation of number of components"
+        AROMA_dim=" "
+    fi
+else
+    AROMA_dim=" "
+fi 
+
 #cmd="${ICA_AROMA_path}/ICA_AROMA.py \
 cmd="ICA_AROMA.py \
 -in ${fileSmooth} \
 -out ${AROMAout} \
 -mc ${fileMovePar} \
 -affmat ${fileMat} \
--warp ${fileWarpField}"
+-warp ${fileWarpField} ${AROMA_dim}"
 log $cmd 
 out=`$cmd`
 log "$out"

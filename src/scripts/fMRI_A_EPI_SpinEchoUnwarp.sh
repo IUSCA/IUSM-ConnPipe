@@ -34,7 +34,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
     if [[ -d ${path_EPI_SEFM} ]]; then
 
-        if [[ -z ${EPInum} ]] || [[ ${EPInum} -le ${configs_EPI_skipSEmap4EPI }]]; then
+        if [[ -z "${EPInum}" ]] || [[ "${EPInum}" -eq 1 ]]; then
 
             fileInAP="${path_EPI_SEFM}/AP.nii.gz"
             fileInPA="${path_EPI_SEFM}/PA.nii.gz"
@@ -166,7 +166,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                 exit 1
             fi 
 
-        elif [[ ${EPInum} -gt ${configs_EPI_skipSEmap4EPI }]]; then
+        elif [[ "${EPInum}" -gt 1 ]]; then
 
             log "USER-PARAM configs_EPI_skipSEmap4EPI < EPInum -- skipping topup for EPI${EPInum}"
             exit 1

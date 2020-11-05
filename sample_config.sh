@@ -278,6 +278,10 @@ if $fMRI_A; then
 	## If user sets flags_NuisanceReg_AROMA=false, then flags_NuisanceReg_HeadParam=true
 
 		export flags_NuisanceReg_AROMA=true;  
+			## USER: by default, ICA_AROMA will estimate the dimensionality (i.e. num of independent components) for you; however, for higher multiband
+			## factors with many time-points and high motion subjects, it may be useful for the user to set the dimensionality. THis can be done by
+			## setting the desired number of componenets in the following config flag. Leave undefined for automatic estimation 
+			export flag_AROMA_dim=
 			if ${flags_NuisanceReg_AROMA}; then # if using ICA-AROMA
 				nR="aroma" # set filename postfix for output image
 				export flags_NuisanceReg_HeadParam=false

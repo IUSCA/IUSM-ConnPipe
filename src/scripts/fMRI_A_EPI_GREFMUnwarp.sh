@@ -123,8 +123,13 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                     log $cmd
                     eval $cmd
 
+                    ## ******* Up to here we only need to run if we are using SIEMENS DICOMS; 
+                    ## With GE we already have the output from the previous step in a file named XX_fieldmap.nii.gz
+                    ## Mario thinks that the other XX_.nii.gz should be renamed "gre_fieldmap_mag" and this file containes two magnitudes (e1 and e2)
+                    ## Fieldmap shoul dbe in radians per sec; if it is in hertz, it has to be converted. 
+
                     # Now run fugue (-s 3 : apply Gaussian smoothing of sigma = 3mm
-                    fileFmapIn="${fileFMap}.nii.gz"
+                    fileFMapIn="${fileFMap}.nii.gz"
 
                     if ${configs_EPI_GREdespike}; then
                         fileFMapRads="${GREFMpath}/fm_rads_brain_sm${configs_EPI_GREsmooth}_m_ds"
