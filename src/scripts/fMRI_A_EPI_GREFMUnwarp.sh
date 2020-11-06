@@ -34,7 +34,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         if [ -d "${path_GREmagdcm}" ] && [ -d "${path_GREphasedcm}" ]; then
             
             log "EPI session number: ${EPInum}"
-            if [[ ${EPInum} -le ${configs_EPI_skipSEmap4EPI }]]; then
+            if [[ ${EPInum} -le ${configs_EPI_skipGREmap4EPI} ]]; then
                 # identify dicoms 
                 declare -a dicom_files
                 while IFS= read -r -d $'\0' dicomfile; do 
@@ -161,7 +161,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                     exit 1
                 fi 
 
-            elif [[ ${EPInum} -gt ${configs_EPI_skipSEmap4EPI } ]]; then
+            elif [[ ${EPInum} -gt ${configs_EPI_skipGREmap4EPI} ]]; then
 
                 if ${configs_EPI_GREdespike}; then
 
