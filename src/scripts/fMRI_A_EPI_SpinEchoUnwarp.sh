@@ -20,11 +20,14 @@ source ${EXEDIR}/src/func/bash_funcs.sh
     echo "# =================================="
 
     # set up direcotry paths
-    if [[ ${configs_EPI_SEindex} -eq "0" ]]; then  # Assume single pair of SE fieldmaps within EPI folder
+    if ! ${configs_EPI_multiSEfieldmaps}; then  # Assume single pair of SE fieldmaps within EPI folder
+        echo "SINGLE SE FIELDMAP FOLDER ${EPIpath}/${configs_sefmFolder}"
         path_EPI_SEFM="${EPIpath}/${configs_sefmFolder}"
     else  # Allows multiple UNWARP folders at the subject level (UNWARP1, UNWARP2,...)
-        SEdir="${configs_sefmFolder}${configs_EPI_SEindex}"
-        path_EPI_SEFM="${path2data}/${SUBJ}/${SEdir}"
+        # SEdir="${configs_sefmFolder}${configs_EPI_SEindex}"
+        # path_EPI_SEFM="${path2data}/${SUBJ}/${SEdir}"
+        path_EPI_SEFM="${path2data}/${SUBJ}/${configs_sefmFolder}"
+        echo "MULTIPLE SE FIELDMAP FOLDERS ${path_EPI_SEFM}"
     fi 
 
     path_EPI_APdcm="${path_EPI_SEFM}/${configs_APdcm}"
@@ -34,7 +37,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
     if [[ -d ${path_EPI_SEFM} ]]; then
 
-        if [[ -z ${EPInum} ]] || [[ ${EPInum} -le ${configs_EPI_skipSEmap4EPI }]]; then
+        if [[ -z "${EPInum}" ]] || [[ "${EPInum}" -le "${configs_EPI_skipSEmap4EPI}" ]]; then
 
             fileInAP="${path_EPI_SEFM}/AP.nii.gz"
             fileInPA="${path_EPI_SEFM}/PA.nii.gz"
@@ -166,9 +169,9 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                 exit 1
             fi 
 
-        elif [[ ${EPInum} -gt ${configs_EPI_skipSEmap4EPI }]]; then
+        elif [[ "${EPInum}" -gt ${configs_EPI_skipSEmap4EPI} ]]; then
 
-            log "USER-PARAM configs_EPI_skipSEmap4EPI < EPInum -- skipping topup for EPI${EPInum}"
+            log "USER-PARAM configs_EPI_skipSEmap4EPI > EPInum -- skipping topup for EPI${EPInum}"
             exit 1
 
         else
@@ -218,37 +221,4 @@ source ${EXEDIR}/src/func/bash_funcs.sh
     else
         log "WARNING ${path_EPI_SEFM} doesn't exist. Field map correction must be skipped."
     fi
-
-
-
-        # elif [ -d "${path_EPI_GREmagdcm}" ] && [ -d "${path_EPI_GREphasedcm}" ]; then
-        #     # identify dicoms 
-        #     declare -a dicom_files
-        #     while IFS= read -r -d $'\0' dicomfile; do 
-        #         dicom_files+=( "$dicomfile" )
-        #     done < <(find ${path_EPI_GREmagdcm} -iname "*.${configs_dcmFiles}" -print0 | sort -z)
-
-        #     if [ ${#dicom_files[@]} -eq 0 ]; then 
-        #         echo "No dicom (.${configs_dcmFiles}) images found."
-        #         echo "Please specify the correct file extension of dicom files by setting the configs_dcmFiles flag in the config file"
-        #         echo "Skipping further analysis"
-        #         exit 1
-        #     else
-        #         # Extract TE1 and TE2 from the first image of Gradient Echo Magnitude Series
-        #         # fsval image descrip would do the same but truncates TEs to a single digit!
-        #         echo "There are ${#dicom_files[@]} dicom files in this EPI-series "
-        #         dcm_file=${dicom_files[0]}
-        #         cmd="dicom_hinfo -tag 0018,0081 ${path_EPI_GREmagdcm}/${dcm_file}"
-        #         log $cmd
-        #         out=`$cmd`
-        #         TE1=`echo $out | awk -F' ' '{ print $2}'`
-        #         echo "Header extracted TE is: ${TE1}" 
-        #     fi
-
-        #     ################################################################################
-        #                 # Code missing here - need data with GRE field maps to test
-        #     ################################################################################
-
-        # else 
-        #     log "WARNING. UNWARP DICOMS folders do not exist. Field Map correction failed."
-        # fi 
+    

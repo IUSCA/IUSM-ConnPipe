@@ -231,7 +231,11 @@ if $fMRI_A; then
 
 	export flags_EPI_SpinEchoUnwarp=true # Requires UNWARP directory and approporiate dicoms.
     	# # Allow multiple UNWARP directories (0: UNWARP; 1: UNWARP1, 2: UNWARP2) 
-    	export configs_EPI_SEindex=1 # Appends index to configs_sefmFolder name
+    	export configs_EPI_multiSEfieldmaps=true # false - single pair of SE fieldmaps within EPI folder
+												  # true -  multiple UNWARP folders at the subject level (UNWARP1, UNWARP2,...)
+			# set only if configs_EPI_multiSEfieldmaps=true:
+			# specify number of UNWARP directories (0: UNWARP; 1: UNWARP1, 2: UNWARP2)
+			export configs_EPI_SEindex=1
     	export configs_EPI_skipSEmap4EPI=1 # Skip SEmap calculation for EPInum > configs_EPI_skipGREmap4EPI
                 ##  e.g.; 1 to skip redoing SEmap for EPIs 2-6; 5 to skip for EPI6
 
@@ -241,11 +245,11 @@ if $fMRI_A; then
 
 	# # topup (see www.mccauslanddenter.sc.edu/cml/tools/advanced-dti - Chris Rorden's description
 		export flags_EPI_RunTopup=true # 1=Run topup (1st pass), 0=Do not rerun if previously completed. 
-    	export configs_EPI_skipGREmap4EPI=true # Skip GREmap calculation for EPInum > configs_EPI_skipGREmap4EPI
-                # false to ignore. true to skip redoing GREmap for EPIs 2-6
 
 	# # Gradient recalled echo Field Map Acquisition
 	export flags_EPI_GREFMUnwarp=false # Requires GREfieldmap directory and appropriate dicoms
+    	export configs_EPI_skipGREmap4EPI=1 # Skip GREmap calculation for EPInum > configs_EPI_skipGREmap4EPI
+                # 0 to ignore. 1 to skip redoing GREmap for EPIs 2-6
 
 		export configs_EPI_GREbetf=0.5; # GRE-specific bet values. Do not change
 		export configs_EPI_GREbetg=0;   # GRE-specific bet input. Change if needed 
@@ -278,6 +282,10 @@ if $fMRI_A; then
 	## If user sets flags_NuisanceReg_AROMA=false, then flags_NuisanceReg_HeadParam=true
 
 		export flags_NuisanceReg_AROMA=true;  
+			## USER: by default, ICA_AROMA will estimate the dimensionality (i.e. num of independent components) for you; however, for higher multiband
+			## factors with many time-points and high motion subjects, it may be useful for the user to set the dimensionality. THis can be done by
+			## setting the desired number of componenets in the following config flag. Leave undefined for automatic estimation 
+			export flag_AROMA_dim=
 			if ${flags_NuisanceReg_AROMA}; then # if using ICA-AROMA
 				nR="aroma" # set filename postfix for output image
 				export flags_NuisanceReg_HeadParam=false
