@@ -76,6 +76,8 @@ def get_pca(data, n_comp):
     
     from sklearn.decomposition import PCA
 
+    print("data shape: ",data.shape)
+
     pca = PCA()  #(n_components = n_comp) 
     pca.fit(data)
     PC = pca.components_
@@ -99,10 +101,37 @@ print("resting_vol.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 fname = ''.join([EPIpath,'/rT1_CSFvent_mask_eroded.nii.gz'])
 volCSFvent = nib.load(fname)
 volCSFvent_vol = volCSFvent.get_data()
+numVoxels = np.count_nonzero(volCSFvent_vol);
+if numVoxels < numTimePoints:
+    print("WARNING: using non-eroded CSFvent mask")
+    fname = ''.join([EPIpath,'/rT1_CSFvent_mask.nii.gz'])
+    volCSFvent = nib.load(fname)
+    volCSFvent_vol = volCSFvent.get_data()
+    numVoxels = np.count_nonzero(volCSFvent_vol);
+    if numVoxels < numTimePoints:
+        print("WARNING: number of voxels in CSFvent mask is smaller than number of Time points; PCA will fail")
+
+
 
 fname = ''.join([EPIpath,'/rT1_WM_mask_eroded.nii.gz'])
 volWM = nib.load(fname)
 volWM_vol = volWM.get_data()
+numVoxels = np.count_nonzero(volWM_vol);
+if numVoxels < numTimePoints:
+    print("WARNING: using 2nd-eroded WM mask")
+    fname = ''.join([EPIpath,'/rT1_WM_mask_eroded_2nd.nii.gz'])
+    volWM = nib.load(fname)
+    volWM_vol = volWM.get_data()
+    numVoxels = np.count_nonzero(volWM_vol);
+    if numVoxels < numTimePoints:
+        print("WARNING: using 1st-eroded WM mask")
+        fname = ''.join([EPIpath,'/rT1_WM_mask_eroded_1st.nii.gz'])
+        volWM = nib.load(fname)
+        volWM_vol = volWM.get_data()
+        numVoxels = np.count_nonzero(volWM_vol);
+        if numVoxels < numTimePoints:
+            print("WARNING: number of voxels in WM mask is smaller than number of Time points; PCA will fail")
+
 
 fname = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
 volGS = nib.load(fname)

@@ -358,65 +358,65 @@ fi
 if ${flags_T1_seg}; then
     echo "Tissue-type Segmentation"
 
-    # Check that T1_brain image exists
-    fileIn="${T1path}/T1_brain.nii.gz"
-    checkisfile ${fileIn}
+    # # Check that T1_brain image exists
+    # fileIn="${T1path}/T1_brain.nii.gz"
+    # checkisfile ${fileIn}
 
-    # FSL fast tissue-type segmentation (GM, WM, CSF)
-    cmd="fast -H ${configs_T1_segfastH} ${fileIn}"
-    log $cmd 
-    eval $cmd
+    # # FSL fast tissue-type segmentation (GM, WM, CSF)
+    # cmd="fast -H ${configs_T1_segfastH} ${fileIn}"
+    # log $cmd 
+    # eval $cmd
 
-    ## CSF masks
-    fileIn="${T1path}/T1_brain_seg.nii.gz"
-    fileOut="${T1path}/T1_CSF_mask"
-    checkisfile ${fileIn}
+    # ## CSF masks
+    # fileIn="${T1path}/T1_brain_seg.nii.gz"
+    # fileOut="${T1path}/T1_CSF_mask"
+    # checkisfile ${fileIn}
 
-    cmd="fslmaths ${fileIn} -thr ${configs_T1_masklowthr} -uthr 1 ${fileOut}"
-    log $cmd 
-    eval $cmd
+    # cmd="fslmaths ${fileIn} -thr ${configs_T1_masklowthr} -uthr 1 ${fileOut}"
+    # log $cmd 
+    # eval $cmd
 
-    cmd="fslmaths ${T1path}/T1_CSF_mask.nii.gz -mul -1 -add 1 ${T1path}/T1_CSF_mask_inv.nii.gz"
-    log $cmd 
-    eval $cmd
+    # cmd="fslmaths ${T1path}/T1_CSF_mask.nii.gz -mul -1 -add 1 ${T1path}/T1_CSF_mask_inv.nii.gz"
+    # log $cmd 
+    # eval $cmd
 
-    ## Subcortical masks
-    fileIn="${T1path}/${configs_T1_denoised}.anat/T1_subcort_seg.nii.gz"
-    fileOut="${T1path}/T1_subcort_seg.nii.gz"
-    checkisfile ${fileIn}
+    # ## Subcortical masks
+    # fileIn="${T1path}/${configs_T1_denoised}.anat/T1_subcort_seg.nii.gz"
+    # fileOut="${T1path}/T1_subcort_seg.nii.gz"
+    # checkisfile ${fileIn}
 
-    cmd="cp ${fileIn} ${fileOut}"
-    log $cmd
-    eval $cmd 
+    # cmd="cp ${fileIn} ${fileOut}"
+    # log $cmd
+    # eval $cmd 
 
-    cmd="fslmaths ${T1path}/T1_subcort_seg.nii.gz -bin ${T1path}/T1_subcort_mask.nii.gz"
-    log $cmd 
-    eval $cmd
+    # cmd="fslmaths ${T1path}/T1_subcort_seg.nii.gz -bin ${T1path}/T1_subcort_mask.nii.gz"
+    # log $cmd 
+    # eval $cmd
 
-    fileIn="${T1path}/T1_subcort_mask.nii.gz"
-    fileMas="${T1path}/T1_CSF_mask_inv.nii.gz"  
-    fileOut=${fileIn}  
+    # fileIn="${T1path}/T1_subcort_mask.nii.gz"
+    # fileMas="${T1path}/T1_CSF_mask_inv.nii.gz"  
+    # fileOut=${fileIn}  
 
-    cmd="fslmaths ${fileIn} -mas ${fileMas} ${fileOut}"
-    log $cmd 
-    eval $cmd
+    # cmd="fslmaths ${fileIn} -mas ${fileMas} ${fileOut}"
+    # log $cmd 
+    # eval $cmd
 
-    cmd="fslmaths ${T1path}/T1_subcort_mask.nii.gz -mul -1 -add 1 ${T1path}/T1_subcort_mask_inv.nii.gz"
-    log $cmd 
-    eval $cmd
+    # cmd="fslmaths ${T1path}/T1_subcort_mask.nii.gz -mul -1 -add 1 ${T1path}/T1_subcort_mask_inv.nii.gz"
+    # log $cmd 
+    # eval $cmd
 
-    ## Adding FIRST subcortical into tissue segmentation
-    cmd="fslmaths ${T1path}/T1_brain_seg -mul ${T1path}/T1_subcort_mask_inv ${T1path}/T1_brain_seg_best"
-    log $cmd 
-    eval $cmd 
+    # ## Adding FIRST subcortical into tissue segmentation
+    # cmd="fslmaths ${T1path}/T1_brain_seg -mul ${T1path}/T1_subcort_mask_inv ${T1path}/T1_brain_seg_best"
+    # log $cmd 
+    # eval $cmd 
 
-    cmd="fslmaths ${T1path}/T1_subcort_mask -mul 2 ${T1path}/T1_subcort_seg_add"
-    log $cmd 
-    eval $cmd
+    # cmd="fslmaths ${T1path}/T1_subcort_mask -mul 2 ${T1path}/T1_subcort_seg_add"
+    # log $cmd 
+    # eval $cmd
 
-    cmd="fslmaths ${T1path}/T1_brain_seg_best -add ${T1path}/T1_subcort_seg_add ${T1path}/T1_brain_seg_best"
-    log $cmd 
-    eval $cmd    
+    # cmd="fslmaths ${T1path}/T1_brain_seg_best -add ${T1path}/T1_subcort_seg_add ${T1path}/T1_brain_seg_best"
+    # log $cmd 
+    # eval $cmd    
 
     ## Separating Tissue types
     declare -a listTissue=("CSF" "GM" "WM")
@@ -441,15 +441,21 @@ if ${flags_T1_seg}; then
 
             echo "Performing 2nd and 3rd WM erotion" 
 
-            WMeroded="${T1path}/T1_WM_mask_eroded.nii.gz"
+            WMeroded_1st="${T1path}/T1_WM_mask_eroded_1st.nii.gz"
+            WMeroded_2nd="${T1path}/T1_WM_mask_eroded_2nd.nii.gz"
+            WMeroded_3rd="${T1path}/T1_WM_mask_eroded.nii.gz"
+
+            cmd="mv ${T1path}/T1_WM_mask_eroded.nii.gz ${WMeroded_1st}"
+            log $cmd
+            eval $cmd 
 
             # 2nd WM erotion
-            cmd="fslmaths ${WMeroded} -ero ${WMeroded}"
+            cmd="fslmaths ${WMeroded_1st} -ero ${WMeroded_2nd}"
             log $cmd
             eval $cmd
 
             # 3rd WM erotion
-            cmd="fslmaths ${WMeroded} -ero ${WMeroded}"
+            cmd="fslmaths ${WMeroded_2nd} -ero ${WMeroded_3rd}"
             log $cmd
             eval $cmd        
         fi 
@@ -465,6 +471,15 @@ if ${flags_T1_seg}; then
     cmd="fslmaths ${fileIn} -mas ${fileMas} ${fileOut}"
     log $cmd
     eval $cmd
+
+    # apply as CSF ventricles mask without erotion 
+    fileIn="${T1path}/T1_CSF_mask.nii.gz" 
+    fileOut="${T1path}/T1_CSFvent_mask"
+    fileMas="${T1path}/T1_mask_CSFvent.nii.gz"
+
+    cmd="fslmaths ${fileIn} -mas ${fileMas} ${fileOut}"
+    log $cmd
+    eval $cmd    
 
     ## WM CSF sandwich 
     echo "WM/CSF sandwich"   

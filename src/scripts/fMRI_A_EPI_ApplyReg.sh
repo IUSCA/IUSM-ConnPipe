@@ -150,10 +150,16 @@ if physReg == "aCompCorr":
 
 
     elif 0 < config_param < 6:
-        print("-- Writing prespecified removal of %d components" % config_param)
+        print("-- Writing prespecified removal of %d components ----" % config_param)
+        print("regressors shape ",regressors.shape)
+        print("numphys['CSFpca'] shape ",numphys['CSFpca'].shape)
+        print("numphys['WMpca'] shape ",numphys['WMpca'].shape)
+
         components = np.vstack((regressors,\
                                 numphys['CSFpca'][:,:config_param].T,\
                                 numphys['WMpca'][:,:config_param].T))
+
+        print("components shape: ", components.shape)
         zRegressMat.append(stats.zscore(components,axis=1));
         print("    -- PCA 1 through %d" % config_param)
 
