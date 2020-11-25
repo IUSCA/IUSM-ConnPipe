@@ -27,7 +27,7 @@ pnodal=int(os.environ['pnodal'])
 print("pnodal is: ",pnodal)
 print(type(pnodal))
 
-subcortUser=int(os.environ['subcortUser'])
+subcortUser=os.environ['subcortUser']
 print("subcortUser is: ",subcortUser)
 print(type(subcortUser))
 
@@ -358,65 +358,65 @@ fi
 if ${flags_T1_seg}; then
     echo "Tissue-type Segmentation"
 
-    # # Check that T1_brain image exists
-    # fileIn="${T1path}/T1_brain.nii.gz"
-    # checkisfile ${fileIn}
+    # Check that T1_brain image exists
+    fileIn="${T1path}/T1_brain.nii.gz"
+    checkisfile ${fileIn}
 
-    # # FSL fast tissue-type segmentation (GM, WM, CSF)
-    # cmd="fast -H ${configs_T1_segfastH} ${fileIn}"
-    # log $cmd 
-    # eval $cmd
+    # FSL fast tissue-type segmentation (GM, WM, CSF)
+    cmd="fast -H ${configs_T1_segfastH} ${fileIn}"
+    log $cmd 
+    eval $cmd
 
-    # ## CSF masks
-    # fileIn="${T1path}/T1_brain_seg.nii.gz"
-    # fileOut="${T1path}/T1_CSF_mask"
-    # checkisfile ${fileIn}
+    ## CSF masks
+    fileIn="${T1path}/T1_brain_seg.nii.gz"
+    fileOut="${T1path}/T1_CSF_mask"
+    checkisfile ${fileIn}
 
-    # cmd="fslmaths ${fileIn} -thr ${configs_T1_masklowthr} -uthr 1 ${fileOut}"
-    # log $cmd 
-    # eval $cmd
+    cmd="fslmaths ${fileIn} -thr ${configs_T1_masklowthr} -uthr 1 ${fileOut}"
+    log $cmd 
+    eval $cmd
 
-    # cmd="fslmaths ${T1path}/T1_CSF_mask.nii.gz -mul -1 -add 1 ${T1path}/T1_CSF_mask_inv.nii.gz"
-    # log $cmd 
-    # eval $cmd
+    cmd="fslmaths ${T1path}/T1_CSF_mask.nii.gz -mul -1 -add 1 ${T1path}/T1_CSF_mask_inv.nii.gz"
+    log $cmd 
+    eval $cmd
 
-    # ## Subcortical masks
-    # fileIn="${T1path}/${configs_T1_denoised}.anat/T1_subcort_seg.nii.gz"
-    # fileOut="${T1path}/T1_subcort_seg.nii.gz"
-    # checkisfile ${fileIn}
+    ## Subcortical masks
+    fileIn="${T1path}/${configs_T1_denoised}.anat/T1_subcort_seg.nii.gz"
+    fileOut="${T1path}/T1_subcort_seg.nii.gz"
+    checkisfile ${fileIn}
 
-    # cmd="cp ${fileIn} ${fileOut}"
-    # log $cmd
-    # eval $cmd 
+    cmd="cp ${fileIn} ${fileOut}"
+    log $cmd
+    eval $cmd 
 
-    # cmd="fslmaths ${T1path}/T1_subcort_seg.nii.gz -bin ${T1path}/T1_subcort_mask.nii.gz"
-    # log $cmd 
-    # eval $cmd
+    cmd="fslmaths ${T1path}/T1_subcort_seg.nii.gz -bin ${T1path}/T1_subcort_mask.nii.gz"
+    log $cmd 
+    eval $cmd
 
-    # fileIn="${T1path}/T1_subcort_mask.nii.gz"
-    # fileMas="${T1path}/T1_CSF_mask_inv.nii.gz"  
-    # fileOut=${fileIn}  
+    fileIn="${T1path}/T1_subcort_mask.nii.gz"
+    fileMas="${T1path}/T1_CSF_mask_inv.nii.gz"  
+    fileOut=${fileIn}  
 
-    # cmd="fslmaths ${fileIn} -mas ${fileMas} ${fileOut}"
-    # log $cmd 
-    # eval $cmd
+    cmd="fslmaths ${fileIn} -mas ${fileMas} ${fileOut}"
+    log $cmd 
+    eval $cmd
 
-    # cmd="fslmaths ${T1path}/T1_subcort_mask.nii.gz -mul -1 -add 1 ${T1path}/T1_subcort_mask_inv.nii.gz"
-    # log $cmd 
-    # eval $cmd
+    cmd="fslmaths ${T1path}/T1_subcort_mask.nii.gz -mul -1 -add 1 ${T1path}/T1_subcort_mask_inv.nii.gz"
+    log $cmd 
+    eval $cmd
 
-    # ## Adding FIRST subcortical into tissue segmentation
-    # cmd="fslmaths ${T1path}/T1_brain_seg -mul ${T1path}/T1_subcort_mask_inv ${T1path}/T1_brain_seg_best"
-    # log $cmd 
-    # eval $cmd 
+    ## Adding FIRST subcortical into tissue segmentation
+    cmd="fslmaths ${T1path}/T1_brain_seg -mul ${T1path}/T1_subcort_mask_inv ${T1path}/T1_brain_seg_best"
+    log $cmd 
+    eval $cmd 
 
-    # cmd="fslmaths ${T1path}/T1_subcort_mask -mul 2 ${T1path}/T1_subcort_seg_add"
-    # log $cmd 
-    # eval $cmd
+    cmd="fslmaths ${T1path}/T1_subcort_mask -mul 2 ${T1path}/T1_subcort_seg_add"
+    log $cmd 
+    eval $cmd
 
-    # cmd="fslmaths ${T1path}/T1_brain_seg_best -add ${T1path}/T1_subcort_seg_add ${T1path}/T1_brain_seg_best"
-    # log $cmd 
-    # eval $cmd    
+    cmd="fslmaths ${T1path}/T1_brain_seg_best -add ${T1path}/T1_subcort_seg_add ${T1path}/T1_brain_seg_best"
+    log $cmd 
+    eval $cmd    
 
     ## Separating Tissue types
     declare -a listTissue=("CSF" "GM" "WM")
@@ -567,7 +567,7 @@ fi
 
 if ${flags_T1_parc}; then
 
-    echo "Gray matter masking of native space parcellations"
+    log "PARC->GM->masking Gray matter masking of native space parcellations"
 
     for ((i=1; i<=numParcs; i++)); do  # exclude PARC0 - CSF - here
 
@@ -580,176 +580,176 @@ if ${flags_T1_parc}; then
         psubcortonly="PARC${i}psubcortonly"    
         psubcortonly="${!psubcortonly}"
 
-        log "${parc} parcellation intersection with GM; pcort is -- ${pcort}"
+        echo "${parc} parcellation intersection with GM; pcort is -- ${pcort}"
 
-        fileIn="${T1path}/T1_parc_${parc}.nii.gz"
-        checkisfile ${fileIn}
+        # fileIn="${T1path}/T1_parc_${parc}.nii.gz"
+        # checkisfile ${fileIn}
 
-        fileOut="${T1path}/T1_parc_${parc}_dil.nii.gz"
+        # fileOut="${T1path}/T1_parc_${parc}_dil.nii.gz"
         
-        # Dilate the parcellation.
-        cmd="fslmaths ${fileIn} -dilD ${fileOut}"
-        log $cmd
-        eval $cmd 
+        # # Dilate the parcellation.
+        # cmd="fslmaths ${fileIn} -dilD ${fileOut}"
+        # log $cmd
+        # eval $cmd 
 
-        # Iteratively mask the dilated parcellation with GM.
-        fileMul="${T1path}/T1_GM_mask.nii.gz"
-        checkisfile ${fileMul}
+        # # Iteratively mask the dilated parcellation with GM.
+        # fileMul="${T1path}/T1_GM_mask.nii.gz"
+        # checkisfile ${fileMul}
 
-        # Apply subject GM mask
+        # # Apply subject GM mask
         fileOut2="${T1path}/T1_GM_parc_${parc}.nii.gz"
 
-        cmd="fslmaths ${fileOut} -mul ${fileMul} ${fileOut2}"
-        log $cmd
-        eval $cmd 
+        # cmd="fslmaths ${fileOut} -mul ${fileMul} ${fileOut2}"
+        # log $cmd
+        # eval $cmd 
 
-        # Dilate and remask to fill GM mask a set number of times
-        for ((j=1; j<=${configs_T1_numDilReMask}; j++)); do
-            fileOut3="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
+        # # Dilate and remask to fill GM mask a set number of times
+        # for ((j=1; j<=${configs_T1_numDilReMask}; j++)); do
+        #     fileOut3="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
 
-            cmd="fslmaths ${fileOut2} -dilD ${fileOut3}"
-            log $cmd
-            eval $cmd
+        #     cmd="fslmaths ${fileOut2} -dilD ${fileOut3}"
+        #     log $cmd
+        #     eval $cmd
 
-            cmd="fslmaths ${fileOut3} -mul ${fileMul} ${fileOut2}"
-            log $cmd
-            eval $cmd 
+        #     cmd="fslmaths ${fileOut3} -mul ${fileMul} ${fileOut2}"
+        #     log $cmd
+        #     eval $cmd 
 
-        done 
+        # done 
 
-        # 07.25.2017 EJC Remove the left over dil parcellation images.
-        cmd="rm ${fileOut} ${fileOut3}"
-        log $cmd
-        eval $cmd 
+        # # 07.25.2017 EJC Remove the left over dil parcellation images.
+        # cmd="rm ${fileOut} ${fileOut3}"
+        # log $cmd
+        # eval $cmd 
 
 
 
         if [ "${pcort}" -eq 1 ]; then
 
-            log "CORTICAL-PARCELLATION removing subcortical and cerebellar gray matter"
-            # -------------------------------------------------------------------------#
-            # Clean up the cortical parcellation by removing subcortical and
-            # cerebellar gray matter.
+            # log "CORTICAL-PARCELLATION removing subcortical and cerebellar gray matter"
+            # # -------------------------------------------------------------------------#
+            # # Clean up the cortical parcellation by removing subcortical and
+            # # cerebellar gray matter.
 
-            # Generate inverse subcortical mask to isolate cortical portion of parcellation.
-            fileIn="${T1path}/T1_subcort_mask.nii.gz"
-            fileOut="${T1path}/T1_subcort_mask_dil.nii.gz"
-            fileMas="${T1path}/T1_GM_mask.nii.gz"
+            # # Generate inverse subcortical mask to isolate cortical portion of parcellation.
+            # fileIn="${T1path}/T1_subcort_mask.nii.gz"
+            # fileOut="${T1path}/T1_subcort_mask_dil.nii.gz"
+            # fileMas="${T1path}/T1_GM_mask.nii.gz"
 
-            cmd="fslmaths ${fileIn} -dilD ${fileOut}"
-            log $cmd
-            eval $cmd 
+            # cmd="fslmaths ${fileIn} -dilD ${fileOut}"
+            # log $cmd
+            # eval $cmd 
 
-            cmd="fslmaths ${fileOut} -mas ${fileMas} ${fileOut}"
-            log $cmd
-            eval $cmd 
+            # cmd="fslmaths ${fileOut} -mas ${fileMas} ${fileOut}"
+            # log $cmd
+            # eval $cmd 
 
-            fileMas2="${T1path}/T1_subcort_mask_dil_inv.nii.gz"
+            # fileMas2="${T1path}/T1_subcort_mask_dil_inv.nii.gz"
 
-            cmd="fslmaths ${fileOut} -binv ${fileMas2}"
-            log $cmd
-            eval $cmd 
+            # cmd="fslmaths ${fileOut} -binv ${fileMas2}"
+            # log $cmd
+            # eval $cmd 
 
-            # --------------------------------------------------------- #
-            # Apply subcortical inverse to cortical parcellations.
-            fileOut="${T1path}/T1_GM_parc_${parc}.nii.gz"
+            # # --------------------------------------------------------- #
+            # # Apply subcortical inverse to cortical parcellations.
+            # fileOut="${T1path}/T1_GM_parc_${parc}.nii.gz"
 
-            cmd="fslmaths ${fileOut} -mas ${fileMas2} ${fileOut}"
-            log $cmd
-            eval $cmd 
+            # cmd="fslmaths ${fileOut} -mas ${fileMas2} ${fileOut}"
+            # log $cmd
+            # eval $cmd 
 
-            # --------------------------------------------------------- #
-            # Generate a cerebellum mask using FSL's FIRST.
+            # # --------------------------------------------------------- #
+            # # Generate a cerebellum mask using FSL's FIRST.
 
-            FileIn="${T1path}/T1_fov_denoised.nii"
-            FileRoot="${T1path}/subj_2_std_subc"
-            FileMat="${T1path}/subj_2_std_subc_cort.mat"
-            FileOut1="${T1path}/L_cerebellum.nii.gz"
-            FileOut2="${T1path}/R_cerebellum.nii.gz"          
+            # FileIn="${T1path}/T1_fov_denoised.nii"
+            # FileRoot="${T1path}/subj_2_std_subc"
+            # FileMat="${T1path}/subj_2_std_subc_cort.mat"
+            # FileOut1="${T1path}/L_cerebellum.nii.gz"
+            # FileOut2="${T1path}/R_cerebellum.nii.gz"          
 
-            FileModel1="${FSLDIR}/data/first/models_336_bin/intref_puta/L_Cereb.bmv"
-            FileModel2="${FSLDIR}/data/first/models_336_bin/intref_puta/R_Cereb.bmv"
-            FileRef1="${FSLDIR}/data/first/models_336_bin/05mm/L_Puta_05mm.bmv"
-            FileRef2="${FSLDIR}/data/first/models_336_bin/05mm/R_Puta_05mm.bmv"
+            # FileModel1="${FSLDIR}/data/first/models_336_bin/intref_puta/L_Cereb.bmv"
+            # FileModel2="${FSLDIR}/data/first/models_336_bin/intref_puta/R_Cereb.bmv"
+            # FileRef1="${FSLDIR}/data/first/models_336_bin/05mm/L_Puta_05mm.bmv"
+            # FileRef2="${FSLDIR}/data/first/models_336_bin/05mm/R_Puta_05mm.bmv"
 
-            cmd="first_flirt ${FileIn} ${FileRoot} -cort"
-            log $cmd
-            eval $cmd 
+            # cmd="first_flirt ${FileIn} ${FileRoot} -cort"
+            # log $cmd
+            # eval $cmd 
 
-            cmd="run_first -i ${FileIn} \
-            -t ${FileMat} \
-            -o ${FileOut1} \
-            -n 40 -m ${FileModel1} \
-            -intref ${FileRef1}"
-            log $cmd
-            eval $cmd
+            # cmd="run_first -i ${FileIn} \
+            # -t ${FileMat} \
+            # -o ${FileOut1} \
+            # -n 40 -m ${FileModel1} \
+            # -intref ${FileRef1}"
+            # log $cmd
+            # eval $cmd
 
-            cmd="run_first -i ${FileIn} \
-            -t ${FileMat} \
-            -o ${FileOut2} \
-            -n 40 -m ${FileModel2} \
-            -intref ${FileRef2}"
-            log $cmd
-            eval $cmd
+            # cmd="run_first -i ${FileIn} \
+            # -t ${FileMat} \
+            # -o ${FileOut2} \
+            # -n 40 -m ${FileModel2} \
+            # -intref ${FileRef2}"
+            # log $cmd
+            # eval $cmd
 
-            # Clean up the edges of the cerebellar mask.
-            cmd="first_boundary_corr -s ${FileOut1} \
-            -i ${FileIn} \
-            -b fast \
-            -o ${FileOut1}"
-            log $cmd
-            eval $cmd    
+            # # Clean up the edges of the cerebellar mask.
+            # cmd="first_boundary_corr -s ${FileOut1} \
+            # -i ${FileIn} \
+            # -b fast \
+            # -o ${FileOut1}"
+            # log $cmd
+            # eval $cmd    
 
-            cmd="first_boundary_corr -s ${FileOut2} \
-            -i ${FileIn} \
-            -b fast \
-            -o ${FileOut2}"
-            log $cmd
-            eval $cmd    
+            # cmd="first_boundary_corr -s ${FileOut2} \
+            # -i ${FileIn} \
+            # -b fast \
+            # -o ${FileOut2}"
+            # log $cmd
+            # eval $cmd    
 
-            # Add the left and right cerebellum masks together.
-            FileOut="${T1path}/Cerebellum_bin.nii.gz"
+            # # Add the left and right cerebellum masks together.
+            # FileOut="${T1path}/Cerebellum_bin.nii.gz"
 
-            cmd="fslmaths ${FileOut1} -add ${FileOut2} ${FileOut}"
-            log $cmd
-            eval $cmd 
+            # cmd="fslmaths ${FileOut1} -add ${FileOut2} ${FileOut}"
+            # log $cmd
+            # eval $cmd 
 
-            # Fill holes in the mask
-            cmd="fslmaths ${FileOut} -fillh ${FileOut}"
-            log $cmd
-            eval $cmd  
+            # # Fill holes in the mask
+            # cmd="fslmaths ${FileOut} -fillh ${FileOut}"
+            # log $cmd
+            # eval $cmd  
 
-            # Invert the Cerebellum mask
-            FileInv="${T1path}/Cerebellum_Inv.nii.gz"
+            # # Invert the Cerebellum mask
+            # FileInv="${T1path}/Cerebellum_Inv.nii.gz"
 
-            cmd="fslmaths ${FileOut1} -binv ${FileInv}"
-            log $cmd
-            eval $cmd       
+            # cmd="fslmaths ${FileOut1} -binv ${FileInv}"
+            # log $cmd
+            # eval $cmd       
 
-            #-------------------------------------------------------------------------%    
-            # Remove any parcellation contamination of the cerebellum.                             
+            # #-------------------------------------------------------------------------%    
+            # # Remove any parcellation contamination of the cerebellum.                             
             FileIn="${T1path}/T1_GM_parc_${parc}.nii.gz"
             
-            cmd="fslmaths ${FileIn} -mas ${FileInv} ${FileIn}"
-            log $cmd
-            eval $cmd  
+            # cmd="fslmaths ${FileIn} -mas ${FileInv} ${FileIn}"
+            # log $cmd
+            # eval $cmd  
 
-            #-------------------------------------------------------------------------%    
-            # 07.25.2017 EJC Remove intermediates of the clean-up. 
-            log "rm -vf ${FileRoot}"
-            rm -vf ${FileRoot}*
+            # #-------------------------------------------------------------------------%    
+            # # 07.25.2017 EJC Remove intermediates of the clean-up. 
+            # log "rm -vf ${FileRoot}"
+            # rm -vf ${FileRoot}*
 
-            log "rm -v ${FileOut1}"
-            rm -vf ${FileOut1}*
+            # log "rm -v ${FileOut1}"
+            # rm -vf ${FileOut1}*
 
-            log "rm -vf ${FileOut2}"
-            rm -vf ${FileOut2}*
+            # log "rm -vf ${FileOut2}"
+            # rm -vf ${FileOut2}*
 
-            log "rm -vf ${T1path}/L_cerebellum_*"
-            rm -vf ${T1path}/L_cerebellum_*
+            # log "rm -vf ${T1path}/L_cerebellum_*"
+            # rm -vf ${T1path}/L_cerebellum_*
 
-            log "rm -vf ${T1path}/R_cerebellum_*"
-            rm -vf ${T1path}/R_cerebellum_*  
+            # log "rm -vf ${T1path}/R_cerebellum_*"
+            # rm -vf ${T1path}/R_cerebellum_*  
 
             ## Add subcortical fsl parcellation to cortical parcellations
             if [[ ${configs_T1_addsubcort} ]] && [[ "${psubcortonly}" -eq 0 ]]; then 
@@ -806,7 +806,7 @@ if ${flags_T1_parc}; then
         # NOTE: They will be used by f_functiona_connectivity
         #  to bring parcellations into epi space.
 
-        if [[ ${psubcortonlyii} -ne 1 ]]; then
+        if [[ ${psubcortonly} -ne 1 ]]; then
 
             fileOut4="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
             cmd="fslmaths ${fileOut2} -dilD ${fileOut4}"

@@ -164,11 +164,16 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
     psubcortonly="PARC${p}psubcortonly"    
     psubcortonly="${!psubcortonly}"                       
 
-    echo "p is ${p} -- ${parc} parcellation -- pcort is -- ${pcort} -- pnodal is -- ${pnodal}"
+    log "T1->EPI  p is ${p} -- ${parc} parcellation -- pcort is -- ${pcort} -- pnodal is -- ${pnodal}-- psubcortonly is -- ${psubcortonly}"
 
     if [ ${psubcortonly} -ne 1 ]; then  # ignore subcortical-only parcellation
+
+        log "psubcortonly -ne 1 -- ${parc} parcellation"
+
         if [ ${pnodal} -eq 1 ]; then   # treat as a parcelattion that will serve as noded for connectivity
             
+            log "pnodal -eq 1  -- ${parc} parcellation"
+
             # transformation from T1 to epi space
             fileIn="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
             fileOut="${EPIpath}/rT1_parc_${parc}.nii.gz"

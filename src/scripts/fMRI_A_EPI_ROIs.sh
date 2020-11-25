@@ -76,7 +76,7 @@ for pc in range(0,len(resid)):
     [sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
     print("resting_vol shape is ",sizeX,sizeY,sizeZ,numTimePoints)
 
-    for k in range(0,numParcs):
+    for k in range(0,numParcs+1):
         parc_label=os.environ["PARC%d" % k]
         parc_nodal=os.environ["PARC%dpnodal" % k]
         parc_subcortonly=os.environ["PARC%dpsubcortonly" % k]
@@ -96,7 +96,8 @@ for pc in range(0,len(resid)):
                 ROIs_numVoxels[i_roi] = np.count_nonzero((parcGM == (i_roi+1)))
                 print("ROI %d  - %d voxels" % (i_roi+1, ROIs_numVoxels[i_roi]))
         
-            restingROIs = np.zeros((numROIs,numTimePoints))
+            restingROIs = np.empty((numROIs,numTimePoints))
+            restingROIs[:] = np.NaN
             ROIs_numNans = np.empty((numROIs,numTimePoints))
             ROIs_numNans[:] = np.NaN
 
@@ -105,14 +106,16 @@ for pc in range(0,len(resid)):
 
                 for roi in range(0,numROIs): 
                     voxelsROI = (parcGM == (roi+1)) 
-                    ## boolean true elements get ignored so we must negate the mask
-                    voxelsROI_mask = np.logical_not(voxelsROI) 
-                    vx = np.ma.array(vol_tp,mask=voxelsROI_mask)
-                    restingROIs[roi,tp] = np.nanmean(vx)
-                    ROIs_numNans[roi,tp] = np.isnan(vx).sum()
+                    if np.count_nonzero(voxelsROI) > 0:
+                        ## boolean true elements get ignored so we must negate the mask
+                        voxelsROI_mask = np.logical_not(voxelsROI) 
+                        vx = np.ma.array(vol_tp,mask=voxelsROI_mask)
+                        restingROIs[roi,tp] = np.nanmean(vx)
+                        ROIs_numNans[roi,tp] = np.isnan(vx).sum()
+                    
 
                 if tp % 20 == 0:
-                    print("%d out of %d" % (tp, numTimePoints))
+                    print("***********%d out of %d" % (tp, numTimePoints))
 
 
             fileOut = "/8_epi_%s_ROIs.npz" % parc_label

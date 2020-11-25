@@ -3,22 +3,36 @@
 ############################################################################### 
 
 function f_load_motion_reg() {
-path="$1" python - <<END
+path="$1" numTimePoints="$2" python - <<END
 import os
 import numpy as np
 
 EPIpath=os.environ['path']
 print(EPIpath)
 
+numTimePoints=int(os.environ['numTimePoints'])
+print(numTimePoints)
+
 ## FD
 file_fd=''.join([EPIpath,'/motionRegressor_fd.txt'])
-fd_scrub = np.sum(np.loadtxt(file_fd),axis=1)
+if os.path.exists(file_fd):
+    print("shape of file_fd: ", np.loadtxt(file_fd).shape)
+    fd_scrub = np.sum(np.loadtxt(file_fd),axis=1)
+else:
+    print("file_fd not generated; using dummy vector of zeros")
+    fd_scrub = np.zeros(numTimePoints)
+    
 n_fd_outliers = np.count_nonzero(fd_scrub)
 print("number of fd_outliers: ", n_fd_outliers)
 
 ## DVARS
 file_dvars=''.join([EPIpath,'/motionRegressor_dvars.txt'])
-dvars_scrub = np.sum(np.loadtxt(file_dvars),axis=1)
+if os.path.exists(file_dvars):
+    dvars_scrub = np.sum(np.loadtxt(file_dvars),axis=1)
+else:
+    print("file_dvars not generated; using dummy vector of zeros")
+    dvars_scrub = np.zeros(numTimePoints)
+    
 n_dvars_outliers = np.count_nonzero(dvars_scrub)
 print("number of dvars_outliers: ", n_dvars_outliers)
 
@@ -27,7 +41,6 @@ scrub = scrub == 0
 scrub = scrub.astype(bool).astype(int)
 #print(scrub)
 print("number of good vols: ",np.count_nonzero(scrub))
-
 
 # fname=''.join([EPIpath,'/scrubbing_goodvols.mat'])
 # np.savetxt(fname, scrub,fmt='%d')
@@ -42,9 +55,11 @@ END
 ##############################################################################
 EPIpath=$1
 fIn=$2
+numTimePoints=$3
 
 echo "EPIpath is -- ${EPIpath}"
 echo "fIn is -- ${fIn}"
+echo "numTimePoints is -- ${numTimePoints}"
 
 # ------------------------------------------------------------------------- #
 ## Frame Displacement regressor
@@ -145,7 +160,7 @@ fi
 
 if [[ -e ${fileMetric} ]] && [[ -e ${fileOut1} ]]; then
     echo "calling f_load_motion_reg:"
-    f_load_motion_reg ${EPIpath}
+    f_load_motion_reg ${EPIpath} ${numTimePoints}
 else
     echo "WARNING File ${fileMetric} and/or ${fileOut1} not found!"
     exit 1
