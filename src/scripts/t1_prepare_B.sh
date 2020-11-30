@@ -621,7 +621,7 @@ if ${flags_T1_parc}; then
         # Dilate the parcellation.
         cmd="fslmaths ${fileIn} -dilD ${fileOut}"
         log $cmd
-        #eval $cmd 
+        eval $cmd 
 
         # Iteratively mask the dilated parcellation with GM.
         fileMul="${T1path}/T1_GM_mask.nii.gz"
@@ -632,7 +632,7 @@ if ${flags_T1_parc}; then
 
         cmd="fslmaths ${fileOut} -mul ${fileMul} ${fileOut2}"
         log $cmd
-        #eval $cmd 
+        eval $cmd 
 
         # Dilate and remask to fill GM mask a set number of times
         fileOut3="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
@@ -641,18 +641,18 @@ if ${flags_T1_parc}; then
 
             cmd="fslmaths ${fileOut2} -dilD ${fileOut3}"
             log $cmd
-            #eval $cmd
+            eval $cmd
 
             cmd="fslmaths ${fileOut3} -mul ${fileMul} ${fileOut2}"
             log $cmd
-            #eval $cmd 
+            eval $cmd 
 
         done 
 
         # Remove the left over dil parcellation images.
         cmd="rm ${fileOut} ${fileOut3}"
         log $cmd
-        #eval $cmd 
+        eval $cmd 
 
         if [ "${pcort}" -eq 1 ]; then
 

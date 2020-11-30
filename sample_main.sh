@@ -22,7 +22,7 @@ fi
 ############################  PATH TO DATA  ###################################
 
 # USER INSTRUCTIONS- PLEASE SET THIS PATH TO POINT TO YOUR DATA DIRECTORY
-export path2data="/N/project/project_name/DataDir"
+export path2data="/N/project/PROJECT_NAME/PATH2DATA/DataDir"
 
     ## USER: if running all subjects in the path2data directory, set this flag to true; 
     ## set to false if you'd like to process a subset of subjects 

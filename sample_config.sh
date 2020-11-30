@@ -15,7 +15,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 if ${runAll}; then
 	find ${path2data} -maxdepth 1 -mindepth 1 -type d -printf '%f\n' \
-	> ${path2data}/${subj2run}	
+	| sort > ${path2data}/${subj2run}	
 fi 
 
 ################################################################################
@@ -71,7 +71,7 @@ export pathFSLstandard="${FSLDIR}/data/standard"
 
 ## FOR IUSM USERS ONLY - DURING DEVELOPMENT PHASE, PLEASE USE THIS "pathSM" AS THE 
 ## SUPPLEMENTARY MATERIALS PATH. THIS WILL EVENTUALLY LIVE IN A REPOSITORY 
-export pathSM="/N/project/project_name/ConnPipelineSM"
+export pathSM="/N/project/PROJECT_NAME/ConnPipelineSM"
 export pathMNItmplates="${pathSM}/MNI_templates"
 export pathBrainmaskTemplates="${pathSM}/brainmask_templates"
 export pathParcellations="${pathSM}/Parcellations"
@@ -86,7 +86,7 @@ export PARC0="CSFvent"
 export PARC0dir="${pathMNItmplates}/MNI152_T1_1mm_VentricleMask.nii.gz"
 export PARC0pcort=0;
 export PARC0pnodal=0;
-export PARC1psubcortonly=0;
+export PARC0psubcortonly=0;
 
 # required
 # Schaefer parcellation of yeo17 into 200 nodes
@@ -112,8 +112,8 @@ export PARC3pnodal=0;
 export PARC3psubcortonly=0;
 
 # optional
-export PARC4="tian_subcortical_S3"
-export PARC4dir="Tian_Subcortex_S3_3T_FSLMNI152_1mm"
+export PARC4="tian_subcortical_S2"
+export PARC4dir="Tian_Subcortex_S2_3T_FSLMNI152_1mm"
 export PARC4pcort=0;
 export PARC4pnodal=1;
 export PARC4psubcortonly=1;
@@ -133,7 +133,7 @@ export numParcs=4  # CSF doesn't count; numParcs cannot be less than 1. Schaefer
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export T1_PREPARE_A=true
+export T1_PREPARE_A=false
 
 if $T1_PREPARE_A; then
 
@@ -176,7 +176,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export T1_PREPARE_B=true
+export T1_PREPARE_B=false
 
 if $T1_PREPARE_B; then
 
@@ -184,6 +184,11 @@ if $T1_PREPARE_B; then
 	export flags_T1_reg2MNI=true
 		export configs_T1_useExistingMats=false
 		export configs_T1_useMNIbrain=true
+			if ${configs_T1_useMNIbrain}; then
+				export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm_brain.nii.gz"
+			else
+				export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm.nii.gz"
+			fi
 		export configs_T1_fnirtSubSamp="4,4,2,1"
 	# segmentation flags
 	export flags_T1_seg=true		
@@ -200,8 +205,6 @@ if $T1_PREPARE_B; then
 											  # Name of user-provided subcortical parcellation (assumed to be found in ConnPipeSM folder)
 											  # should be set in the desired parcellation name for index "N" with "psubcortonly=1"
 
-	export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm.nii.gz"
-
 fi 
 
 
@@ -210,7 +213,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export fMRI_A=true
+export fMRI_A=false
 
 if $fMRI_A; then
 
@@ -258,7 +261,7 @@ if $fMRI_A; then
 		# Do not use configs.EPI.EPIdwell. Use params.EPI.EffectiveEchoSpacing extracted from the json header
      	# export configs_EPI_EPIdwell = 0.000308; # Dwell time (sec) for the EPI to be unwarped 
 
-	export flags_EPI_SliceTimingCorr=true
+	export flags_EPI_SliceTimingCorr=false
 		#export flags_EPI_UseUnwarped=true # Use unwarped EPI if both warped and unwarped are available.
 		export configs_EPI_UseTcustom=1;# 1: use header-extracted times (suggested)
 
@@ -315,7 +318,7 @@ if $fMRI_A; then
 		export flags_PhysiolReg_aCompCorr=true  
 		if ${flags_PhysiolReg_aCompCorr}; then  ### if using aCompCorr
 			export flags_PhysiolReg_WM_CSF=false
-			export configs_EPI_numPC=4; # 1-5; the maximum and recommended number is 5 
+			export configs_EPI_numPC=5; # 1-5; the maximum and recommended number is 5 
 										  # set to 6 to include all 
 				if [[ "${configs_EPI_numPC}" -ge 0 && "${configs_EPI_numPC}" -le 5 ]]; then
 					nR="${nR}_pca${configs_EPI_numPC}"
@@ -373,7 +376,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export DWI_A=true
+export DWI_A=false
 
 if $DWI_A; then
 
@@ -391,7 +394,7 @@ fi
 
 
 
-export DWI_B=true
+export DWI_B=false
 
 if $DWI_B; then
 
