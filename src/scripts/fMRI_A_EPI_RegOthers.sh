@@ -42,6 +42,13 @@ cmd="flirt -in ${fileIn} \
 log $cmd
 eval $cmd 
 
+# COmpute the volume 
+cmd="fslstats ${fileOut} -V"
+qc "$cmd"
+out=`$cmd`
+qc "Number of voxels in ${fileOut} :  $out"
+#voxels=`echo $out | awk -F' ' '{ print $2}'`
+
 # WM mask
 fileIn="${T1path}/T1_WM_mask.nii.gz"
 fileOut="${EPIpath}/rT1_WM_mask"
@@ -52,6 +59,12 @@ cmd="flirt -in ${fileIn} \
     -interp nearestneighbour -nosearch"
 log $cmd
 eval $cmd 
+
+# COmpute the volume 
+cmd="fslstats ${fileOut} -V"
+qc "$cmd"
+out=`$cmd`
+qc "Number of voxels in ${fileOut} :  $out"
 
 # 1st Erotion WM mask
 fileIn="${T1path}/T1_WM_mask_eroded_1st.nii.gz"
@@ -64,6 +77,12 @@ cmd="flirt -in ${fileIn} \
 log $cmd
 eval $cmd 
 
+# COmpute the volume 
+cmd="fslstats ${fileOut} -V"
+qc "$cmd"
+out=`$cmd`
+qc "Number of voxels in ${fileOut} :  $out"
+
 # 2nd Erotion WM mask
 fileIn="${T1path}/T1_WM_mask_eroded_2nd.nii.gz"
 fileOut="${EPIpath}/rT1_WM_mask_eroded_2nd"
@@ -74,6 +93,12 @@ cmd="flirt -in ${fileIn} \
     -interp nearestneighbour -nosearch"
 log $cmd
 eval $cmd 
+
+# COmpute the volume 
+cmd="fslstats ${fileOut} -V"
+qc "$cmd"
+out=`$cmd`
+qc "Number of voxels in ${fileOut} :  $out"
 
 # 3rd (final) Erotion WM mask
 fileIn="${T1path}/T1_WM_mask_eroded.nii.gz"
@@ -86,6 +111,12 @@ cmd="flirt -in ${fileIn} \
 log $cmd
 eval $cmd 
 
+# COmpute the volume 
+cmd="fslstats ${fileOut} -V"
+qc "$cmd"
+out=`$cmd`
+qc "Number of voxels in ${fileOut} :  $out"
+
 # CSF mask
 fileIn="${T1path}/T1_CSF_mask.nii.gz"
 fileOut="${EPIpath}/rT1_CSF_mask"
@@ -97,6 +128,12 @@ cmd="flirt -in ${fileIn} \
 log $cmd
 eval $cmd 
 
+# COmpute the volume 
+cmd="fslstats ${fileOut} -V"
+qc "$cmd"
+out=`$cmd`
+qc "Number of voxels in ${fileOut} :  $out"
+
 # Eroded CSF mask
 fileIn="${T1path}/T1_CSF_mask_eroded.nii.gz"
 fileOut="${EPIpath}/rT1_CSF_mask_eroded"
@@ -106,7 +143,13 @@ cmd="flirt -in ${fileIn} \
     -applyxfm -init ${fileInit} \
     -interp nearestneighbour -nosearch"
 log $cmd
-eval $cmd    
+eval $cmd 
+
+# COmpute the volume 
+cmd="fslstats ${fileOut} -V"
+qc "$cmd"
+out=`$cmd`
+qc "Number of voxels in ${fileOut} :  $out"
 
 # CSF ventricle mask 
 fileIn="${T1path}/T1_CSFvent_mask.nii.gz"
@@ -119,6 +162,12 @@ cmd="flirt -in ${fileIn} \
 log $cmd
 eval $cmd  
 
+# COmpute the volume 
+cmd="fslstats ${fileOut} -V"
+qc "$cmd"
+out=`$cmd`
+qc "Number of voxels in ${fileOut} :  $out"
+
 # CSF ventricle mask eroded
 fileIn="${T1path}/T1_CSFvent_mask_eroded.nii.gz"
 fileOut="${EPIpath}/rT1_CSFvent_mask_eroded"
@@ -129,6 +178,12 @@ cmd="flirt -in ${fileIn} \
     -interp nearestneighbour -nosearch"
 log $cmd
 eval $cmd  
+
+# COmpute the volume 
+cmd="fslstats ${fileOut} -V"
+qc "$cmd"
+out=`$cmd`
+qc "Number of voxels in ${fileOut} :  $out"
 
 #-------------------------------------------------------------------------#
 
@@ -144,12 +199,24 @@ cmd="flirt -applyxfm \
 log $cmd
 eval $cmd   
 
+# COmpute the volume 
+cmd="fslstats ${fileOut} -V"
+qc "$cmd"
+out=`$cmd`
+qc "Number of voxels in ${fileOut}: $out"
+
 # binarize GM probability map
 fileIn="${EPIpath}/rT1_GM_mask_prob.nii.gz"
 fileOut="${EPIpath}/rT1_GM_mask"
 cmd="fslmaths ${fileIn} -thr ${configs_EPI_GMprobthr} -bin ${fileOut}"
 log $cmd
 eval $cmd 
+
+# COmpute the volume 
+cmd="fslstats ${fileOut} -V"
+qc "$cmd"
+out=`$cmd`
+qc "Number of voxels in ${fileOut} :  $out"
 
 #-------------------------------------------------------------------------#
 # Apllying T1 to EPI transformations to parcellations

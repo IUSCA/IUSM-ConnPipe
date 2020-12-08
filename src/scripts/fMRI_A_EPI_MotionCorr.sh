@@ -50,7 +50,8 @@ log $cmd
 nvols=`$cmd`                
 #nvols=`echo $out | awk -F' ' '{ print $2}'`
 echo "export nvols=${nvols}" >> ${EPIpath}/0_param_dcm_hdr.sh
-echo "Number of volumes in 1_epi_brain: ${nvols} "
+log "Number of volumes in 1_epi_brain: ${nvols} "
+qc "Number of Time Points: ${nvols} "
 
 
 log "MotionCOrr fileIn is ${fileIn}"

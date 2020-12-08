@@ -61,6 +61,11 @@ print("PhReg_path",PhReg_path)
 numGS=int(os.environ['numGS'])
 print("numGS",numGS)
 
+QCfile_name=os.environ['QCfile_name']
+QCfile_name = ''.join([QCfile_name,'.log'])
+print("QCfile_name: ",QCfile_name)
+f=open(QCfile_name, "a+")
+
 def get_ts(vol,numTP,rest):
     numVoxels = np.count_nonzero(vol);
     print("numVoxels - ",numVoxels)
@@ -103,13 +108,19 @@ volCSFvent = nib.load(fname)
 volCSFvent_vol = volCSFvent.get_data()
 numVoxels = np.count_nonzero(volCSFvent_vol);
 if numVoxels < numTimePoints:
-    print("WARNING: using non-eroded CSFvent mask")
     fname = ''.join([EPIpath,'/rT1_CSFvent_mask.nii.gz'])
     volCSFvent = nib.load(fname)
     volCSFvent_vol = volCSFvent.get_data()
     numVoxels = np.count_nonzero(volCSFvent_vol);
     if numVoxels < numTimePoints:
-        print("WARNING: number of voxels in CSFvent mask is smaller than number of Time points; PCA will fail")
+        print("WARNING: number of voxels in non-eroded CSFvent mask is smaller than number of Time points; PCA will fail")
+        f.write("\n WARNING: number of voxels in non-eroded CSFvent mask is smaller than number of Time points; PCA will fail \n")
+    else:
+        print("WARNING: using non-eroded CSFvent mask in PhysiolReg")
+        f.write("\n WARNING: using non-eroded CSFvent mask in PhysiolReg \n")
+else:
+    print("Using eroded CSFvent mask in PhysiolReg")
+    f.write("\n ==> Using eroded CSFvent mask in PhysiolReg \n")
 
 
 
@@ -118,20 +129,30 @@ volWM = nib.load(fname)
 volWM_vol = volWM.get_data()
 numVoxels = np.count_nonzero(volWM_vol);
 if numVoxels < numTimePoints:
-    print("WARNING: using 2nd-eroded WM mask")
     fname = ''.join([EPIpath,'/rT1_WM_mask_eroded_2nd.nii.gz'])
     volWM = nib.load(fname)
     volWM_vol = volWM.get_data()
     numVoxels = np.count_nonzero(volWM_vol);
     if numVoxels < numTimePoints:
-        print("WARNING: using 1st-eroded WM mask")
         fname = ''.join([EPIpath,'/rT1_WM_mask_eroded_1st.nii.gz'])
         volWM = nib.load(fname)
         volWM_vol = volWM.get_data()
         numVoxels = np.count_nonzero(volWM_vol);
         if numVoxels < numTimePoints:
-            print("WARNING: number of voxels in WM mask is smaller than number of Time points; PCA will fail")
+            print("WARNING: number of voxels in 1st eroded WM mask is smaller than number of Time points; PCA will fail")
+            f.write("\n WARNING: number of voxels in 1st-eroded WM mask is smaller than number of Time points; PCA will fail \n")
+        else:
+            print("WARNING: using 1st-eroded WM mask")
+            f.write("\n WARNING: using 1st-eroded WM mask in PhysiolReg \n")
+    else:
+        print("WARNING: using 2nd-eroded WM mask")
+        f.write("\n WARNING: using 2nd-eroded WM mask in PhysiolReg \n")
 
+else:
+    print("Using 3rd eroded WM mask in PhysiolReg")
+    f.write("\n ==> Using 3rd eroded WM mask in PhysiolReg \n")
+
+f.close()
 
 fname = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
 volGS = nib.load(fname)

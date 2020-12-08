@@ -107,7 +107,15 @@ qc() {
 
 # https://stackoverflow.com/questions/2990414/echo-that-outputs-to-stderr
 echoerr() {
+    
     cat <<< "$(echo -e ${RED_}ERROR: $@ ${NC_})" 1>&2; 
+    local msg=($(echo "$@"))
+    local dateTime=`date`
+    echo -e ${RED_}
+    echo "### $dateTime -" >> ${logfile_name}.log
+    echo "${msg[@]}" >> ${logfile_name}.log
+    echo -e ${NC_}
+
 }
 
 lsrm() {

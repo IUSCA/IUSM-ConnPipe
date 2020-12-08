@@ -16,23 +16,30 @@ print(numTimePoints)
 ## FD
 file_fd=''.join([EPIpath,'/motionRegressor_fd.txt'])
 if os.path.exists(file_fd):
-    print("shape of file_fd: ", np.loadtxt(file_fd).shape)
-    fd_scrub = np.sum(np.loadtxt(file_fd),axis=1)
+    fd = np.loadtxt(file_fd)
+    print("file_fd dimensions: ",fd.ndim )
+    if fd.ndim > 1:
+        fd_scrub = np.sum(fd,axis=1)
+    elif fd.ndim == 1:
+        fd_scrub = fd
 else:
     print("file_fd not generated; using dummy vector of zeros")
-    fd_scrub = np.zeros(numTimePoints)
-    
+    fd_scrub = np.zeros(numTimePoints)   
 n_fd_outliers = np.count_nonzero(fd_scrub)
 print("number of fd_outliers: ", n_fd_outliers)
 
 ## DVARS
 file_dvars=''.join([EPIpath,'/motionRegressor_dvars.txt'])
 if os.path.exists(file_dvars):
-    dvars_scrub = np.sum(np.loadtxt(file_dvars),axis=1)
+    dvar = np.loadtxt(file_dvars)
+    print("file_dvars dimensions: ",dvar.ndim )
+    if dvar.ndim > 1:
+        dvars_scrub = np.sum(dvar,axis=1)
+    elif dvar.ndim == 1:
+        dvars_scrub = dvar
 else:
     print("file_dvars not generated; using dummy vector of zeros")
     dvars_scrub = np.zeros(numTimePoints)
-    
 n_dvars_outliers = np.count_nonzero(dvars_scrub)
 print("number of dvars_outliers: ", n_dvars_outliers)
 
@@ -158,10 +165,7 @@ if [[ ! $out -eq 0 ]]; then
     echo "$out"
 fi
 
-if [[ -e ${fileMetric} ]] && [[ -e ${fileOut1} ]]; then
-    echo "calling f_load_motion_reg:"
-    f_load_motion_reg ${EPIpath} ${numTimePoints}
-else
-    echo "WARNING File ${fileMetric} and/or ${fileOut1} not found!"
-    exit 1
-fi
+
+
+echo "calling f_load_motion_reg:"
+f_load_motion_reg ${EPIpath} ${numTimePoints}
