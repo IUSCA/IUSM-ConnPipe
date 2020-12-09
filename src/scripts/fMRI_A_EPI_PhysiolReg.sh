@@ -180,7 +180,7 @@ if aCompCorr.lower() in ['true','1']:
     np.savez(fname,CSFpca=CSFpca,CSFvar=CSFvar,CSFmask=CSFmask,CSFts=CSFts,WMpca=WMpca,WMvar=WMvar,WMmask=WMmask,WMts=WMts)
     fname = ''.join([PhReg_path,'/dataPCA_WM-CSF.mat'])
     print("savign MATLAB file ", fname)
-    mdic = {"scrub": scrub}
+    mdic = {"CSFpca" : CSFpca,"CSFvar" : CSFvar,"CSFmask" : CSFmask,"CSFts" : CSFts,"WMpca" : WMpca,"WMvar" : WMvar,"WMmask" : WMmask,"WMts" : WMts}
     savemat(fname, mdic)
     print("Saved aCompCor PCA regressors")
 
