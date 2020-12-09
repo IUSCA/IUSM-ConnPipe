@@ -51,8 +51,6 @@ source ${EXEDIR}/config.sh
 ## main
 main() {
 
-start=`date +%s`
-
 log "START running Connectivity Pipeline on the following subjects:"
 
 IFS=$'\r\n' GLOBIGNORE='*' command eval 'SUBJECTS=($(cat ${path2data}/${subj2run}))'
@@ -64,6 +62,8 @@ echo "##################"
 # #### START PROCESSING SUBJECTS ###############
 
 for SUBJdir in "${SUBJECTS[@]}"; do
+
+    start=`date +%s`
 
     export SUBJ=${SUBJdir}
     
@@ -88,7 +88,7 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
             if [[ ${exitcode} -ne 0 ]] ; then
                 echoerr "problem at T1_PREPARE_A. exiting."
-                exit 1
+                continue
             fi
         else 
             log "SKIP T1_PREPARE_A for subject $SUBJ"
@@ -109,7 +109,7 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
                 if [[ ${exitcode} -ne 0 ]] ; then
                     echoerr "problem at T1_PREPARE_B. exiting."
-                    exit 1
+                    continue
                 fi
                         
             else
@@ -134,7 +134,7 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
                 if [[ ${exitcode} -ne 0 ]] ; then
                     echoerr "problem at fMRI_A. exiting."
-                    exit 1
+                    continue
                 fi
                         
             else
@@ -165,7 +165,7 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
                 if [[ ${exitcode} -ne 0 ]] ; then
                     echoerr "problem at DWI_A. exiting."
-                    exit 1
+                    continue
                 fi
                         
             else
@@ -190,7 +190,7 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
                 if [[ ${exitcode} -ne 0 ]] ; then
                     echoerr "problem at DWI_B. exiting."
-                    exit 1
+                    continue
                 fi
                         
             else
@@ -283,4 +283,4 @@ main "$@"
 
 ######################################################################################
 
-
+    

@@ -6,6 +6,7 @@ function f_load_motion_reg() {
 path="$1" numTimePoints="$2" python - <<END
 import os
 import numpy as np
+from scipy.io import savemat
 
 EPIpath=os.environ['path']
 print(EPIpath)
@@ -49,12 +50,13 @@ scrub = scrub.astype(bool).astype(int)
 #print(scrub)
 print("number of good vols: ",np.count_nonzero(scrub))
 
-# fname=''.join([EPIpath,'/scrubbing_goodvols.mat'])
-# np.savetxt(fname, scrub,fmt='%d')
-
 fname=''.join([EPIpath,'/scrubbing_goodvols.npz'])
 np.savez(fname, scrub=scrub)
 
+fname=''.join([EPIpath,'/scrubbing_goodvols.mat'])
+print("savign MATLAB file ", fname)
+mdic = {"scrub": scrub}
+savemat(fname, mdic)
 
 END
 }
@@ -164,7 +166,6 @@ if [[ ! $out -eq 0 ]]; then
     echo "Dvars exit code"
     echo "$out"
 fi
-
 
 
 echo "calling f_load_motion_reg:"
