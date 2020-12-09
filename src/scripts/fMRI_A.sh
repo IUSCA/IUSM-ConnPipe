@@ -277,21 +277,21 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                 log "WARNING Skipping Physiological Regressors. Please set flags_EPI_PhysiolReg=true to run Phys Regression"
             fi   
 
-            # ### AAK - COMMENT OUT THIS SECTION WHEN TESTING TO AVOID HAVING TO RUN NUISANCE REG
-            # if ${flags_EPI_NuisanceReg} || ${flags_EPI_PhysiolReg}; then  
+            ### AAK - COMMENT OUT THIS SECTION WHEN TESTING TO AVOID HAVING TO RUN NUISANCE REG
+            if ${flags_EPI_NuisanceReg} || ${flags_EPI_PhysiolReg}; then  
 
-            #     echo "APPLYING REGRESSORS"
+                echo "APPLYING REGRESSORS"
 
-            #     cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_ApplyReg.sh"
-            #     echo $cmd
-            #     eval $cmd
-            #     exitcode=$?
+                cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_ApplyReg.sh"
+                echo $cmd
+                eval $cmd
+                exitcode=$?
 
-            #     if [[ ${exitcode} -ne 0 ]] ; then
-            #         echoerr "problem at fMRI_A_EPI_ApplyReg. exiting."
-            #         exit 1
-            #     fi  
-            # fi             
+                if [[ ${exitcode} -ne 0 ]] ; then
+                    echoerr "problem at fMRI_A_EPI_ApplyReg. exiting."
+                    exit 1
+                fi  
+            fi             
 
 
             if ${flags_EPI_DemeanDetrend}; then
