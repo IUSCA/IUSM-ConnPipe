@@ -356,8 +356,9 @@ if $fMRI_A; then
 		fi
 
 		export flags_EPI_GS=true # global signal regression 
-			nR="${nR}_Gs${configs_EPI_numGS}"
+			
 			export configs_EPI_numGS=4 # 1-orig; 2-orig+deriv; 4-orig+deriv+sq
+			nR="${nR}_Gs${configs_EPI_numGS}"
 
 		export nR 
 

@@ -14,6 +14,11 @@ print(EPIpath)
 numTimePoints=int(os.environ['numTimePoints'])
 print(numTimePoints)
 
+QCfile_name=os.environ['QCfile_name']
+QCfile_name = ''.join([QCfile_name,'.log'])
+print("QCfile_name: ",QCfile_name)
+f=open(QCfile_name, "a+")
+
 ## FD
 file_fd=''.join([EPIpath,'/motionRegressor_fd.txt'])
 if os.path.exists(file_fd):
@@ -28,6 +33,22 @@ else:
     fd_scrub = np.zeros(numTimePoints)   
 n_fd_outliers = np.count_nonzero(fd_scrub)
 print("number of fd_outliers: ", n_fd_outliers)
+f.write( '\n number of fd_outliers: ' + n_fd_outliers + '\n ')
+
+# compute mean and std of motionMetric
+file_fd=''.join([EPIpath,'/motionMetric_fd.txt'])
+if os.path.exists(file_fd):
+    fd = np.loadtxt(file_fd)
+    fd_mean = np.mean(fd,axis=0)
+    fd_std = np.std(fd,axis=0)
+    fd_min = np.amin(fd,axis=0)
+    fd_max = np.amx(fd,axis=0)
+    f.write( '\n motionMatric_fd stats: \n ')
+    f.write( 'Mean = ' + fd_mean + '\n')
+    f.write( 'Std = ' + fd_std + '\n')
+    f.write( 'Min = ' + fd_min + '\n')
+    f.write( 'Max = ' + fd_max + '\n')
+
 
 ## DVARS
 file_dvars=''.join([EPIpath,'/motionRegressor_dvars.txt'])
@@ -43,12 +64,31 @@ else:
     dvars_scrub = np.zeros(numTimePoints)
 n_dvars_outliers = np.count_nonzero(dvars_scrub)
 print("number of dvars_outliers: ", n_dvars_outliers)
+f.write( '\n number of dvars_outliers: ' + n_dvars_outliers + '\n ')
+
+
+# compute mean and std of motionMetric
+file_dvar=''.join([EPIpath,'/motionMetric_dvar.txt'])
+if os.path.exists(file_dvar):
+    dvar = np.loadtxt(file_dvar)
+    dvar_mean = np.mean(dvar,axis=0)
+    dvar_std = np.std(dvar,axis=0)
+    dvar_min = np.amin(dvar,axis=0)
+    dvar_max = np.amx(dvar,axis=0)
+    f.write( '\n motionMatric_dvar stats: \n ')
+    f.write( 'Mean = ' + dvar_mean + '\n')
+    f.write( 'Std = ' + dvar_std + '\n')
+    f.write( 'Min = ' + dvar_min + '\n')
+    f.write( 'Max = ' + dvar_max + '\n')
 
 scrub = np.add(fd_scrub,dvars_scrub)
 scrub = scrub == 0
 scrub = scrub.astype(bool).astype(int)
 #print(scrub)
 print("number of good vols: ",np.count_nonzero(scrub))
+f.write( '\n number of good vols: ' + np.count_nonzero(scrub) + '\n ')
+
+f.close()
 
 fname=''.join([EPIpath,'/scrubbing_goodvols.npz'])
 np.savez(fname, scrub=scrub)

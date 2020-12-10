@@ -199,7 +199,12 @@ else:
     # save the data
     fname = ''.join([PhReg_path,'/dataMnRg_WM-CSF.npz'])
     np.savez(fname,CSFavg=CSFavg,CSFavg_sq=CSFavg_sq,CSFderiv=CSFderiv,CSFderiv_sq=CSFderiv_sq,WMavg=WMavg,WMavg_sq=WMavg_sq,WMderiv=WMderiv,WMderiv_sq=WMderiv_sq)
-    print("saved mean CSF WM signal, derivatives, and quadtatics")    
+    print("savign MATLAB file ", fname)
+    fname = ''.join([PhReg_path,'/dataMnRg_WM-CSF.mat'])
+    mdic = {"CSFavg" : CSFavg,"CSFavg_sq" : CSFavg_sq,"CSFderiv" : CSFderiv,"CSFderiv_sq" : CSFderiv_sq,"WMavg" : WMavg,"WMavg_sq" : WMavg_sq,"WMderiv" : WMderiv,"WMderiv_sq" : WMderiv_sq}
+    savemat(fname, mdic)
+    print("saved mean CSF WM signal, derivatives, and quadtatics")  
+      
 
 if 0 < numGS < 5:
     GSavg = np.mean(GSts,axis=0)
@@ -213,6 +218,10 @@ if 0 < numGS < 5:
     # save the data
     fname = ''.join([PhReg_path,'/dataGS.npz'])
     np.savez(fname,GSavg=GSavg,GSavg_sq=GSavg_sq,GSderiv=GSderiv,GSderiv_sq=GSderiv_sq)
+    print("savign MATLAB file ", fname)
+    fname = ''.join([PhReg_path,'/dataGS.mat'])
+    mdic = {"GSavg" : GSavg,"GSavg_sq" : GSavg_sq, "GSderiv" : GSderiv,"GSderiv_sq" : GSderiv_sq}
+    savemat(fname, mdic)
     print("saved global signal regressors")      
 
 END
