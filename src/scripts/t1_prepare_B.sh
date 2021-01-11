@@ -773,11 +773,16 @@ if ${flags_T1_parc}; then
         ## Add subcortical fsl parcellation to cortical parcellations
         if ${configs_T1_addsubcort} && [[ "${psubcortonly}" -eq 0 ]]; then 
 
+            log "NONSUBCORTIICAL PARCELLATION - Adding subcorical parcels"
+
             if ! ${configs_T1_subcortUser} ; then  # default FSL subcortical
 
+                log "configs_T1_subcortUser is ${configs_T1_subcortUser} - using FSL default subcortical"
                 fileSubcort="${T1path}/T1_subcort_seg.nii.gz"
 
             else
+
+                log "configs_T1_subcortUser is ${configs_T1_subcortUser} - finding User provided subcortical parcellation "  
 
                 onesubcort=false
 
@@ -786,15 +791,23 @@ if ${flags_T1_parc}; then
                     parcii="PARC${ii}"
                     parcii="${!parcii}"
                     psubcortonlyii="PARC${ii}psubcortonly"    
-                    psubcortonlyii="${!psubcortonlyii}"
+                    psubcortonlyii="${!psubcortonlyii}"                      
 
-                    if [[ ${psubcortonlyii} -eq 1 ]]; then  # find subcortical-only parcellation
+                    log "Finding Subcortical Parcellation"
+                    log "ii is ${ii} -- ${parcii} parcellation -- psubcortonlyii is -- ${psubcortonlyii}"
+
+
+                    if [[ "${psubcortonlyii}" -eq 1 ]]; then  # find subcortical-only parcellation
+
+                        log "SUBCORTICAL parcellation found: ${parcii}"
 
                         if ! ${onesubcort} ; then
                             # check that parcellation is available in T1 space
-                            fileSubcortUser="T1_parc_${parc}.nii.gz"
+                            fileSubcortUser="T1_parc_${parcii}.nii.gz"
 
                             if [[ -f "${T1path}/${fileSubcortUser}" ]]; then
+
+                                log "SUBCORTICAL parcellation is available in T1 space: ${T1path}/${fileSubcortUser}"
 
                                 fileSubcort="${T1path}/${fileSubcortUser}"
                                 onesubcort=true  # allow only one subcortical-only parcellation

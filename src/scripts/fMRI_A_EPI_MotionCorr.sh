@@ -47,8 +47,8 @@ fi
 
 cmd="fslval ${fileIn} dim4"
 log $cmd 
-nvols=`$cmd`                
-#nvols=`echo $out | awk -F' ' '{ print $2}'`
+nvols=`$cmd`  
+# nvols=`echo $out | awk -F' ' '{ print $1}'`
 echo "export nvols=${nvols}" >> ${EPIpath}/0_param_dcm_hdr.sh
 log "Number of volumes in 1_epi_brain: ${nvols} "
 qc "Number of Time Points: ${nvols} "

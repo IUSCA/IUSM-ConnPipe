@@ -46,6 +46,7 @@ EPIpath="$1" fileIN="$2" aCompCorr="$3" num_comp="$4" PhReg_path="$5" numGS="$6"
 import os
 import numpy as np
 import nibabel as nib
+from scipy.io import savemat
 
 
 EPIpath=os.environ['EPIpath']
@@ -104,13 +105,11 @@ resting_vol = resting.get_data()
 print("resting_vol.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 
 fname = ''.join([EPIpath,'/rT1_CSFvent_mask_eroded.nii.gz'])
-volCSFvent = nib.load(fname)
-volCSFvent_vol = volCSFvent.get_data()
+volCSFvent_vol = nib.load(fname).get_data()
 numVoxels = np.count_nonzero(volCSFvent_vol);
 if numVoxels < numTimePoints:
     fname = ''.join([EPIpath,'/rT1_CSFvent_mask.nii.gz'])
-    volCSFvent = nib.load(fname)
-    volCSFvent_vol = volCSFvent.get_data()
+    volCSFvent_vol = nib.load(fname).get_data()
     numVoxels = np.count_nonzero(volCSFvent_vol);
     if numVoxels < numTimePoints:
         print("WARNING: number of voxels in non-eroded CSFvent mask is smaller than number of Time points; PCA will fail")
@@ -125,18 +124,15 @@ else:
 
 
 fname = ''.join([EPIpath,'/rT1_WM_mask_eroded.nii.gz'])
-volWM = nib.load(fname)
-volWM_vol = volWM.get_data()
+volWM_vol = nib.load(fname).get_data()
 numVoxels = np.count_nonzero(volWM_vol);
 if numVoxels < numTimePoints:
     fname = ''.join([EPIpath,'/rT1_WM_mask_eroded_2nd.nii.gz'])
-    volWM = nib.load(fname)
-    volWM_vol = volWM.get_data()
+    volWM_vol = nib.load(fname).get_data()
     numVoxels = np.count_nonzero(volWM_vol);
     if numVoxels < numTimePoints:
         fname = ''.join([EPIpath,'/rT1_WM_mask_eroded_1st.nii.gz'])
-        volWM = nib.load(fname)
-        volWM_vol = volWM.get_data()
+        volWM_vol = nib.load(fname).get_data()
         numVoxels = np.count_nonzero(volWM_vol);
         if numVoxels < numTimePoints:
             print("WARNING: number of voxels in 1st eroded WM mask is smaller than number of Time points; PCA will fail")
@@ -293,7 +289,5 @@ else
 fi
 
 time_series ${EPIpath} ${fileIN} ${flags_PhysiolReg_aCompCorr} ${configs_EPI_numPC} ${PhReg_path} ${configs_EPI_numGS}
-
-
 
 

@@ -93,6 +93,8 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                     exit 1
                 fi                 
             else
+                log "I AM HERE"
+                log "${EPIpath}/0_param_dcm_hdr.sh"
                 if [[ -f "${EPIpath}/0_param_dcm_hdr.sh" ]]; then
                     # echo "The next three lines should be uncommented but leave like this for now"
                     log "Sourcing parameters from ${EPIpath}/0_param_dcm_hdr.sh"

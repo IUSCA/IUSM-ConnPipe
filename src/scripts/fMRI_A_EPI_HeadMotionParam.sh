@@ -20,6 +20,7 @@ function f_load_motion_reg() {
 path="$1" numReg="$2" python - <<END
 import os
 import numpy as np
+from scipy.io import savemat
 
 EPIpath=os.environ['path']
 
