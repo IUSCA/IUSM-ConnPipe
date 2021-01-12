@@ -49,7 +49,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                 else
                     # Extract TE1 and TE2 from the first image of Gradient Echo Magnitude Series
                     # fsval image descrip would do the same but truncates TEs to a single digit!
-                    echo "There are ${#dicom_files[@]} dicom files in this EPI-series "
+                    echo "There are ${#dicom_files[@]} dicom files in ${path_GREmagdcm} "
                     
                     dcm_file=${dicom_files[0]}
                     cmd="dicom_hinfo -tag 0018,0081 ${path_GREmagdcm}/${dcm_file}"

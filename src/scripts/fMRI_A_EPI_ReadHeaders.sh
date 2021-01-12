@@ -195,8 +195,14 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         fi
 
     fi
-    
-    # ##esp
+
+    #-------------------------------------------------------------------------%
+    # Config params are all saved in ${EPIpath}/0_param_dcm_hdr.sh     
+    log "Config params are saved in ${EPIpath}/0_param_dcm_hdr.sh"      
+
+
+
+        # ##esp
     
     # dcm_file=${dicom_files[0]}
     # cmd="dicom_hinfo -tag 0043,102c ${dcm_file}"
@@ -213,7 +219,3 @@ source ${EXEDIR}/src/func/bash_funcs.sh
     # asset=`echo $out | awk -F' ' '{ print $2}'`
     # echo "Header extracted asset is: ${asset}" 
     # echo "export asset=${asset}" >> ${EPIpath}/0_param_dcm_hdr.sh
-
-    #-------------------------------------------------------------------------%
-    # Config params are all saved in ${EPIpath}/0_param_dcm_hdr.sh     
-    log "Config params are saved in ${EPIpath}/0_param_dcm_hdr.sh"      
