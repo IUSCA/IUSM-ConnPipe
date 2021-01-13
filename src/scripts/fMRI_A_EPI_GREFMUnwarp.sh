@@ -26,15 +26,20 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         path_GREmagdcm="${GREFMpath}/${configs_GREmagdcm}"
         path_GREphasedcm="${GREFMpath}/${configs_GREphasedcm}"
 
-        fileNm1="gre_fieldmap_mag"
-        fileNm2="gre_fieldmap_phasemap"
+        fileNm1=${configs_Mag_file}
+        fileNm2="${configs_Phase_file}"
         filePhaseMapNm="gre_fieldmap_phasediff"
-
-
-        if [ -d "${path_GREmagdcm}" ] && [ -d "${path_GREphasedcm}" ]; then
             
-            log "EPI session number: ${EPInum}"
-            if [[ ${EPInum} -le ${configs_EPI_skipGREmap4EPI} ]]; then
+        log "EPI session number: ${EPInum}"
+
+        if [[ ${EPInum} -le ${configs_EPI_skipGREmap4EPI} ]]; then
+
+            log "GREmap4EPI: ${EPInum} -le ${configs_EPI_skipGREmap4EPI}"
+
+            if ${configs_use_DICOMS} && [ -d "${path_GREmagdcm}" ] && [ -d "${path_GREphasedcm}" ]; then
+
+                log "GREFM extracting from DICOM files"
+
                 # identify dicoms 
                 declare -a dicom_files
                 while IFS= read -r -d $'\0' dicomfile; do 
@@ -101,35 +106,76 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                 fileLog="${path_GREphasedcm}/dcm2niix.log"
                 cmd="dcm2niix -f $fileNm2 -o ${GREFMpath} -v y -x y ${path_GREphasedcm} > ${fileLog}"
                 log $cmd
+                eval $cmd 
+
+            elif ! ${configs_use_DICOMS} && ${configs_extract_twoMags} && [ -f "${GREFMpath}/${fileNm1}.nii.gz" ]; then 
+
+                log "GREFM Extracting Mag1 and Mag2 from ${GREFMpath}/${fileNm1}"
+
+                fileMag1="${GREFMpath}/${fileNm1}_0000.nii.gz"
+                fileMag2="${GREFMpath}/${fileNm1}_0001.nii.gz"
+
+                # split 3D volumes in Mag image, corresponding to Mag1 and Mag2
+                cmd="fslsplit ${GREFMpath}/${fileNm1}.nii.gz ${GREFMpath}/${fileNm1}_ -t"
+                log $cmd
+                eval $cmd 
+
+            elif ! ${configs_use_DICOMS} && ! ${configs_extract_twoMags} && \ 
+                 [ -f "${GREFMpath}/${configs_Mag1}" ] && [ -f "${GREFMpath}/${configs_Mag2}" ]; then 
+
+                log "GREFM Mag1 and Mag2 provided by user"
+
+                fileMag1="${GREFMpath}/${configs_Mag1}"
+                fileMag2="${GREFMpath}/${configs_Mag2}"
+
+
+            else 
+                log "WARNING UNWARP DICOMS folders or filedmap magnitude nii images do not exist. Field Map correction failed. Exiting..."
+                exit 1
+
+            fi
+
+            if [[ -f ${fileMag1} ]] && [[ -f ${fileMag2} ]]; then
+
+                fileMagAvg="${GREFMpath}/gre_fieldmap_magAVG"
+                cmd="fslmaths ${fileMag1} -add ${fileMag2} -div 2 ${fileMagAvg}"
+                log $cmd
                 eval $cmd
 
-                if [[ -f ${fileMag1} ]] && [[ -f ${fileMag2} ]]; then
+                fileIn="${fileMagAvg}.nii.gz"
+                fileMagBrain="${GREFMpath}/gre_fieldmap_magAVG_brain"
 
-                    fileMagAvg="${GREFMpath}/gre_fieldmap_magAVG"
-                    cmd="fslmaths ${fileMag1} -add ${fileMag2} -div 2 ${fileMagAvg}"
-                    log $cmd
-                    eval $cmd
+                cmd="bet ${fileIn} ${fileMagBrain} -f ${configs_EPI_GREbetf} -g ${configs_EPI_GREbetg} -m"
+                log $cmd
+                eval $cmd 
 
-                    fileIn="${fileMagAvg}.nii.gz"
-                    fileMagBrain="${GREFMpath}/gre_fieldmap_magAVG_brain"
+                fileFMap="${GREFMpath}/${fileNm2}_rads_prepared"
 
-                    cmd="bet ${fileIn} ${fileMagBrain} -f ${configs_EPI_GREbetf} -g ${configs_EPI_GREbetg} -m"
-                    log $cmd
-                    eval $cmd 
-
+                if ${configs_use_DICOMS} && ${configs_fsl_prepare_fieldmap}; then
                     # Prepare phase map
-                    fileFMap="${GREFMpath}/${fileNm2}_prepared"
-                    cmd="fsl_prepare_fieldmap SIEMENS ${filePhaseMap} ${fileMagBrain} ${fileFMap} ${DeltaTE}"
+                    # fsl_prepare_fieldmap <scanner> <phase_image> <magnitude_image> <out_image> <deltaTE (in ms)>
+                    cmd="fsl_prepare_fieldmap ${scanner} ${GREFMpath}/${fileNm2} ${fileMagBrain} ${fileFMap} ${DeltaTE}"
+                    log $cmd
+                    eval $cmd
+                fi 
+
+                if ${configs_convert2radss}; then 
+                  # phasemap needs to be converted from Hz to Rad/s and masked 
+
+                    cmd="fslmaths ${GREFMpath}/${fileNm2}.nii.gz -mul 6.28 ${fileFMap}"
                     log $cmd
                     eval $cmd
 
-                    ## ******* Up to here we only need to run if we are using SIEMENS DICOMS; 
-                    ## With GE we already have the output from the previous step in a file named XX_fieldmap.nii.gz
-                    ## Mario thinks that the other XX_.nii.gz should be renamed "gre_fieldmap_mag" and this file containes two magnitudes (e1 and e2)
-                    ## Fieldmap shoul dbe in radians per sec; if it is in hertz, it has to be converted. 
+                    cmd="fslmaths ${fileFMap}.nii.gz \
+                        -mul ${fileMagBrain}_mask.nii.gz ${fileFMap}.nii.gz" 
+                    log $cmd
+                    eval $cmd
+                fi                   
 
-                    # Now run fugue (-s 3 : apply Gaussian smoothing of sigma = 3mm
-                    fileFMapIn="${fileFMap}.nii.gz"
+                # Now run fugue (-s 3 : apply Gaussian smoothing of sigma = 3mm -- smoothing 
+                fileFMapIn="${fileFMap}.nii.gz"
+
+                if [ -f ${fileFMapIn} ]; then
 
                     if ${configs_EPI_GREdespike}; then
                         fileFMapRads="${GREFMpath}/fm_rads_brain_sm${configs_EPI_GREsmooth}_m_ds"
@@ -157,11 +203,18 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                     fi
 
                 else 
-                    log "WARNING Field Map images not created. Exiting..."
+                    "WARNING ${fileFMapIn} not found. Exiting..."
                     exit 1
-                fi 
+                fi
 
-            elif [[ ${EPInum} -gt ${configs_EPI_skipGREmap4EPI} ]]; then
+            else 
+                log "WARNING Field Map images not found. Exiting..."
+                exit 1
+            fi 
+
+        elif [[ ${EPInum} -gt ${configs_EPI_skipGREmap4EPI} ]]; then
+
+            log "GREmap4EPI: ${EPInum} -gt ${configs_EPI_skipGREmap4EPI}"
 
                 if ${configs_EPI_GREdespike}; then
 
@@ -175,43 +228,44 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                 if [[ -f "${fileFMapRadsOut}" ]]; then
                     log "Using existing ${fileFMapRadsOut} field map"
                 else
-                    log "WARNING ${fileFMapRadOut} does not exist. Exiting..."
+                    log "WARNING ${fileFMapRadsOut} does not exist. Exiting..."
                     exit 1
                 fi          
 
+        else
+            log "WARNING fm_rads_brain does not exist or GRE map calculation skipped!"
+            exit 1
+        fi 
+
+        fileIn="${EPIpath}/0_epi.nii.gz"
+
+        if [[ -f "${fileIn}" ]]; then
+
+            fileOut="${EPIpath}/0_epi_unwarped"
+
+            cmd="fugue -i ${fileIn} \
+            --dwell=${EPI_EffectiveEchoSpacing} \
+            --loadfmap=${fileFMapRadsOut} \
+            --unwarpdir=y- -u ${fileOut}"
+
+            log "fugue Applying fugue to unwarp 0_epi.nii.gz."
+            log $cmd
+            eval $cmd
+
+            if [[  -f "${fileOut}.nii.gz" ]]; then
+                log "fugue o_epi_unwarped.nii.gz successfully created"
             else
-                log "WARNING fm_rads_brain does not exist or GRE map calculation skipped!"
+                log "WARNING fugue unwarping failed. Exiting..."
                 exit 1
             fi 
 
-            fileIn="${EPIpath}/0_epi.nii.gz"
-            if [[ -f "${fileIn}" ]]; then
-                fileOut="${EPIpath}/0_epi_unwarped"
-                cmd="fugue -i ${fileIn} --dwell=${EPI_EffectiveEchoSpacing} --loadfmap=${fileFMapRadOut} --unwarpdir=y- -u ${fileOut}"
-                log "fugue Applying fugue to unwarp 0_epi.nii.gz."
-                log $cmd
-                eval $cmd
-
-                if [[  -f "${fileOut}.nii.gz" ]]; then
-                    log "fugue o_epi_unwarped.nii.gz successfully created"
-                else
-                    log "WARNING fugue unwarping failed. Exiting..."
-                    exit 1
-                fi 
-
-
-            else 
-                log "WARNING  0_epi.nii.gz not found. Exiting... "
-                exit 1
-
-            fi 
 
         else 
-        
-            log "WARNING UNWARP DICOMS folders or nii images do not exist. Field Map correction failed. Exiting..."
+            log "WARNING  0_epi.nii.gz not found. Exiting... "
             exit 1
 
-        fi
+        fi 
+
 
     fi 
 
