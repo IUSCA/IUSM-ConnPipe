@@ -278,8 +278,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                 log "WARNING Skipping Physiological Regressors. Please set flags_EPI_PhysiolReg=true to run Phys Regression"
             fi   
 
-            ### AAK - COMMENT OUT THIS SECTION WHEN TESTING TO AVOID HAVING TO RUN NUISANCE REG
-            if ${flags_EPI_NuisanceReg} || ${flags_EPI_PhysiolReg}; then  
+            if ${flags_EPI_ApplyReg}; then  
 
                 echo "APPLYING REGRESSORS"
 

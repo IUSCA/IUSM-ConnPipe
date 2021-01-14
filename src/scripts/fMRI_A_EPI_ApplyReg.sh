@@ -37,7 +37,7 @@ def apply_reg(data, mask, regressors,scrubbing):
             for k in range(0,sizeZ):
                 if mask[i,j,k]:
                     TSvoxel = data[i,j,k]                                            
-                    B = np.linalg.lstsq(unique_regressors.T,TSvoxel)
+                    B = np.linalg.lstsq(unique_regressors.T,TSvoxel,rcond=None)
                     coeffs = B[0]
                     Yhat = np.sum(np.multiply(coeffs[:,None],unique_regressors),axis=0)
                     resid[i,j,k,:] = TSvoxel - Yhat
