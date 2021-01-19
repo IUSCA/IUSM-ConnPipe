@@ -28,7 +28,12 @@ print("inside Python script")
 def apply_reg(data, mask, regressors,scrubbing):
 
     # remove identical regressors (rows) if present
-    unique_regressors = np.vstack({tuple(row) for row in regressors})
+    #unique_regressors = np.vstack({tuple(row) for row in regressors})
+    print("regressors shape before removing uniques ",regressors.shape)
+    unique_regressors = [tuple(row) for row in regressors]
+    unique_regressors = np.unique(unique_regressors, axis=0)
+    print("unique_regressors shape after removing repeated rows ",unique_regressors.shape)
+
     [sizeX,sizeY,sizeZ,numTimePoints] = data.shape
     resid = np.zeros(data.shape)
 
@@ -195,7 +200,7 @@ elif physReg == "PhysReg":
 
 
 ## regress-out motion/physilogical regressors 
-print("Applying motion/physicological regression")
+print("2. Applying motion/physicological regression")
 
 # load resting vol
 resting = nib.load(resting_file)
