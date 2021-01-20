@@ -73,7 +73,8 @@ for SUBJdir in "${SUBJECTS[@]}"; do
     export DWIpath="${path2data}/${SUBJ}/${configs_DWI}"
 
     # user may specify name of logfile written inside each subjects dir
-    export logfile_name="${path2data}/${SUBJ}/out"
+    today=$(date +"%m_%d_%Y_%H_%M")
+    export logfile_name="${path2data}/${SUBJ}/out_${today}"
     export QCfile_name="${path2data}/${SUBJ}/qc"
  
 
