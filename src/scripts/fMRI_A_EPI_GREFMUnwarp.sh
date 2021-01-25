@@ -19,6 +19,8 @@ source ${EXEDIR}/src/func/bash_funcs.sh
     echo "# 0. Gradient echo field maps"
     echo "# =================================="
 
+    export GREFMpath="${path2data}/${SUBJ}/${configs_grefmFolder}"
+
     # Gradient echo field maps (directory at the same level as T1 and EPI)
     if [[ ! -d "${GREFMpath}" ]]; then  # Assume single pair of SE fieldmaps within EPI folder
         log "WARNING ${GREFMpath} des not exist. Field map correction will be skipped"
@@ -97,7 +99,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                 # remove any existing file
                 filePhaseMap="${GREFMpath}/${fileNm2}_e2_ph.nii"
                 if [[ -f ${filePhaseMap} ]]; then
-                    cmd="rm ${fileMag1}"
+                    cmd="rm ${filePhaseMap}"
                     log $cmd
                     eval $cmd
                 fi
@@ -145,7 +147,9 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                 fileIn="${fileMagAvg}.nii.gz"
                 fileMagBrain="${GREFMpath}/gre_fieldmap_magAVG_brain"
 
-                cmd="bet ${fileIn} ${fileMagBrain} -f ${configs_EPI_GREbetf} -g ${configs_EPI_GREbetg} -m"
+                cmd="bet ${fileIn} ${fileMagBrain} \
+                    -f ${configs_EPI_GREbetf} \
+                    -g ${configs_EPI_GREbetg} -m"
                 log $cmd
                 eval $cmd 
 

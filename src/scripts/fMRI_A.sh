@@ -41,7 +41,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             && [ $((i+1)) -le "${configs_EPI_epiMax}" ]; then
 
             export EPIpath="${epiList[$i]}"
-            export GREFMpath="${path2data}/${SUBJ}/${configs_grefmFolder}"
+            
             ind=`echo ${EPIpath} | sed 's/.*\EPI//'`
             # check if en is a number or not
             re='^[0-9]+$'
@@ -55,7 +55,6 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             log "fMRI_A on subject ${SUBJ}"
             log "EPI-series ${EPIpath}"
             log "EPI session number ${EPInum}"
-            log "GREFM dir ${GREFMpath}"
 
             ## functional connectivity
 

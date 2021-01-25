@@ -16,7 +16,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ###############################################################################    
     
     echo "# =================================="
-    echo "# 0. Field Map Correction"
+    echo "# 0. Spin Echo Field Map Correction"
     echo "# =================================="
 
     # set up direcotry paths
