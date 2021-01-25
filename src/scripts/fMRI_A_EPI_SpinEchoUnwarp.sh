@@ -88,95 +88,96 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
                 cmd="fslmerge -tr ${fileOut} ${fileInAP} ${fileInPA} ${TR}"
                 log $cmd
-                eval $cmd 
+                eval $cmd                 
 
-            fi 
+                # Generate an acqparams text file based on number of field maps.
+                path_EPIdcm=${EPIpath}/${configs_dcmFolder}
 
-            # Generate an acqparams text file based on number of field maps.
-            path_EPIdcm=${EPIpath}/${configs_dcmFolder}
-
-            cmd="${EXEDIR}/src/scripts/get_readout.sh ${EPIpath}" 
-            log $cmd
-            EPI_SEreadOutTime=`$cmd`
-            echo "EPI_SEreadOutTime -- ${EPI_SEreadOutTime}"
-
-            APstr=`echo -e '0 \t -1 \t  0 \t' ${EPI_SEreadOutTime}`   
-            PAstr=`echo -e '0 \t 1 \t  0 \t' ${EPI_SEreadOutTime}`
-
-            cmd="fslinfo ${fileOut}"
-            log $cmd
-            out=`$cmd` 
-            d4vol=$(echo $out | \
-            awk '{split($0,a,"dim4"); {print a[2]}}' | \
-            awk '{split($0,a," "); {print a[1]}}')   
-            exitcode=$?   # extract number of volumes from sefield.nii.gz
-            echo "d4vol is $d4vol"
-
-            if [[ ${exitcode} -eq 0 ]]; then 
-
-                if [[ $(bc <<< "$d4vol % 2 == 0") ]]; then
-                    SEnumMaps=$(bc <<< "scale=0 ; $d4vol / 2")   #convert number of volumes to a number
-                    log "SEnumMaps extracted from sefield.nii.gz: ${SEnumMaps}"
-                else
-                    log "sefile.nii.gz file must contain even number of volumes. Exiting..."
-                    exit 1
-                fi                             
-            else
-                SEnumMaps=${configs_EPI_SEnumMaps}  #  trust the user input if SEnumMaps failed
-                log "SEnumMaps from user-specified parameter: ${SEnumMaps}"
-            fi            
-
-            acqparams="${path_EPI_SEFM}/acqparams.txt"
-            if [[ -e ${acqparams} ]]; then
-                echo "removing ${acqparams}"
-                cmd="rm ${acqparams}"
+                cmd="${EXEDIR}/src/scripts/get_readout.sh ${EPIpath}" 
                 log $cmd
-                eval $cmd
-            fi 
+                EPI_SEreadOutTime=`$cmd`
+                echo "EPI_SEreadOutTime -- ${EPI_SEreadOutTime}"
 
-            for ((k=0; k<${SEnumMaps}; k++)); do
-                echo ${APstr} >> ${acqparams}
-            done
-            for ((k=0; k<${SEnumMaps}; k++)); do
-                echo ${PAstr} >> ${acqparams}
-            done
+                APstr=`echo -e '0 \t -1 \t  0 \t' ${EPI_SEreadOutTime}`   
+                PAstr=`echo -e '0 \t 1 \t  0 \t' ${EPI_SEreadOutTime}`
 
-            # Generate (topup) and apply (applytopup) spin echo field map
-            # correction to 0_epi image.
+                cmd="fslinfo ${fileOut}"
+                log $cmd
+                out=`$cmd` 
+                d4vol=$(echo $out | \
+                awk '{split($0,a,"dim4"); {print a[2]}}' | \
+                awk '{split($0,a," "); {print a[1]}}')   
+                exitcode=$?   # extract number of volumes from sefield.nii.gz
+                echo "d4vol is $d4vol"
 
-            fileIn="${path_EPI_SEFM}/sefield.nii.gz"
-            if [[ -e "${fileIn}" ]] && [[ -e ${acqparams} ]]; then
-                fileOutName="${path_EPI_SEFM}/topup_results"
-                fileOutField="${path_EPI_SEFM}/topup_field"
-                fileOutUnwarped="${path_EPI_SEFM}/topup_unwarped"
+                if [[ ${exitcode} -eq 0 ]]; then 
 
+                    if [[ $(bc <<< "$d4vol % 2 == 0") ]]; then
+                        SEnumMaps=$(bc <<< "scale=0 ; $d4vol / 2")   #convert number of volumes to a number
+                        log "SEnumMaps extracted from sefield.nii.gz: ${SEnumMaps}"
+                    else
+                        log "sefile.nii.gz file must contain even number of volumes. Exiting..."
+                        exit 1
+                    fi                             
+                else
+                    SEnumMaps=${configs_EPI_SEnumMaps}  #  trust the user input if SEnumMaps failed
+                    log "SEnumMaps from user-specified parameter: ${SEnumMaps}"
+                fi            
 
-                if ${flags_EPI_RunTopup}; then
-                    log "topup: Starting topup on sefiled.nii.gz  --  This might take a wile... "
-                    cmd="topup --imain=${fileIn} \
-                    --datain=${acqparams} \
-                    --out=${fileOutName} \
-                    --fout=${fileOutField} \
-                    --iout=${fileOutUnwarped}"
+                acqparams="${path_EPI_SEFM}/acqparams.txt"
+                if [[ -e ${acqparams} ]]; then
+                    echo "removing ${acqparams}"
+                    cmd="rm ${acqparams}"
                     log $cmd
-                    eval $cmd 
-                    echo $?
+                    eval $cmd
                 fi 
 
-                if [[ ! -e "${fileOutUnwarped}.nii.gz" ]]; then  # check that topup has been completed
-                    log "WARNING Topup output not created. Exiting... "
-                    exit 1
-                fi
+                for ((k=0; k<${SEnumMaps}; k++)); do
+                    echo ${APstr} >> ${acqparams}
+                done
+                for ((k=0; k<${SEnumMaps}; k++)); do
+                    echo ${PAstr} >> ${acqparams}
+                done
 
-            else 
-                log " WARNING UNWARP/sefield.nii.gz or acqparams.txt are missing. topup not started"
-                exit 1
+                # Generate (topup) and apply (applytopup) spin echo field map
+                # correction to 0_epi image.
+
+                fileIn="${path_EPI_SEFM}/sefield.nii.gz"
+                if [[ -e "${fileIn}" ]] && [[ -e ${acqparams} ]]; then
+                    fileOutName="${path_EPI_SEFM}/topup_results"
+                    fileOutField="${path_EPI_SEFM}/topup_field"
+                    fileOutUnwarped="${path_EPI_SEFM}/topup_unwarped"
+
+
+                    if ${flags_EPI_RunTopup}; then
+                        log "topup: Starting topup on sefiled.nii.gz  --  This might take a wile... "
+                        cmd="topup --imain=${fileIn} \
+                        --datain=${acqparams} \
+                        --out=${fileOutName} \
+                        --fout=${fileOutField} \
+                        --iout=${fileOutUnwarped}"
+                        log $cmd
+                        eval $cmd 
+                        echo $?
+                    fi 
+
+                    if [[ ! -e "${fileOutUnwarped}.nii.gz" ]]; then  # check that topup has been completed
+                        log "ERROR Topup output not created. Exiting... "
+                        exit 1
+                    fi
+
+                else 
+                    log " WARNING UNWARP/sefield.nii.gz or acqparams.txt are missing. topup not started"
+                    exit 1
+                fi 
+            else
+                log "WARNING ${fileInAP} and/or ${fileInPA} files not found. Exiting..."
+                exit 1 
             fi 
 
         elif [[ "${EPInum}" -gt ${configs_EPI_skipSEmap4EPI} ]]; then
 
             log "USER-PARAM configs_EPI_skipSEmap4EPI > EPInum -- skipping topup for EPI${EPInum}"
-            exit 1
 
         else
 
@@ -196,7 +197,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
             fileOut="${path_EPI_SEFM}/0_epi_unwarped.nii.gz"
 
             log "applytopup -- starting applytopup on 0_epi.nii.gz"
-            fileOut="${path_EPI_SEFM}/0_epi_unwarped.nii.gz"
+
             cmd="applytopup --imain=${fileIn} \
             --datain=${acqparams} \
             --inindex=1 \
