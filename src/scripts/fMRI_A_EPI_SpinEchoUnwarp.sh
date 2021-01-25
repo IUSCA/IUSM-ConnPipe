@@ -44,6 +44,8 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         
             if [ ! -f "${fileInAP}" ] && [ ! -f "${fileInPA}" ]; then
 
+                log "IMPORT AP and PA fieldmaps from DICOM"
+
                 fileNiiAP="AP"
                 rm -fr ${path_EPI_SEFM}/${fileNiiAP}.nii*  # remove any existing .nii images
                 log "rm -fr ${path_EPI_SEFM}/${fileNiiAP}.nii"
@@ -73,6 +75,8 @@ source ${EXEDIR}/src/func/bash_funcs.sh
             fi
 
             if [ -f "${fileInAP}" ] && [ -f "${fileInPA}" ]; then
+
+                log "Concatenate the AP then PA into single 4D image"
                 
                 # Concatenate the AP then PA into single 4D image
                 fileOut="${path_EPI_SEFM}/sefield.nii.gz"
