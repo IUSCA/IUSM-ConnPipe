@@ -21,23 +21,6 @@ source ${EXEDIR}/src/func/bash_funcs.sh
     echo "# =================================="
 
 
-    path_EPIdcm=${EPIpath}/${configs_dcmFolder}
-
-    # Identify DICOMs
-    declare -a dicom_files
-    while IFS= read -r -d $'\0' dicomfile; do 
-        dicom_files+=( "$dicomfile" )
-    done < <(find ${path_EPIdcm} -iname "*.${configs_dcmFiles}" -print0 | sort -z)
-
-    if [ ${#dicom_files[@]} -eq 0 ]; then 
-        echo "No dicom (.${configs_dcmFiles}) images found."
-        echo "Please specify the correct file extension of dicom files by setting the configs_dcmFiles flag in the config file"
-        echo "Skipping further analysis"
-        exit 1
-    else
-        echo "There are ${#dicom_files[@]} dicom files in this EPI-series "
-    fi
-
     if ${flags_EPI_UseJson}; then  
         log "JSON: Using json file provided by dcm2niix to extract header information "
 
@@ -104,7 +87,25 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         eval $cmd
         # exitcode=$?
 
-    else   ## if not using JSON file
+    else   ## if not using JSON file, extract info from DICOMs
+
+        path_EPIdcm=${EPIpath}/${configs_dcmFolder}
+
+        # Identify DICOMs
+        declare -a dicom_files
+        while IFS= read -r -d $'\0' dicomfile; do 
+            dicom_files+=( "$dicomfile" )
+        done < <(find ${path_EPIdcm} -iname "*.${configs_dcmFiles}" -print0 | sort -z)
+
+        if [ ${#dicom_files[@]} -eq 0 ]; then 
+            echo "No dicom (.${configs_dcmFiles}) images found."
+            echo "Please specify the correct file extension of dicom files by setting the configs_dcmFiles flag in the config file"
+            echo "Skipping further analysis"
+            exit 1
+        else
+            echo "There are ${#dicom_files[@]} dicom files in this EPI-series "
+        fi
+
         # Extract Repetition time (TR)
         # Dicom header information --> Flag 0018,0080 "Repetition Time"
         cmd="dicom_hinfo -tag 0018,0080 ${dicom_files[0]}"                    
