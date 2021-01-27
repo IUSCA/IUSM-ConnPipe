@@ -178,6 +178,10 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                     echoerr "problem at fMRI_A_EPI_MotionCorr. exiting."
                     exit 1
                 fi
+
+                # 0_param_dcm_hdr.sh has been modified in MotionCorr, so needs to be sourced again
+                log "Sourcing parameters read from header and written to ${EPIpath}/0_param_dcm_hdr.sh"
+                source ${EPIpath}/0_param_dcm_hdr.sh
             fi 
 
 

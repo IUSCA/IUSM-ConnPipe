@@ -53,7 +53,63 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         EPI_BandwidthPerPixelPhaseEncode=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_BandwidthPerPixelPhaseEncode}`
         log "BandwidthPerPixelPhaseEncode extracted from header is $EPI_BandwidthPerPixelPhaseEncode"
         echo "export EPI_BandwidthPerPixelPhaseEncode=${EPI_BandwidthPerPixelPhaseEncode}" >> ${EPIpath}/0_param_dcm_hdr.sh
+        # find TotalReadoutTime
+        EPI_SEreadOutTime=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TotalReadoutTime}`
+        if [[ ! -z "${EPI_SEreadOutTime}" ]]; then 
+        # extract the variable from dicom files 
+            # Identify DICOMs
+            path_EPIdcm=${EPIpath}/${configs_dcmFolder}
+            declare -a dicom_files
+            while IFS= read -r -d $'\0' dicomfile; do 
+                dicom_files+=( "$dicomfile" )
+            done < <(find ${path_EPIdcm} -iname "*.${configs_dcmFiles}" -print0 | sort -z)
 
+            if [ ${#dicom_files[@]} -eq 0 ]; then 
+                echo "No dicom (.${configs_dcmFiles}) images found."
+                echo "Please specify the correct file extension of dicom files by setting the configs_dcmFiles flag in the config file"
+                echo "Skipping further analysis"
+                exit 1
+            else
+                echo "There are ${#dicom_files[@]} dicom files in this EPI-series "
+
+                ## create a temp dir to extract header info
+                temp_dir="${EPIpath}/Dir2delete"
+                cmd="mkdir ${temp_dir}"
+                log $cmd
+                eval $cmd 
+
+                cmd="cp ${dicom_files[0]} ${temp_dir}"
+                log $cmd
+                eval $cmd
+
+                tempfile="temp_epi"
+
+                # import dicoms
+                fileLog="${temp_dir}/temp_dcm2niix.log"
+                cmd="dcm2niix -f ${tempfile} -o ${temp_dir} -v y -x y ${temp_dir} > ${fileLog}"
+                log $cmd
+                eval $cmd
+
+                mv ${temp_dir}/${tempfile}*.json ${EPIpath}/${tempfile}.json
+
+                if [[ ! -e "${EPIpath}/${tempfile}.json" ]]; then
+                    log "${EPIpath}/${tempfile}.json file not created. Exiting... "
+                else
+                    EPI_SEreadOutTime=`cat ${EPIpath}/${tempfile}.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TotalReadoutTime}`
+                    log "EPI_SEreadOutTime extracted from ${EPIpath}/${tempfile}.json file is $EPI_SEreadOutTime"
+                    rm -rf ${temp_dir}
+                fi
+            fi
+
+            # check again to see if read out time has been extracted
+            if [ -z "${EPI_SEreadOutTime}" ]; then
+                cmd="${EXEDIR}/src/scripts/get_readout.sh ${EPIpath}" 
+                log $cmd
+                EPI_SEreadOutTime=`$cmd`
+                log "EPI_SEreadOutTime extracted from get_redout.sh is $EPI_SEreadOutTime"
+            fi
+        fi        
+        echo "export EPI_SEreadOutTime=${EPI_SEreadOutTime}" >> ${EPIpath}/0_param_dcm_hdr.sh
 
         # get the SliceTiming values in an array
         declare -a starr; 
