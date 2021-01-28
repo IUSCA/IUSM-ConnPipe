@@ -55,8 +55,11 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         echo "export EPI_BandwidthPerPixelPhaseEncode=${EPI_BandwidthPerPixelPhaseEncode}" >> ${EPIpath}/0_param_dcm_hdr.sh
         # find TotalReadoutTime
         EPI_SEreadOutTime=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TotalReadoutTime}`
-        if [[ ! -z "${EPI_SEreadOutTime}" ]]; then 
-        # extract the variable from dicom files 
+
+        if [ -z "${EPI_SEreadOutTime}" ]; then 
+
+            log "EPI_SEreadOutTime not found in existing json file; extracting from DICOM files"
+            # extract the variable from dicom files 
             # Identify DICOMs
             path_EPIdcm=${EPIpath}/${configs_dcmFolder}
             declare -a dicom_files
