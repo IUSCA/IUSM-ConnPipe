@@ -56,7 +56,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         # find TotalReadoutTime
         EPI_SEreadOutTime=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TotalReadoutTime}`
 
-        if [ -z "${EPI_SEreadOutTime}" ]; then 
+        if [ -z "${EPI_SEreadOutTime}" ] || [[ "${EPI_SEreadOutTime}" -eq "null" ]]; then 
 
             log "EPI_SEreadOutTime not found in existing json file; extracting from DICOM files"
             # extract the variable from dicom files 
@@ -75,7 +75,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
             else
                 echo "There are ${#dicom_files[@]} dicom files in this EPI-series "
 
-                ## create a temp dir to extract header info
+                ## create a temp dir to extract header inf
                 temp_dir="${EPIpath}/Dir2delete"
                 cmd="mkdir ${temp_dir}"
                 log $cmd
@@ -99,13 +99,13 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                     log "${EPIpath}/${tempfile}.json file not created. Exiting... "
                 else
                     EPI_SEreadOutTime=`cat ${EPIpath}/${tempfile}.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TotalReadoutTime}`
-                    log "EPI_SEreadOutTime extracted from ${EPIpath}/${tempfile}.json file is $EPI_SEreadOutTime"
+                    log "EPI_SEreadOutTime extracted from ${EPIpath}/${tempfile}.json file is ${EPI_SEreadOutTime}"
                     rm -rf ${temp_dir}
                 fi
             fi
 
             # check again to see if read out time has been extracted
-            if [ -z "${EPI_SEreadOutTime}" ]; then
+            if [ -z "${EPI_SEreadOutTime}" ] || [[ "${EPI_SEreadOutTime}" -eq "null" ]]; then 
                 cmd="${EXEDIR}/src/scripts/get_readout.sh ${EPIpath}" 
                 log $cmd
                 EPI_SEreadOutTime=`$cmd`
