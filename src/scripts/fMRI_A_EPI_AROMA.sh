@@ -186,8 +186,9 @@ else
     AROMA_dim=" "
 fi 
 
-#cmd="${ICA_AROMA_path}/ICA_AROMA.py \
-cmd="ICA_AROMA.py \
+#cmd="ICA_AROMA.py \
+
+cmd="python ${ICA_AROMA_path}/ICA_AROMA.py \
 -in ${fileSmooth} \
 -out ${AROMAout} \
 -mc ${fileMovePar} \
