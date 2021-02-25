@@ -69,21 +69,25 @@ fi
 
 AROMApath="${EPIpath}/AROMA"
 
-if [[ ! -d "${AROMApath}" ]]; then
-    cmd="mkdir ${AROMApath}"
-    log "AROMA - creating directory"
+if [[ -d "${AROMApath}" ]]; then
+    # rename existing directory and create a new one
+    today=$(date +"%m_%d_%Y_%H_%M")
+    cmd="mv ${AROMApath} ${AROMApath}_${today}"
     log $cmd
     eval $cmd 
 fi 
+
+cmd="mkdir ${AROMApath}"
+log "AROMA - creating directory"
+log $cmd
+eval $cmd 
 
 AROMAreg_path="${AROMApath}/registration"
 
-if [[ ! -d "${AROMAreg_path}" ]]; then
-    cmd="mkdir ${AROMAreg_path}"
-    log "AROMAreg - creating directory"
-    log $cmd
-    eval $cmd 
-fi 
+cmd="mkdir ${AROMAreg_path}"
+log "AROMAreg - creating directory"
+log $cmd
+eval $cmd 
 
 echo "## Generating Inputs"
 echo "#### EPI to T1 linear transform"

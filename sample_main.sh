@@ -1,36 +1,50 @@
 #!/bin/bash
 
 
-# IU modules load
-module unload python/2.7.16; module load python/3.6.8 
-module load fsl/6.0.1; 
-module load mricrogl
-module load afni/18.3.03
-module load ants
-module load ica-aroma/0.4.4
-module load mrtrix/3.0
-# module load singularity
+# # IU modules load
+# module unload python/2.7.16; module load python/3.6.8 
+# module load fsl/6.0.1; 
+# module load mricrogl
+# module load afni/18.3.03
+# module load ants
+# module load ica-aroma/0.4.4
+# module load mrtrix/3.0
+# # module load singularity
 
 # FSL
-# set FSL env vars for fsl_sub.IU or fsl_sub.orig
+# if [[ -z ${FSLDIR} ]] ; then
+# 	echoerr "FSLDIR not set"
+# 	exit 1
+# fi
+
 if [[ -z ${FSLDIR} ]] ; then
+
 	echoerr "FSLDIR not set"
-	exit 1
+    
+	export FSLDIR="/user/local/fsl"
+    source ${FSLDIR}/etc/fslconf/fsl.sh
+    PATH=${FSLDIR}/bin:${PATH}
+    export PATH 
 fi
+
+
 
 ################################################################################
 ############################  PATH TO DATA  ###################################
 
 # USER INSTRUCTIONS- PLEASE SET THIS PATH TO POINT TO YOUR DATA DIRECTORY
-export path2data="/N/project/PROJECT_NAME/PATH2DATA/DataDir"
+# export path2data="/N/project/YoderLab/NANCfN/Datadir"
+export path2data="/N/project/YoderLab/NANSTAN/Datadir"
+# export path2data="/N/project/hasda/DataDir"
+
 
     ## USER: if running all subjects in the path2data directory, set this flag to true; 
     ## set to false if you'd like to process a subset of subjects 
-    export runAll=true 
+    export runAll=false 
 
     ## USER: if running a subset of subjects, a list of subject ID's can be read from 
     ## a text file located in path2data; user can name the file here:
-    export subj2run="subj2run.txt"
+    export subj2run="subj2run_1.txt"
 
 
 
@@ -284,4 +298,4 @@ main "$@"
 
 ######################################################################################
 
-    
+
