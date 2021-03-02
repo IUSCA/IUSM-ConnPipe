@@ -1,5 +1,8 @@
 #!/bin/bash
 
+##########################################
+### RUN THIS FOR NANSTAN SUBJECTS 13 - 29
+##########################################
 
 # IU modules load
 module unload python/2.7.16; module load python/3.6.8 
@@ -22,13 +25,13 @@ fi
 ############################  PATH TO DATA  ###################################
 
 # USER INSTRUCTIONS- PLEASE SET THIS PATH TO POINT TO YOUR DATA DIRECTORY
-export path2data="/N/project/PROJECT_NAME/PATH2DATA/DataDir"
+export path2data="/N/project/slate_project/NANSTAN/Datadir"
 
     ## USER: if running all subjects in the path2data directory, set this flag to true; 
     ## set to false if you'd like to process a subset of subjects 
-    export runAll=true 
+    export runAll=false 
 
-    ## USER: if running a subset of subjects, a list of subject ID's can be read from 
+    ## USER -- if running a subset of subjects, a list of subject ID's can be read from 
     ## a text file located in path2data; user can name the file here:
     export subj2run="subj2run.txt"
 
@@ -41,7 +44,7 @@ export path2data="/N/project/PROJECT_NAME/PATH2DATA/DataDir"
 export EXEDIR=$(dirname "$(readlink -f "$0")")
 
 source ${EXEDIR}/src/func/bash_funcs.sh
-source ${EXEDIR}/config.sh
+source ${EXEDIR}/config_STAN_SPINECO.sh
 
 
 #################################################################################
