@@ -17,12 +17,14 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 function extract_b0_1st() {
-python - <<END
+dwifile="$1" python - <<END
 import os
 import numpy as np
 
 DWIpath=os.environ['DWIpath']
 # print(DWIpath)
+dwifile=os.environ['dwifile']
+#print("dwifile ",dwifile)
 
 def is_empty(any_struct):
     if any_struct:
@@ -30,10 +32,10 @@ def is_empty(any_struct):
     else:
         return True 
 
-pbval=''.join([DWIpath,'/0_DWI.bval'])
+pbval=''.join([DWIpath,'/',dwifile,'.bval'])
 bval = np.loadtxt(pbval)
 
-B0_index = np.where(bval<=1)
+B0_index = np.where(bval==0)
 if is_empty(B0_index):    
     #print("No B0 volumes identified. Check quality of 0_DWI.bval") 
     print("err")
@@ -45,20 +47,23 @@ END
 }
 
 function format_row_bval() {
-DTIfit="$1" python - <<END
+DTIfit="$1" dwifile="$2" python - <<END
 import os
 from dipy.io import read_bvals_bvecs
 import nibabel as nib
 import numpy as np
 
 DTIfit=os.environ['DTIfit']
-print("DTIfit ",DTIfit)
-
+#print("DTIfit ",DTIfit)
+dwifile=os.environ['dwifile']
+#print("dwifile ",dwifile)
 DWIpath=os.environ['DWIpath']
-print("DWIpath ",DWIpath)
+#print("DWIpath ",DWIpath)
 
-pbval=''.join([DWIpath,'/0_DWI.bval'])
-pbvec=''.join([DWIpath,'/0_DWI.bvec'])
+pbval=''.join([DWIpath,'/',dwifile,'.bval'])
+print('pbval',pbval)
+pbvec=''.join([DWIpath,'/',dwifile,'.bvec'])
+print('pbvec',pbvec)
 
 bvals, bvecs = read_bvals_bvecs(pbval,pbvec)
  
@@ -78,73 +83,90 @@ echo "=================================="
 echo "2. Fitting Diffusion Tensor"
 echo "=================================="
 
-# set paths 
-path_DWI_UNWARP=${DWIpath}/${configs_unwarpFolder}
+log "Number of scans is ${nscanmax}"
 
-path_DWI_EDDY="${DWIpath}/EDDY"
-path_DWI_DTIfit="${DWIpath}/DTIfit"
+for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
+    
+    # set paths
+    path_DWI_UNWARP=${DWIpath}/${configs_unwarpFolder}
+    if [[ "${nscanmax}" -eq "1" ]]; then 
+        export path_DWI_EDDY="${DWIpath}/EDDY"
+        export path_DWI_DTIfit="${DWIpath}/DTIfit"
+    elif [[ "${nscanmax}" -eq "2" ]]; then 
+        export path_DWI_EDDY="${DWIpath}/EDDY${nscan}"
+        export path_DWI_DTIfit="${DWIpath}/DTIfit${nscan}"
+    fi 
 
-# create output directory if one does not exist
-if [[ ! -d "${path_DWI_DTIfit}" ]]; then
-    cmd="mkdir ${path_DWI_DTIfit}"
-    log $cmd
-    eval $cmd
-else 
-    # remove any existing files
-    rm -rf ${path_DWI_DTIfit}/*
-    log "rm -rf ${path_DWI_DTIfit}/"
-fi 
+    # create output directory if one does not exist
+    if [[ ! -d "${path_DWI_DTIfit}" ]]; then
+        cmd="mkdir ${path_DWI_DTIfit}"
+        log $cmd
+        eval $cmd
+    else 
+        # remove any existing files
+        rm -rf ${path_DWI_DTIfit}/*
+        log "rm -rf ${path_DWI_DTIfit}/"
+    fi 
 
-# Prepare inputs for DTIfit
-# DWI data in (from EDDY)
-fileDWI="${path_DWI_EDDY}/eddy_output.nii.gz"
+    # Prepare inputs for DTIfit
+    # DWI data in (from EDDY)
+    fileDWI="${path_DWI_EDDY}/eddy_output.nii.gz"
 
-# Format Bval file (row format)
-format_row_bval ${path_DWI_DTIfit}
-fileBval="${path_DWI_DTIfit}/3_DWI.bval"
+    if [[ "$nscanmax" -eq "1" ]]; then 
+        dwifile="0_DWI"
+        #b0file="AP_b0"
+    elif [[ "$nscanmax" -eq "2" ]]; then 
+        dwifile="0_DWI_ph${nscan}"
+        #b0file=ph${nscan}_b0_
+    fi 
+    # Format Bval file (row format)
+    format_row_bval ${path_DWI_DTIfit} ${dwifile}
+    fileBval="${path_DWI_DTIfit}/3_DWI.bval"
 
-# Rotated Bvec from EDDY will be used here.
-fileBvec="${path_DWI_EDDY}/eddy_output.eddy_rotated_bvecs"
+    # Rotated Bvec from EDDY will be used here.
+    fileBvec="${path_DWI_EDDY}/eddy_output.eddy_rotated_bvecs"
 
-# Create a brain mask of EDDY corrected data
-b0_1st=$(extract_b0_1st)
-echo ${b0_1st}
+    # Create a brain mask of EDDY corrected data
+    b0_1st=$(extract_b0_1st ${dwifile})
+    #log "b0_1st is ${b0_1st}"
 
-if [[ "${b0_1st}" == "err" ]]; then
-    log "WARNING: No b0 volumes identified. Check quality of 0_DWI.bval"
-    exit 1
-else
-    echo "FSL index of 1st b0 volume is ${b0_1st}"
-    fileb0="${path_DWI_DTIfit}/b0_1st.nii.gz"  #file out b0
-    # extract b0 into 3D volume
-    cmd="fslroi ${fileDWI} ${fileb0} ${b0_1st} 1"
-    log $cmd
-    eval $cmd
+    if [[ "${b0_1st}" == "err" ]]; then
+        log "WARNING: No b0 volumes identified. Check quality of 0_DWI.bval"
+        exit 1
+    else
+        echo "FSL index of 1st b0 volume is ${b0_1st}"
+        fileb0="${path_DWI_DTIfit}/b0_1st.nii.gz"  #file out b0
+        # extract b0 into 3D volume
+        cmd="fslroi ${fileDWI} ${fileb0} ${b0_1st} 1"
+        log $cmd
+        eval $cmd
 
-    # brain extraction of b0
-    cmd="bet ${fileb0} ${fileb0} -f ${configs_DWI_DTIfitf} -m"
-    log $cmd
-    eval $cmd
+        # brain extraction of b0
+        cmd="bet ${fileb0} ${fileb0} -f ${configs_DWI_DTIfitf} -m"
+        log $cmd
+        eval $cmd
 
-    fileMask="${path_DWI_DTIfit}/b0_1st_mask.nii.gz"
-    # output base name
-    fileOut="${path_DWI_DTIfit}/3_DWI"
+        fileMask="${path_DWI_DTIfit}/b0_1st_mask.nii.gz"
+        # output base name
+        fileOut="${path_DWI_DTIfit}/3_DWI"
 
-    #run DTIfit
-    cmd="dtifit -k ${fileDWI} \
-        -o ${fileOut} \
-        -m ${fileMask} \
-        -r ${fileBvec} \
-        -b ${fileBval} --save_tensor -V"
-    log $cmd
-    eval $cmd > "${path_DWI_DTIfit}/dtifit.log"
+        #run DTIfit
+        cmd="dtifit -k ${fileDWI} \
+            -o ${fileOut} \
+            -m ${fileMask} \
+            -r ${fileBvec} \
+            -b ${fileBval} --save_tensor -V"
+        log $cmd
+        eval $cmd > "${path_DWI_DTIfit}/dtifit.log"
 
-    # Preproc DWI_A is done.
-    echo "DWI_A is done."
-    echo "QC recommendations:"
-    echo "1. Check topup_field.nii.gz in UNWARP"
-    echo "2. Check delta_DWI.nii.gz in EDDY"
-    echo "   2b. If eddy_correct was ran check eddy_output also"
-    echo "3. Check 3_DWI_V1.nii.gz in DTIfit, with FSLeyes"
-   
-fi 
+        # Preproc DWI_A is done.
+        echo "DWI_A is done."
+        echo "QC recommendations:"
+        echo "1. Check topup_field.nii.gz in UNWARP"
+        echo "2. Check delta_DWI.nii.gz in EDDY"
+        echo "   2b. If eddy_correct was ran check eddy_output also"
+        echo "3. Check 3_DWI_V1.nii.gz in DTIfit, with FSLeyes"
+    
+    fi 
+
+done

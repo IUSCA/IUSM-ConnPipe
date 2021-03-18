@@ -107,6 +107,14 @@ qc() {
     echo "${msg[@]}" >> ${QCfile_name}.log
 }
 
+log2file() {
+
+    local msg=($(echo "$@"))
+    local dateTime=`date`
+
+    echo "### $dateTime --->" >> ${logfile_name}.log
+    echo "${msg[@]}" >> ${logfile_name}.log
+}
 
 # https://stackoverflow.com/questions/2990414/echo-that-outputs-to-stderr
 echoerr() {

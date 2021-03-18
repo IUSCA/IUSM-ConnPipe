@@ -93,10 +93,6 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                 # Generate an acqparams text file based on number of field maps.
                 path_EPIdcm=${EPIpath}/${configs_dcmFolder}
 
-                # find total readout time
-                # cmd="${EXEDIR}/src/scripts/get_readout.sh ${EPIpath}" 
-                # log $cmd
-                # EPI_SEreadOutTime=`$cmd`
                 echo "EPI_SEreadOutTime -- ${EPI_SEreadOutTime}"
 
                 APstr=`echo -e '0 \t -1 \t  0 \t' ${EPI_SEreadOutTime}`   
