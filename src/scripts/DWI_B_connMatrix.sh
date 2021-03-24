@@ -25,18 +25,18 @@ echo "=================================="
 echo "3. Connectivity Matrix Assembly"
 echo "=================================="
 
-# set paths
-path_DWI_EDDY="${DWIpath}/EDDY"
-path_DWI_DTIfit="${DWIpath}/DTIfit"
-path_DWI_mrtrix="${DWIpath}/MRtrix"
-path_DWI_matrices="${DWIpath}/CONNmats"
-
 
 if [[ ! -d "${path_DWI_matrices}" ]]; then
     cmd="mkdir ${path_DWI_matrices}"
     log $cmd
     eval $cmd
 fi 
+
+# check paths
+log "path_DWI_EDDY is ${path_DWI_EDDY}"
+log "path_DWI_DTIfit is ${path_DWI_DTIfit}"
+log "path_DWI_mrtrix is ${path_DWI_mrtrix}"
+log "path_DWI_matrices is ${path_DWI_matrices}"
 
 fileFiltStreamlines="${path_DWI_mrtrix}/1m_sift_streamlines.tck"
 

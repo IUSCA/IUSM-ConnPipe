@@ -160,13 +160,14 @@ for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
         eval $cmd > "${path_DWI_DTIfit}/dtifit.log"
 
         # Preproc DWI_A is done.
-        echo "DWI_A is done."
-        echo "QC recommendations:"
-        echo "1. Check topup_field.nii.gz in UNWARP"
-        echo "2. Check delta_DWI.nii.gz in EDDY"
-        echo "   2b. If eddy_correct was ran check eddy_output also"
-        echo "3. Check 3_DWI_V1.nii.gz in DTIfit, with FSLeyes"
+         "DWI_A is done."
     
     fi 
 
 done
+
+echo "QC recommendations:"
+echo "1. Check topup_field.nii.gz in UNWARP"
+echo "2. Check delta_DWI.nii.gz in EDDY"
+echo "   2b. If eddy_correct was ran check eddy_output also"
+echo "3. Check 3_DWI_V1.nii.gz in DTIfit, with FSLeyes"

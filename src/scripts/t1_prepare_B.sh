@@ -513,7 +513,8 @@ if ${flags_T1_seg}; then
     ## WM CSF sandwich 
     echo "WM/CSF sandwich"   
 
-    # Remove any gray matter voxels that are withing one dilation of CSF and white matter.
+    # Remove any gray matter voxels that are within
+    # one dilation of CSF and white matter.
 
     # Dilate WM mask    
     fileIn="${T1path}/T1_WM_mask.nii.gz"
