@@ -25,7 +25,8 @@ fi
 ############################  PATH TO DATA  ###################################
 
 # USER INSTRUCTIONS- PLEASE SET THIS PATH TO POINT TO YOUR DATA DIRECTORY
-export path2data="/N/project/slate_project/NANSTAN/Datadir"
+export path2data="/N/project/ProjectName/Datadir"
+
 
     ## USER: if running all subjects in the path2data directory, set this flag to true; 
     ## set to false if you'd like to process a subset of subjects 
@@ -44,7 +45,7 @@ export path2data="/N/project/slate_project/NANSTAN/Datadir"
 export EXEDIR=$(dirname "$(readlink -f "$0")")
 
 source ${EXEDIR}/src/func/bash_funcs.sh
-source ${EXEDIR}/config_STAN_SPINECO.sh
+source ${EXEDIR}/config.sh
 
 
 #################################################################################

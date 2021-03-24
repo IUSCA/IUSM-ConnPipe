@@ -58,9 +58,18 @@ export configs_DWI="DWI"
     export configs_unwarpFolder="UNWARP"
         export configs_dcmPA="B0_PA_DCM" #b0 opposite phase encoding
 
-export configs_dcmFolder="DICOMS"
+#export configs_dcmFolder="DICOMS"
 export configs_dcmFiles="dcm" # specify Dicom file extension
 export configs_niiFiles="nii" # Nifti-1 file extension
+
+## USER: select only one option below (single phase or two phase)
+## Single phase ##
+# export configs_dcmFolder="DICOMS"
+
+## Two phase##
+# Allow two DICOM directories (e.g., AP/PA, LR/RL,...).Both phase directions must exist  
+# export configs_dcmFolder1="DICOMS1" # Specify first phase direction (e.g., AP)
+# export configs_dcmFolder2="DICOMS2" # Specify reverse phase data direction (e.g., PA)
 
 
 ################################################################################
@@ -72,7 +81,7 @@ export pathFSLstandard="${FSLDIR}/data/standard"
 
 ## FOR IUSM USERS ONLY - DURING DEVELOPMENT PHASE, PLEASE USE THIS "pathSM" AS THE 
 ## SUPPLEMENTARY MATERIALS PATH. THIS WILL EVENTUALLY LIVE IN A REPOSITORY 
-export pathSM="/N/project/slate_project/ConnPipelineSM"
+export pathSM="/N/project/ProjectName/ConnPipelineSM"
 export pathMNItmplates="${pathSM}/MNI_templates"
 export pathBrainmaskTemplates="${pathSM}/brainmask_templates"
 export pathParcellations="${pathSM}/Parcellations"
@@ -214,11 +223,11 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export fMRI_A=true
+export fMRI_A=false
 
 if $fMRI_A; then
 
-	export scanner="GE" #  SIEMENS or GE
+	export scanner="SIEMENS" #  SIEMENS or GE
 	log "SCANNER ${scanner}"
 
 	# # set number of EPI sessions/scans
@@ -239,6 +248,8 @@ if $fMRI_A; then
 			export scanner_param_BandwidthPerPixelPhaseEncode="BandwidthPerPixelPhaseEncode"  # "BandwidthPerPixelPhaseEncode" for Siemens; unknown for GE
 			export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
 			export scanner_param_TotalReadoutTime="TotalReadoutTime"
+			export scammer_param_AcquisitionMatrix="AcquisitionMatrixPE"
+			export scanner_param_PhaseEncodingDirection="PhaseEncodingDirection"
 		elif [[ ${scanner} == "GE" ]]; then
 			export scanner_param_TR="tr"  # "RepetitionTime" for Siemens; "tr" for GE
 			export scanner_param_TE="te"  # "EchoTime" for Siemens; "te" for GE
@@ -247,6 +258,8 @@ if $fMRI_A; then
 			export scanner_param_BandwidthPerPixelPhaseEncode="pixel_bandwidth"  # "BandwidthPerPixelPhaseEncode" for Siemens; unknown for GE
 			export scanner_param_slice_fractimes="slice_timing"  # "SliceTiming" for Siemens; "slice_timing" for GE
 			export scanner_param_TotalReadoutTime="TotalReadoutTime"
+			export scammer_param_AcquisitionMatrix="acquisition_matrix"
+			export scanner_param_PhaseEncodingDirection="phase_encode_direction"
 		fi
 
 	#------------------------------------------------------------------------------------------------------------	
@@ -412,15 +425,15 @@ if $fMRI_A; then
 
 		export nR 
 
-	export flags_EPI_ApplyReg=true
+	export flags_EPI_ApplyReg=false
 
-	export flags_EPI_DemeanDetrend=true
+	export flags_EPI_DemeanDetrend=false
 
-	export flags_EPI_BandPass=true
+	export flags_EPI_BandPass=false
 		export configs_EPI_fMin=0.009
 		export configs_EPI_fMax=0.08	
 		
-	export flags_EPI_ROIs=true
+	export flags_EPI_ROIs=false
 
 fi
 
@@ -429,17 +442,36 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export DWI_A=false
+export DWI_A=true
 
 if $DWI_A; then
 
+	export scanner="SIEMENS" #  SIEMENS or GE
+	log "SCANNER ${scanner}"
+
+	if [[ ${scanner} == "SIEMENS" ]]; then
+		export scanner_param_EffectiveEchoSpacing="EffectiveEchoSpacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
+		export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
+		export scanner_param_TotalReadoutTime="TotalReadoutTime"
+		export scammer_param_AcquisitionMatrix="AcquisitionMatrixPE"
+		export scanner_param_PhaseEncodingDirection="PhaseEncodingDirection"
+	elif [[ ${scanner} == "GE" ]]; then
+		export scanner_param_EffectiveEchoSpacing="effective_echo_spacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
+		export scanner_param_slice_fractimes="slice_timing"  # "SliceTiming" for Siemens; "slice_timing" for GE
+		export scanner_param_TotalReadoutTime="TotalReadoutTime"
+		export scammer_param_AcquisitionMatrix="acquisition_matrix"
+		export scanner_param_PhaseEncodingDirection="phase_encode_direction"
+	fi
+
 	export flags_DWI_dcm2niix=true # dicom to nifti coversion
+								# not needed if json file(s) are provided/extracted
 		export configs_DWI_readout=[] # if empty get from dicom; else specify value
 	export flags_DWI_topup=true # FSL topup destortion field estimation
 		export configs_DWI_b0cut=1 # maximum B-value to be considered B0
 	export flags_DWI_eddy=true # FSL EDDY distortion correction
 		export configs_DWI_EDDYf='0.3' # fsl bet threshold for b0 brain mask used by EDDY
 		export configs_DWI_repolON=true # use eddy_repol to interpolate missing/outlier data
+		export configs_DWI_MBjson=true # read the slices/MB-groups info from the json file (--json option)
 	export flags_DWI_DTIfit=true  # Tensor estimation and generation of scalar maps
 		export configs_DWI_DTIfitf='0.4' # brain extraction (FSL bet -f) parameter 
 
