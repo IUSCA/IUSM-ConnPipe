@@ -127,7 +127,7 @@ done
 
 
 ## list all the files in unwarp dir
-filesIn=$(find ${path_DWI_UNWARP} -maxdepth 1 -type f -iname "*.nii.gz")
+filesIn=$(find ${path_DWI_UNWARP} -maxdepth 1 -type f -iname "*.nii.gz" | sort -z)
 echo $filesIn
 B0_list=$(find ${path_DWI_UNWARP} -maxdepth 1 -type f -iname "*.nii.gz" | wc -l)
 echo "$B0_list volumes were found in ${path_DWI_UNWARP}"
@@ -170,5 +170,5 @@ cmd="topup --imain=${fileIn} \
     --iout=${fileOutUnwarped}"
 
     log $cmd
-    #eval $cmd 
+    eval $cmd 
   
