@@ -1,9 +1,5 @@
 <<'COMMENT'
-josh faskowitz
-Indiana University
-Computational Cognitive Neurosciene Lab
-Copyright (c) 2018 Josh Faskowitz
-See LICENSE file for license
+inspired by josh faskowitz, modified by AAK
 COMMENT
 
 # colors
@@ -20,7 +16,7 @@ check_required() {
 
     #read in list (could be list of 1
     local input_list=("$@")
-    echo "input_list: ${input_list[@]}"
+    log "input_list: ${input_list[@]}"
 
     for i in ${input_list[@]}
     do
@@ -28,15 +24,14 @@ check_required() {
         then
             echoerr "${i} does not exist"
             echoerr "problem with ${!i}"
-            #and touch a file for convenience 
-            touch "problem.yo"
-            log "${i} for $subj does not exist: ${!i}" >> problem.yo
+            log "${i} for $subj does not exist: ${!i}" 
             # return an error
             return 1
         fi
     done
 
     # if we get here, return no error
+    echo; log "ALL FILES EXIST" ; echo
     return 0 
 }
 
@@ -44,7 +39,7 @@ check_inputs() {
 
     #read in list (could be list of 1
     local input_list=("$@")
-    echo "input_list: ${input_list[@]}"
+    log "input_list: ${input_list[@]}"
 
     for i in ${input_list[@]}
     do
@@ -57,7 +52,7 @@ check_inputs() {
     done
 
     # if we get here, return no error
-    echo; echo "ALL INPUTS EXIST" ; echo
+    echo; log "ALL INPUTS EXIST" ; echo
     return 0 
 }
 
@@ -70,6 +65,15 @@ checkisfile() {
     fi
 }
 
+checkisdir() {
+
+    local inDir=$1
+    if [[ ! -d ${inDir} ]] ; then
+        echoerr "Directory does not exist: $inDir"
+        exit 1
+    fi
+}
+
 ################################################################################
 ## log message
 log() {
@@ -77,15 +81,14 @@ log() {
     local msg=($(echo "$@"))
     local dateTime=`date`
     echo -e ${CYAN_}
-    echo "# "$dateTime "-" ${msg[0]} "--->"
+    echo "# "$dateTime " --->"
     echo -e ${NC_}     
     echo "${msg[@]}"
     echo -e ${NC_}
 
 	# echo "### $dateTime -" >> ${EXEDIR}/pipeline.log
     # echo "${msg[@]}" >> ${EXEDIR}/pipeline.log
-
-    echo "### $dateTime -" >> ${logfile_name}.log
+    echo "### $dateTime --->" >> ${logfile_name}.log
     echo "${msg[@]}" >> ${logfile_name}.log
 }
 
@@ -95,7 +98,7 @@ qc() {
     local msg=($(echo "$@"))
     local dateTime=`date`
     echo -e ${CYAN_}
-    echo "# "$dateTime "-" ${msg[0]} "--->"
+    echo "# "$dateTime "--->"
     echo -e ${NC_}     
     echo "${msg[@]}"
     echo -e ${NC_}
@@ -104,18 +107,27 @@ qc() {
     echo "${msg[@]}" >> ${QCfile_name}.log
 }
 
+log2file() {
+
+    local msg=($(echo "$@"))
+    local dateTime=`date`
+
+    echo "### $dateTime --->" >> ${logfile_name}.log
+    echo "${msg[@]}" >> ${logfile_name}.log
+}
 
 # https://stackoverflow.com/questions/2990414/echo-that-outputs-to-stderr
 echoerr() {
+    
     cat <<< "$(echo -e ${RED_}ERROR: $@ ${NC_})" 1>&2; 
-}
+    local msg=($(echo "$@"))
+    local dateTime=`date`
+    echo -e ${RED_}
+    echo "### $dateTime -" >> ${logfile_name}.log
+    echo "ERROR" >> ${logfile_name}.log
+    echo "${msg[@]}" >> ${logfile_name}.log
+    echo -e ${NC_}
 
-lsrm() {
-    file=($(echo "$@"))
-    for ff in "${file[@]}" ; do
-        echo -e "${YELLOW_}REMOVING: $ff ${NC_}"
-        ls ${ff} && rm ${ff}
-    done
 }
 
 

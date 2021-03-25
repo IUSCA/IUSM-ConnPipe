@@ -25,10 +25,9 @@ echo "=================================="
 echo "1. Registration of T1 to b0"
 echo "=================================="
 
-# set paths
-path_DWI_EDDY="${DWIpath}/EDDY"
-path_DWI_DTIfit="${DWIpath}/DTIfit"
-
+# check paths
+log "path_DWI_EDDY is ${path_DWI_EDDY}"
+log "path_DWI_DTIfit is ${path_DWI_DTIfit}"
 
 # down-sample FA image
 fileFA2mm="${path_DWI_DTIfit}/3_DWI_FA.nii.gz"

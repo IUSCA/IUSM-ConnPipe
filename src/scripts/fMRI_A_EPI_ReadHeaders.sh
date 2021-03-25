@@ -21,23 +21,6 @@ source ${EXEDIR}/src/func/bash_funcs.sh
     echo "# =================================="
 
 
-    path_EPIdcm=${EPIpath}/${configs_dcmFolder}
-
-    # Identify DICOMs
-    declare -a dicom_files
-    while IFS= read -r -d $'\0' dicomfile; do 
-        dicom_files+=( "$dicomfile" )
-    done < <(find ${path_EPIdcm} -iname "*.${configs_dcmFiles}" -print0 | sort -z)
-
-    if [ ${#dicom_files[@]} -eq 0 ]; then 
-        echo "No dicom (.${configs_dcmFiles}) images found."
-        echo "Please specify the correct file extension of dicom files by setting the configs_dcmFiles flag in the config file"
-        echo "Skipping further analysis"
-        exit 1
-    else
-        echo "There are ${#dicom_files[@]} dicom files in this EPI-series "
-    fi
-
     if ${flags_EPI_UseJson}; then  
         log "JSON: Using json file provided by dcm2niix to extract header information "
 
@@ -70,7 +53,15 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         EPI_BandwidthPerPixelPhaseEncode=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_BandwidthPerPixelPhaseEncode}`
         log "BandwidthPerPixelPhaseEncode extracted from header is $EPI_BandwidthPerPixelPhaseEncode"
         echo "export EPI_BandwidthPerPixelPhaseEncode=${EPI_BandwidthPerPixelPhaseEncode}" >> ${EPIpath}/0_param_dcm_hdr.sh
+        # find TotalReadoutTime
 
+        log "THIS IS EPIpath ${EPIpath}"
+
+        cmd="${EXEDIR}/src/scripts/get_readout.sh ${EPIpath}/0_epi.json ${EPIpath}/DICOMS EPI" 
+        log $cmd
+        EPI_SEreadOutTime=`$cmd`
+        log "EPI_SEreadOutTime = ${EPI_SEreadOutTime}"
+        echo "export EPI_SEreadOutTime=${EPI_SEreadOutTime}" >> ${EPIpath}/0_param_dcm_hdr.sh
 
         # get the SliceTiming values in an array
         declare -a starr; 
@@ -104,7 +95,25 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         eval $cmd
         # exitcode=$?
 
-    else   ## if not using JSON file
+    else   ## if not using JSON file, extract info from DICOMs
+
+        path_EPIdcm=${EPIpath}/${configs_dcmFolder}
+
+        # Identify DICOMs
+        declare -a dicom_files
+        while IFS= read -r -d $'\0' dicomfile; do 
+            dicom_files+=( "$dicomfile" )
+        done < <(find ${path_EPIdcm} -iname "*.${configs_dcmFiles}" -print0 | sort -z)
+
+        if [ ${#dicom_files[@]} -eq 0 ]; then 
+            echo "No dicom (.${configs_dcmFiles}) images found."
+            echo "Please specify the correct file extension of dicom files by setting the configs_dcmFiles flag in the config file"
+            echo "Skipping further analysis"
+            exit 1
+        else
+            echo "There are ${#dicom_files[@]} dicom files in this EPI-series "
+        fi
+
         # Extract Repetition time (TR)
         # Dicom header information --> Flag 0018,0080 "Repetition Time"
         cmd="dicom_hinfo -tag 0018,0080 ${dicom_files[0]}"                    
@@ -165,7 +174,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         log $cmd
         out=`$cmd`
         GRAPPAacc=`echo $out | awk -F' ' '{ print $2}'`
-        echo "HEADER extracted Acceleration factor is: ${TE}" 
+        echo "HEADER extracted Acceleration factor is: ${GRAPPAacc}" 
         echo "export GRAPPAacc=${GRAPPAacc}" >> ${EPIpath}/0_param_dcm_hdr.sh
 
 
@@ -195,25 +204,27 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         fi
 
     fi
-    
-    # ##esp
-    
-    # dcm_file=${dicom_files[0]}
-    # cmd="dicom_hinfo -tag 0043,102c ${dcm_file}"
-    # log $cmd
-    # out=`$cmd`
-    # esp=`echo $out | awk -F' ' '{ print $2}'`
-    # echo "Header extracted TE is: ${esp}" 
-    # echo "export esp=${esp}" >> ${EPIpath}/0_param_dcm_hdr.sh
-
-    # ## asset
-    # cmd="dicom_hinfo -tag 0043,1083 ${dcm_file}"                    
-    # log $cmd 
-    # out=`$cmd`                
-    # asset=`echo $out | awk -F' ' '{ print $2}'`
-    # echo "Header extracted asset is: ${asset}" 
-    # echo "export asset=${asset}" >> ${EPIpath}/0_param_dcm_hdr.sh
 
     #-------------------------------------------------------------------------%
     # Config params are all saved in ${EPIpath}/0_param_dcm_hdr.sh     
     log "Config params are saved in ${EPIpath}/0_param_dcm_hdr.sh"      
+
+
+
+    # ##esp
+
+# dcm_file=${dicom_files[0]}
+# cmd="dicom_hinfo -tag 0043,102c ${dcm_file}"
+# log $cmd
+# out=`$cmd`
+# esp=`echo $out | awk -F' ' '{ print $2}'`
+# echo "Header extracted TE is: ${esp}" 
+# echo "export esp=${esp}" >> ${EPIpath}/0_param_dcm_hdr.sh
+
+# ## asset
+# cmd="dicom_hinfo -tag 0043,1083 ${dcm_file}"                    
+# log $cmd 
+# out=`$cmd`                
+# asset=`echo $out | awk -F' ' '{ print $2}'`
+# echo "Header extracted asset is: ${asset}" 
+# echo "export asset=${asset}" >> ${EPIpath}/0_param_dcm_hdr.sh

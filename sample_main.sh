@@ -1,5 +1,8 @@
 #!/bin/bash
 
+##########################################
+### RUN THIS FOR NANSTAN SUBJECTS 13 - 29
+##########################################
 
 # IU modules load
 module unload python/2.7.16; module load python/3.6.8 
@@ -22,13 +25,14 @@ fi
 ############################  PATH TO DATA  ###################################
 
 # USER INSTRUCTIONS- PLEASE SET THIS PATH TO POINT TO YOUR DATA DIRECTORY
-export path2data="/N/project/project_name/DataDir"
+export path2data="/N/project/ProjectName/Datadir"
+
 
     ## USER: if running all subjects in the path2data directory, set this flag to true; 
     ## set to false if you'd like to process a subset of subjects 
-    export runAll=true 
+    export runAll=false 
 
-    ## USER: if running a subset of subjects, a list of subject ID's can be read from 
+    ## USER -- if running a subset of subjects, a list of subject ID's can be read from 
     ## a text file located in path2data; user can name the file here:
     export subj2run="subj2run.txt"
 
@@ -51,8 +55,6 @@ source ${EXEDIR}/config.sh
 ## main
 main() {
 
-start=`date +%s`
-
 log "START running Connectivity Pipeline on the following subjects:"
 
 IFS=$'\r\n' GLOBIGNORE='*' command eval 'SUBJECTS=($(cat ${path2data}/${subj2run}))'
@@ -65,6 +67,8 @@ echo "##################"
 
 for SUBJdir in "${SUBJECTS[@]}"; do
 
+    start=`date +%s`
+
     export SUBJ=${SUBJdir}
     
     log "Subject ${SUBJ}"
@@ -73,7 +77,8 @@ for SUBJdir in "${SUBJECTS[@]}"; do
     export DWIpath="${path2data}/${SUBJ}/${configs_DWI}"
 
     # user may specify name of logfile written inside each subjects dir
-    export logfile_name="${path2data}/${SUBJ}/out"
+    today=$(date +"%m_%d_%Y_%H_%M")
+    export logfile_name="${path2data}/${SUBJ}/out_${today}"
     export QCfile_name="${path2data}/${SUBJ}/qc"
  
 
@@ -88,7 +93,7 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
             if [[ ${exitcode} -ne 0 ]] ; then
                 echoerr "problem at T1_PREPARE_A. exiting."
-                exit 1
+                continue
             fi
         else 
             log "SKIP T1_PREPARE_A for subject $SUBJ"
@@ -109,7 +114,7 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
                 if [[ ${exitcode} -ne 0 ]] ; then
                     echoerr "problem at T1_PREPARE_B. exiting."
-                    exit 1
+                    continue
                 fi
                         
             else
@@ -134,7 +139,7 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
                 if [[ ${exitcode} -ne 0 ]] ; then
                     echoerr "problem at fMRI_A. exiting."
-                    exit 1
+                    continue
                 fi
                         
             else
@@ -165,7 +170,7 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
                 if [[ ${exitcode} -ne 0 ]] ; then
                     echoerr "problem at DWI_A. exiting."
-                    exit 1
+                    continue
                 fi
                         
             else
@@ -190,7 +195,7 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
                 if [[ ${exitcode} -ne 0 ]] ; then
                     echoerr "problem at DWI_B. exiting."
-                    exit 1
+                    continue
                 fi
                         
             else
@@ -283,4 +288,4 @@ main "$@"
 
 ######################################################################################
 
-
+    

@@ -16,15 +16,18 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ###############################################################################    
     
     echo "# =================================="
-    echo "# 0. Field Map Correction"
+    echo "# 0. Spin Echo Field Map Correction"
     echo "# =================================="
 
     # set up direcotry paths
-    if [[ ${configs_EPI_SEindex} -eq "0" ]]; then  # Assume single pair of SE fieldmaps within EPI folder
+    if ! ${configs_EPI_multiSEfieldmaps}; then  # Assume single pair of SE fieldmaps within EPI folder
+        echo "SINGLE SE FIELDMAP FOLDER ${EPIpath}/${configs_sefmFolder}"
         path_EPI_SEFM="${EPIpath}/${configs_sefmFolder}"
     else  # Allows multiple UNWARP folders at the subject level (UNWARP1, UNWARP2,...)
-        SEdir="${configs_sefmFolder}${configs_EPI_SEindex}"
-        path_EPI_SEFM="${path2data}/${SUBJ}/${SEdir}"
+        # SEdir="${configs_sefmFolder}${configs_EPI_SEindex}"
+        # path_EPI_SEFM="${path2data}/${SUBJ}/${SEdir}"
+        path_EPI_SEFM="${path2data}/${SUBJ}/${configs_sefmFolder}"
+        echo "MULTIPLE SE FIELDMAP FOLDERS ${path_EPI_SEFM}"
     fi 
 
     path_EPI_APdcm="${path_EPI_SEFM}/${configs_APdcm}"
@@ -34,12 +37,14 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
     if [[ -d ${path_EPI_SEFM} ]]; then
 
-        if [[ -z ${EPInum} ]] || [[ ${EPInum} -le ${configs_EPI_skipSEmap4EPI }]]; then
+        if [[ -z "${EPInum}" ]] || [[ "${EPInum}" -le "${configs_EPI_skipSEmap4EPI}" ]]; then
 
             fileInAP="${path_EPI_SEFM}/AP.nii.gz"
             fileInPA="${path_EPI_SEFM}/PA.nii.gz"
         
             if [ ! -f "${fileInAP}" ] && [ ! -f "${fileInPA}" ]; then
+
+                log "IMPORT AP and PA fieldmaps from DICOM"
 
                 fileNiiAP="AP"
                 rm -fr ${path_EPI_SEFM}/${fileNiiAP}.nii*  # remove any existing .nii images
@@ -70,6 +75,8 @@ source ${EXEDIR}/src/func/bash_funcs.sh
             fi
 
             if [ -f "${fileInAP}" ] && [ -f "${fileInPA}" ]; then
+
+                log "Concatenate the AP then PA into single 4D image"
                 
                 # Concatenate the AP then PA into single 4D image
                 fileOut="${path_EPI_SEFM}/sefield.nii.gz"
@@ -81,95 +88,93 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
                 cmd="fslmerge -tr ${fileOut} ${fileInAP} ${fileInPA} ${TR}"
                 log $cmd
-                eval $cmd 
+                eval $cmd                 
 
-            fi 
+                # Generate an acqparams text file based on number of field maps.
+                path_EPIdcm=${EPIpath}/${configs_dcmFolder}
 
-            # Generate an acqparams text file based on number of field maps.
-            path_EPIdcm=${EPIpath}/${configs_dcmFolder}
+                echo "EPI_SEreadOutTime -- ${EPI_SEreadOutTime}"
 
-            cmd="${EXEDIR}/src/scripts/get_readout.sh ${EPIpath}" 
-            log $cmd
-            EPI_SEreadOutTime=`$cmd`
-            echo "EPI_SEreadOutTime -- ${EPI_SEreadOutTime}"
+                APstr=`echo -e '0 \t -1 \t  0 \t' ${EPI_SEreadOutTime}`   
+                PAstr=`echo -e '0 \t 1 \t  0 \t' ${EPI_SEreadOutTime}`
 
-            APstr=`echo -e '0 \t -1 \t  0 \t' ${EPI_SEreadOutTime}`   
-            PAstr=`echo -e '0 \t 1 \t  0 \t' ${EPI_SEreadOutTime}`
-
-            cmd="fslinfo ${fileOut}"
-            log $cmd
-            out=`$cmd` 
-            d4vol=$(echo $out | \
-            awk '{split($0,a,"dim4"); {print a[2]}}' | \
-            awk '{split($0,a," "); {print a[1]}}')   
-            exitcode=$?   # extract number of volumes from sefield.nii.gz
-            echo "d4vol is $d4vol"
-
-            if [[ ${exitcode} -eq 0 ]]; then 
-
-                if [[ $(bc <<< "$d4vol % 2 == 0") ]]; then
-                    SEnumMaps=$(bc <<< "scale=0 ; $d4vol / 2")   #convert number of volumes to a number
-                    log "SEnumMaps extracted from sefield.nii.gz: ${SEnumMaps}"
-                else
-                    log "sefile.nii.gz file must contain even number of volumes. Exiting..."
-                    exit 1
-                fi                             
-            else
-                SEnumMaps=${configs_EPI_SEnumMaps}  #  trust the user input if SEnumMaps failed
-                log "SEnumMaps from user-specified parameter: ${SEnumMaps}"
-            fi            
-
-            acqparams="${path_EPI_SEFM}/acqparams.txt"
-            if [[ -e ${acqparams} ]]; then
-                echo "removing ${acqparams}"
-                cmd="rm ${acqparams}"
+                cmd="fslinfo ${fileOut}"
                 log $cmd
-                eval $cmd
-            fi 
+                out=`$cmd` 
+                d4vol=$(echo $out | \
+                awk '{split($0,a,"dim4"); {print a[2]}}' | \
+                awk '{split($0,a," "); {print a[1]}}')   
+                exitcode=$?   # extract number of volumes from sefield.nii.gz
+                echo "d4vol is $d4vol"
 
-            for ((k=0; k<${SEnumMaps}; k++)); do
-                echo ${APstr} >> ${acqparams}
-            done
-            for ((k=0; k<${SEnumMaps}; k++)); do
-                echo ${PAstr} >> ${acqparams}
-            done
+                if [[ ${exitcode} -eq 0 ]]; then 
 
-            # Generate (topup) and apply (applytopup) spin echo field map
-            # correction to 0_epi image.
+                    if [[ $(bc <<< "$d4vol % 2 == 0") ]]; then
+                        SEnumMaps=$(bc <<< "scale=0 ; $d4vol / 2")   #convert number of volumes to a number
+                        log "SEnumMaps extracted from sefield.nii.gz: ${SEnumMaps}"
+                    else
+                        log "sefile.nii.gz file must contain even number of volumes. Exiting..."
+                        exit 1
+                    fi                             
+                else
+                    SEnumMaps=${configs_EPI_SEnumMaps}  #  trust the user input if SEnumMaps failed
+                    log "SEnumMaps from user-specified parameter: ${SEnumMaps}"
+                fi            
 
-            fileIn="${path_EPI_SEFM}/sefield.nii.gz"
-            if [[ -e "${fileIn}" ]] && [[ -e ${acqparams} ]]; then
-                fileOutName="${path_EPI_SEFM}/topup_results"
-                fileOutField="${path_EPI_SEFM}/topup_field"
-                fileOutUnwarped="${path_EPI_SEFM}/topup_unwarped"
-
-
-                if ${flags_EPI_RunTopup}; then
-                    log "topup: Starting topup on sefiled.nii.gz  --  This might take a wile... "
-                    cmd="topup --imain=${fileIn} \
-                    --datain=${acqparams} \
-                    --out=${fileOutName} \
-                    --fout=${fileOutField} \
-                    --iout=${fileOutUnwarped}"
+                acqparams="${path_EPI_SEFM}/acqparams.txt"
+                if [[ -e ${acqparams} ]]; then
+                    echo "removing ${acqparams}"
+                    cmd="rm ${acqparams}"
                     log $cmd
-                    eval $cmd 
-                    echo $?
+                    eval $cmd
                 fi 
 
-                if [[ ! -e "${fileOutUnwarped}.nii.gz" ]]; then  # check that topup has been completed
-                    log "WARNING Topup output not created. Exiting... "
-                    exit 1
-                fi
+                for ((k=0; k<${SEnumMaps}; k++)); do
+                    echo ${APstr} >> ${acqparams}
+                done
+                for ((k=0; k<${SEnumMaps}; k++)); do
+                    echo ${PAstr} >> ${acqparams}
+                done
 
-            else 
-                log " WARNING UNWARP/sefield.nii.gz or acqparams.txt are missing. topup not started"
-                exit 1
+                # Generate (topup) and apply (applytopup) spin echo field map
+                # correction to 0_epi image.
+
+                fileIn="${path_EPI_SEFM}/sefield.nii.gz"
+                if [[ -e "${fileIn}" ]] && [[ -e ${acqparams} ]]; then
+                    fileOutName="${path_EPI_SEFM}/topup_results"
+                    fileOutField="${path_EPI_SEFM}/topup_field"
+                    fileOutUnwarped="${path_EPI_SEFM}/topup_unwarped"
+
+
+                    if ${flags_EPI_RunTopup}; then
+                        log "topup: Starting topup on sefiled.nii.gz  --  This might take a wile... "
+                        cmd="topup --imain=${fileIn} \
+                        --datain=${acqparams} \
+                        --out=${fileOutName} \
+                        --fout=${fileOutField} \
+                        --iout=${fileOutUnwarped}"
+                        log $cmd
+                        eval $cmd 
+                        echo $?
+                    fi 
+
+                    if [[ ! -e "${fileOutUnwarped}.nii.gz" ]]; then  # check that topup has been completed
+                        log "ERROR Topup output not created. Exiting... "
+                        exit 1
+                    fi
+
+                else 
+                    log " WARNING UNWARP/sefield.nii.gz or acqparams.txt are missing. topup not started"
+                    exit 1
+                fi 
+            else
+                log "WARNING ${fileInAP} and/or ${fileInPA} files not found. Exiting..."
+                exit 1 
             fi 
 
-        elif [[ ${EPInum} -gt ${configs_EPI_skipSEmap4EPI }]]; then
+        elif [[ "${EPInum}" -gt ${configs_EPI_skipSEmap4EPI} ]]; then
 
-            log "USER-PARAM configs_EPI_skipSEmap4EPI < EPInum -- skipping topup for EPI${EPInum}"
-            exit 1
+            log "USER-PARAM configs_EPI_skipSEmap4EPI > EPInum -- skipping topup for EPI${EPInum}"
 
         else
 
@@ -189,7 +194,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
             fileOut="${path_EPI_SEFM}/0_epi_unwarped.nii.gz"
 
             log "applytopup -- starting applytopup on 0_epi.nii.gz"
-            fileOut="${path_EPI_SEFM}/0_epi_unwarped.nii.gz"
+
             cmd="applytopup --imain=${fileIn} \
             --datain=${acqparams} \
             --inindex=1 \
@@ -218,37 +223,4 @@ source ${EXEDIR}/src/func/bash_funcs.sh
     else
         log "WARNING ${path_EPI_SEFM} doesn't exist. Field map correction must be skipped."
     fi
-
-
-
-        # elif [ -d "${path_EPI_GREmagdcm}" ] && [ -d "${path_EPI_GREphasedcm}" ]; then
-        #     # identify dicoms 
-        #     declare -a dicom_files
-        #     while IFS= read -r -d $'\0' dicomfile; do 
-        #         dicom_files+=( "$dicomfile" )
-        #     done < <(find ${path_EPI_GREmagdcm} -iname "*.${configs_dcmFiles}" -print0 | sort -z)
-
-        #     if [ ${#dicom_files[@]} -eq 0 ]; then 
-        #         echo "No dicom (.${configs_dcmFiles}) images found."
-        #         echo "Please specify the correct file extension of dicom files by setting the configs_dcmFiles flag in the config file"
-        #         echo "Skipping further analysis"
-        #         exit 1
-        #     else
-        #         # Extract TE1 and TE2 from the first image of Gradient Echo Magnitude Series
-        #         # fsval image descrip would do the same but truncates TEs to a single digit!
-        #         echo "There are ${#dicom_files[@]} dicom files in this EPI-series "
-        #         dcm_file=${dicom_files[0]}
-        #         cmd="dicom_hinfo -tag 0018,0081 ${path_EPI_GREmagdcm}/${dcm_file}"
-        #         log $cmd
-        #         out=`$cmd`
-        #         TE1=`echo $out | awk -F' ' '{ print $2}'`
-        #         echo "Header extracted TE is: ${TE1}" 
-        #     fi
-
-        #     ################################################################################
-        #                 # Code missing here - need data with GRE field maps to test
-        #     ################################################################################
-
-        # else 
-        #     log "WARNING. UNWARP DICOMS folders do not exist. Field Map correction failed."
-        # fi 
+    

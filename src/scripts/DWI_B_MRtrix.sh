@@ -20,15 +20,9 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ############################################################################### 
 
-
 echo "=================================="
 echo "2. MRtrix Streamline Tractography"
 echo "=================================="
-
-# set paths
-path_DWI_EDDY="${DWIpath}/EDDY"
-path_DWI_DTIfit="${DWIpath}/DTIfit"
-path_DWI_mrtrix="${DWIpath}/MRtrix"
 
 
 if [[ ! -d "${path_DWI_mrtrix}" ]]; then
@@ -36,6 +30,11 @@ if [[ ! -d "${path_DWI_mrtrix}" ]]; then
     log $cmd
     eval $cmd
 fi 
+
+# check paths
+log "path_DWI_EDDY is ${path_DWI_EDDY}"
+log "path_DWI_DTIfit is ${path_DWI_DTIfit}"
+log "path_DWI_mrtrix is ${path_DWI_mrtrix}"
 
 ## Response Function Estimation
 echo "2.1 Estimating Response function"

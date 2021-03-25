@@ -44,9 +44,19 @@ else
     log " -Will use the slice time corrected 1_epi.nii.gz as input" 
 fi 
 
+
+cmd="fslval ${fileIn} dim4"
+log $cmd 
+nvols=`$cmd`  
+# nvols=`echo $out | awk -F' ' '{ print $1}'`
+echo "export nvols=${nvols}" >> ${EPIpath}/0_param_dcm_hdr.sh
+log "Number of volumes in 1_epi_brain: ${nvols} "
+qc "Number of Time Points: ${nvols} "
+
+
 log "MotionCOrr fileIn is ${fileIn}"
 # Compute motion outliers
-cmd="${EXEDIR}/src/scripts/get_motion_outliers.sh ${EPIpath} ${fileIn}"
+cmd="${EXEDIR}/src/scripts/get_motion_outliers.sh ${EPIpath} ${fileIn} ${nvols}"
 log $cmd
 eval $cmd
 
@@ -56,13 +66,6 @@ fi
 
 
 fileOut="${EPIpath}/2_epi"
-cmd="fslval ${fileIn} dim4"
-log $cmd 
-nvols=`$cmd`                
-#nvols=`echo $out | awk -F' ' '{ print $2}'`
-echo "export nvols=${nvols}" >> ${EPIpath}/0_param_dcm_hdr.sh
-echo "Number of volumes in 1_epi_brain: ${nvols} "
-
 cmd="mcflirt -in ${fileIn} -out ${fileOut} -plots -meanvol"
 log $cmd 
 eval $cmd 

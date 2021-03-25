@@ -13,7 +13,7 @@
 ############################################################################### 
 
 function add_subcort_parc() {
-path="$1" pnodal="$2" subcortUser="$3" python - <<END
+path="$1" pnodal="$2" fileSubcort="$3" subcortUser="$4" python - <<END
 
 import os.path
 import numpy as np
@@ -27,17 +27,20 @@ pnodal=int(os.environ['pnodal'])
 print("pnodal is: ",pnodal)
 print(type(pnodal))
 
-subcortUser=int(os.environ['subcortUser'])
+file_Subcort=os.environ['fileSubcort']
+print("file_Subcort is: ",file_Subcort)
+
+subcortUser=os.environ['subcortUser']
 print("subcortUser is: ",subcortUser)
 print(type(subcortUser))
 
-head_tail = os.path.split(parcpath)
+# head_tail = os.path.split(parcpath)
 
-print(head_tail[0])
-print(head_tail[1])
+# print(head_tail[0])
+# print(head_tail[1])
 
-fileSubcort = ''.join([head_tail[0],'/T1_subcort_seg.nii.gz'])
-print(fileSubcort)
+# fileSubcort = ''.join([head_tail[0],'/T1_subcort_seg.nii.gz'])
+# print(fileSubcort)
 
 parc = nib.load(parcpath)
 parc_vol = parc.get_data()
@@ -45,7 +48,7 @@ parc_vol = parc.get_data()
 MaxID = np.max(parc_vol)
 #print(MaxID)
 
-subcort = nib.load(fileSubcort)
+subcort = nib.load(file_Subcort)
 subcort_vol = subcort.get_data()
 #ind = np.argwhere(subcort_vol == 16)
 #print(ind)
@@ -72,7 +75,6 @@ elif pnodal == 0:
 parc_vol[subcort_vol > 0] = 0
 parc_vol = np.squeeze(parc_vol) + subcort_vol
 
-#fileOut = ''.join([head_tail[0],'/this_is_a_test.nii'])
 parc_vol_new = nib.Nifti1Image(parc_vol.astype(np.float32),parc.affine,parc.header)
 nib.save(parc_vol_new,parcpath)
 
@@ -91,11 +93,19 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 
 ##### Registration of subject to MNI######
+
+# Set registration dir path and remove any existing reg directories
+T1reg="${T1path}/registration"
+
+
 if ${flags_T1_reg2MNI}; then
 
-    T1reg="${T1path}/registration"
+## Transform subject T1 into MNI space, then using inverse matrices
+## transform yeo7, yeo17, shen parcellations and MNI vertricles mask into subject native space
 
-    if [[ $configs_T1_useExistingMats ]] && [[ -d ${T1reg} ]]; then  # check for existing transformation matrices
+    log "Registration between Native t1 and MNI space"
+
+    if [[ $configs_T1_useExistingMats && -d ${T1reg} ]]; then  # check for existing transformation matrices
         
         dof6="${T1reg}/T12MNI_dof6.mat"
         dof6_inv="${T1reg}/MNI2T1_dof6.mat"
@@ -113,9 +123,9 @@ if ${flags_T1_reg2MNI}; then
             log "useExistingMats is ${configs_T1_useExistingMats}"
         fi
     else
+        log "WARNING ${T1reg} not found. Running reg2MNI"
         configs_T1_useExistingMats=false
-        log "useExistingMats is ${configs_T1_useExistingMats}"    
-
+        log "Resetting useExistingMats = ${configs_T1_useExistingMats}"    
     fi
     
 
@@ -130,13 +140,21 @@ if ${flags_T1_reg2MNI}; then
         fi 
         mkdir -p ${T1reg}        
 
+        # Register T1 to MNI and obtain inverse tranformations
         log "flirt dof 6 -- T1 -> MNI152"
-        if [[ -e "${T1path}/T1_fov_denoised.nii" && -e ${path2MNIref} ]]; then		
+
+        if ${configs_T1_useMNIbrain}; then
+            fileIn="${T1path}/T1_brain.nii.gz"
+        else
+            fileIn="${T1path}/T1_fov_denoised.nii"
+        fi
+
+        if [[ -e "${fileIn}" ]] && [[ -e ${path2MNIref} ]]; then		
             # Linear rigid body registration T1 to MNI	
             dof6="${T1reg}/T12MNI_dof6.mat"
 
             cmd="flirt -ref ${path2MNIref} \
-                -in ${T1path}/T1_fov_denoised.nii \
+                -in ${fileIn} \
                 -omat ${dof6} \
                 -out ${T1reg}/T1_dof6 \
                 -cost ${configs_T1_flirtdof6cost} \
@@ -166,11 +184,12 @@ if ${flags_T1_reg2MNI}; then
                 exit 1	
             fi 
         else
-            log "MISSING files - ${T1path}/T1_fov_denoised.nii ${path2MNIref} "
+            log "MISSING one of these files was not found: ${fileIn} ${path2MNIref} "
         fi 
 
         log "flirt dof 12 -- T1 -> MNI152"
-        if [[ -e "${T1reg}/T1_dof6.nii.gz" && -e ${path2MNIref} ]]; then	
+
+        if [[ -e "${T1reg}/T1_dof6.nii.gz" ]] && [[ -e ${path2MNIref} ]]; then	
             # Linear affnie registration of T1 to MNI	
             dof12="${T1reg}/T12MNI_dof12.mat"
 
@@ -207,9 +226,10 @@ if ${flags_T1_reg2MNI}; then
         fi 
 
         log "fnirt"
-        if [[ -e "${T1reg}/T1_dof12.nii.gz" && -e ${path2MNIref} ]]; then
+        if [[ -e "${T1reg}/T1_dof12.nii.gz" ]] && [[ -e ${path2MNIref} ]]; then
+
             # Nonlinear warp of T1 to MNI
-            warp="${T1reg}/T12MNI_warp.nii.gz"
+            warp="${T1reg}/T12MNI_warp"
 
             cmd="fnirt --ref=${path2MNIref} \
                 --in=${T1reg}/T1_dof12.nii.gz \
@@ -220,7 +240,8 @@ if ${flags_T1_reg2MNI}; then
             eval $cmd 
             exitcode=$?
             echo $exitcode
-            if [[ ${exitcode} -eq 0 ]] && [[ -e ${warp} ]] && [[ -e "${T1reg}/T1_warped.nii.gz" ]]; then
+            if [[ ${exitcode} -eq 0 ]] && [[ -e "${warp}.nii.gz" ]] && [[ -e "${T1reg}/T1_warped.nii.gz" ]]; then
+
                 # inverse warp fnirt	
                 warp_inv="${T1reg}/MNI2T1_warp.nii.gz"
 
@@ -236,7 +257,7 @@ if ${flags_T1_reg2MNI}; then
                     return 1
                 fi 
             else 
-                log "WARNING ${warp} or ${T1reg}/T1_warped.nii.gz not created. Exiting"
+                log "WARNING ${warp}.nii.gz or ${T1reg}/T1_warped.nii.gz not created. Exiting"
                 return 1	
             fi 
         else
@@ -244,9 +265,10 @@ if ${flags_T1_reg2MNI}; then
         fi 				
     fi
 
-    ## Transform parcellations from MNI to native subject space
+    # Transform parcellations from MNI to native subject space
     # for every parcellation +1 (Ventricle mask)
-    log "PARCELLATIONS"
+    log "TRANSFORM PARCELLATIONS"
+
     for ((i=0; i<=numParcs; i++)); do
 
         parc="PARC$i"
@@ -267,6 +289,7 @@ if ${flags_T1_reg2MNI}; then
         fi
 
         if [[ -f ${parcdir} ]]; then
+
             log "PARCELLATION $parc --> T1"
 
             fileRef="${T1reg}/T1_dof12.nii.gz"
@@ -310,6 +333,7 @@ if ${flags_T1_reg2MNI}; then
 
             # inv dof 6
             fileIn="${T1reg}/${parc}_unwarped_dof12.nii.gz"
+
             if ${configs_T1_useMNIbrain}; then
                 fileRef="${T1path}/T1_brain.nii.gz"
             else
@@ -352,7 +376,6 @@ if ${flags_T1_reg2MNI}; then
     done
 fi	
 
-
 ##### Tissue-type segmentation; cleaning; and gray matter masking of parcellations ######
 
 if ${flags_T1_seg}; then
@@ -389,10 +412,12 @@ if ${flags_T1_seg}; then
     log $cmd
     eval $cmd 
 
+    # binarize subcorticla segmentaiton to a mask
     cmd="fslmaths ${T1path}/T1_subcort_seg.nii.gz -bin ${T1path}/T1_subcort_mask.nii.gz"
     log $cmd 
     eval $cmd
 
+    # remove CSF contamination
     fileIn="${T1path}/T1_subcort_mask.nii.gz"
     fileMas="${T1path}/T1_CSF_mask_inv.nii.gz"  
     fileOut=${fileIn}  
@@ -401,7 +426,11 @@ if ${flags_T1_seg}; then
     log $cmd 
     eval $cmd
 
-    cmd="fslmaths ${T1path}/T1_subcort_mask.nii.gz -mul -1 -add 1 ${T1path}/T1_subcort_mask_inv.nii.gz"
+    cmd="fslmaths ${T1path}/T1_subcort_seg.nii.gz -mas ${fileMas} ${T1path}/T1_subcort_seg.nii.gz"
+    log $cmd 
+    eval $cmd
+
+    cmd="fslmaths ${fileIn} -mul -1 -add 1 ${T1path}/T1_subcort_mask_inv.nii.gz"
     log $cmd 
     eval $cmd
 
@@ -441,15 +470,21 @@ if ${flags_T1_seg}; then
 
             echo "Performing 2nd and 3rd WM erotion" 
 
-            WMeroded="${T1path}/T1_WM_mask_eroded.nii.gz"
+            WMeroded_1st="${T1path}/T1_WM_mask_eroded_1st.nii.gz"
+            WMeroded_2nd="${T1path}/T1_WM_mask_eroded_2nd.nii.gz"
+            WMeroded_3rd="${T1path}/T1_WM_mask_eroded.nii.gz"
+
+            cmd="mv ${T1path}/T1_WM_mask_eroded.nii.gz ${WMeroded_1st}"
+            log $cmd
+            eval $cmd 
 
             # 2nd WM erotion
-            cmd="fslmaths ${WMeroded} -ero ${WMeroded}"
+            cmd="fslmaths ${WMeroded_1st} -ero ${WMeroded_2nd}"
             log $cmd
             eval $cmd
 
             # 3rd WM erotion
-            cmd="fslmaths ${WMeroded} -ero ${WMeroded}"
+            cmd="fslmaths ${WMeroded_2nd} -ero ${WMeroded_3rd}"
             log $cmd
             eval $cmd        
         fi 
@@ -466,10 +501,20 @@ if ${flags_T1_seg}; then
     log $cmd
     eval $cmd
 
+    # apply as CSF ventricles mask without erotion 
+    fileIn="${T1path}/T1_CSF_mask.nii.gz" 
+    fileOut="${T1path}/T1_CSFvent_mask"
+    fileMas="${T1path}/T1_mask_CSFvent.nii.gz"
+
+    cmd="fslmaths ${fileIn} -mas ${fileMas} ${fileOut}"
+    log $cmd
+    eval $cmd    
+
     ## WM CSF sandwich 
     echo "WM/CSF sandwich"   
 
-    # Remove any gray matter voxels that are withing one dilation of CSF and white matter.
+    # Remove any gray matter voxels that are within
+    # one dilation of CSF and white matter.
 
     # Dilate WM mask    
     fileIn="${T1path}/T1_WM_mask.nii.gz"
@@ -487,7 +532,7 @@ if ${flags_T1_seg}; then
     log $cmd
     eval $cmd
 
-    # Dilate CSF mask    
+    # Add the dilated masks together   
     fileIn1="${T1path}/T1_WM_mask_dil.nii.gz"
     fileIn2="${T1path}/T1_CSF_mask_dil.nii.gz"
     fileOut="${T1path}/T1_WM_CSF_sandwich.nii.gz"
@@ -552,7 +597,9 @@ fi
 
 if ${flags_T1_parc}; then
 
-    echo "Gray matter masking of native space parcellations"
+    log "PARC->GM Gray matter masking of native space parcellations"
+
+    one_time=true
 
     for ((i=1; i<=numParcs; i++)); do  # exclude PARC0 - CSF - here
 
@@ -565,7 +612,7 @@ if ${flags_T1_parc}; then
         psubcortonly="PARC${i}psubcortonly"    
         psubcortonly="${!psubcortonly}"
 
-        log "${parc} parcellation intersection with GM; pcort is -- ${pcort}"
+        echo "${parc} parcellation intersection with GM; pcort is -- ${pcort}"
 
         fileIn="${T1path}/T1_parc_${parc}.nii.gz"
         checkisfile ${fileIn}
@@ -581,7 +628,7 @@ if ${flags_T1_parc}; then
         fileMul="${T1path}/T1_GM_mask.nii.gz"
         checkisfile ${fileMul}
 
-        # Apply subject GM mask
+        # # Apply subject GM mask
         fileOut2="${T1path}/T1_GM_parc_${parc}.nii.gz"
 
         cmd="fslmaths ${fileOut} -mul ${fileMul} ${fileOut2}"
@@ -589,8 +636,9 @@ if ${flags_T1_parc}; then
         eval $cmd 
 
         # Dilate and remask to fill GM mask a set number of times
+        fileOut3="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
+
         for ((j=1; j<=${configs_T1_numDilReMask}; j++)); do
-            fileOut3="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
 
             cmd="fslmaths ${fileOut2} -dilD ${fileOut3}"
             log $cmd
@@ -602,12 +650,10 @@ if ${flags_T1_parc}; then
 
         done 
 
-        # 07.25.2017 EJC Remove the left over dil parcellation images.
+        # Remove the left over dil parcellation images.
         cmd="rm ${fileOut} ${fileOut3}"
         log $cmd
         eval $cmd 
-
-
 
         if [ "${pcort}" -eq 1 ]; then
 
@@ -615,25 +661,29 @@ if ${flags_T1_parc}; then
             # -------------------------------------------------------------------------#
             # Clean up the cortical parcellation by removing subcortical and
             # cerebellar gray matter.
+            
+            if ${one_time}; then
 
-            # Generate inverse subcortical mask to isolate cortical portion of parcellation.
-            fileIn="${T1path}/T1_subcort_mask.nii.gz"
-            fileOut="${T1path}/T1_subcort_mask_dil.nii.gz"
-            fileMas="${T1path}/T1_GM_mask.nii.gz"
+                # Generate inverse subcortical mask to isolate cortical portion of parcellation.
+                fileIn="${T1path}/T1_subcort_mask.nii.gz"
+                fileOut="${T1path}/T1_subcort_mask_dil.nii.gz"
+                fileMas="${T1path}/T1_GM_mask.nii.gz"
 
-            cmd="fslmaths ${fileIn} -dilD ${fileOut}"
-            log $cmd
-            eval $cmd 
+                cmd="fslmaths ${fileIn} -dilD ${fileOut}"
+                log $cmd
+                eval $cmd 
 
-            cmd="fslmaths ${fileOut} -mas ${fileMas} ${fileOut}"
-            log $cmd
-            eval $cmd 
+                cmd="fslmaths ${fileOut} -mas ${fileMas} ${fileOut}"
+                log $cmd
+                eval $cmd 
 
-            fileMas2="${T1path}/T1_subcort_mask_dil_inv.nii.gz"
+                fileMas2="${T1path}/T1_subcort_mask_dil_inv.nii.gz"
 
-            cmd="fslmaths ${fileOut} -binv ${fileMas2}"
-            log $cmd
-            eval $cmd 
+                cmd="fslmaths ${fileOut} -binv ${fileMas2}"
+                log $cmd
+                eval $cmd 
+
+            fi 
 
             # --------------------------------------------------------- #
             # Apply subcortical inverse to cortical parcellations.
@@ -643,168 +693,162 @@ if ${flags_T1_parc}; then
             log $cmd
             eval $cmd 
 
-            # --------------------------------------------------------- #
-            # Generate a cerebellum mask using FSL's FIRST.
+            if ${one_time}; then
+                # --------------------------------------------------------- #
+                # Generate a cerebellum mask using FSL's FIRST.
+                # inverse transform the MNI cerebellum mask
 
-            FileIn="${T1path}/T1_fov_denoised.nii"
-            FileRoot="${T1path}/subj_2_std_subc"
-            FileMat="${T1path}/subj_2_std_subc_cort.mat"
-            FileOut1="${T1path}/L_cerebellum.nii.gz"
-            FileOut2="${T1path}/R_cerebellum.nii.gz"          
+                FileIn="${pathMNItmplates}/MNI152_T1_cerebellum.nii.gz"
+                FileWarpInv="${T1reg}/MNI2T1_warp.nii.gz"
+                FileRef="${T1reg}/T1_dof12.nii.gz"
+                FileOut="${T1reg}/cerebellum_unwarped.nii.gz"
 
-            FileModel1="${FSLDIR}/data/first/models_336_bin/intref_puta/L_Cereb.bmv"
-            FileModel2="${FSLDIR}/data/first/models_336_bin/intref_puta/R_Cereb.bmv"
-            FileRef1="${FSLDIR}/data/first/models_336_bin/05mm/L_Puta_05mm.bmv"
-            FileRef2="${FSLDIR}/data/first/models_336_bin/05mm/R_Puta_05mm.bmv"
+                cmd="applywarp \
+                --ref=${FileRef} \
+                --in=${FileIn} \
+                --warp=${FileWarpInv} \
+                --out=${FileOut} \
+                --interp=nn"
+                log $cmd
+                eval $cmd            
 
-            cmd="first_flirt ${FileIn} ${FileRoot} -cort"
-            log $cmd
-            eval $cmd 
+                FileIn="${T1reg}/cerebellum_unwarped.nii.gz"
+                FileRef="${T1reg}/T1_dof6.nii.gz"
+                FileOut="${T1reg}/cerebellum_unwarped_dof12.nii.gz"
+                dof12_inv="${T1reg}/MNI2T1_dof12.mat"
 
-            cmd="run_first -i ${FileIn} \
-            -t ${FileMat} \
-            -o ${FileOut1} \
-            -n 40 -m ${FileModel1} \
-            -intref ${FileRef1}"
-            log $cmd
-            eval $cmd
 
-            cmd="run_first -i ${FileIn} \
-            -t ${FileMat} \
-            -o ${FileOut2} \
-            -n 40 -m ${FileModel2} \
-            -intref ${FileRef2}"
-            log $cmd
-            eval $cmd
+                cmd="flirt \
+                -in ${FileIn} \
+                -ref ${FileRef} \
+                -out ${FileOut} \
+                -applyxfm \
+                -init ${dof12_inv} \
+                -interp nearestneighbour
+                -nosearch"
+                log $cmd
+                eval $cmd
 
-            # Clean up the edges of the cerebellar mask.
-            cmd="first_boundary_corr -s ${FileOut1} \
-            -i ${FileIn} \
-            -b fast \
-            -o ${FileOut1}"
-            log $cmd
-            eval $cmd    
+                dof6_inv="${T1reg}/MNI2T1_dof6.mat"
+                FileIn="${T1reg}/cerebellum_unwarped_dof12"
+                if ${configs_T1_useMNIbrain}; then
+                    FileRef="${T1path}/T1_brain.nii.gz"
+                else
+                    FileRef="${T1path}/T1_fov_denoised.nii"
+                fi
+                FileOut="${T1reg}/Cerebellum_bin.nii.gz"
 
-            cmd="first_boundary_corr -s ${FileOut2} \
-            -i ${FileIn} \
-            -b fast \
-            -o ${FileOut2}"
-            log $cmd
-            eval $cmd    
+                cmd="flirt \
+                -in ${FileIn} \
+                -ref ${FileRef} \
+                -out ${FileOut} \
+                -applyxfm \
+                -init ${dof6_inv} \
+                -interp nearestneighbour
+                -nosearch"            
+                log $cmd
+                eval $cmd
 
-            # Add the left and right cerebellum masks together.
-            FileOut="${T1path}/Cerebellum_bin.nii.gz"
+                # Generate cerebellar inverse mask
+                FileIn="${T1reg}/Cerebellum_bin.nii.gz"
+                FileOut="${T1path}/Cerebellum_Inv.nii.gz"
+                cmd="fslmaths ${FileIn} -binv ${FileOut}"
+                log $cmd
+                eval $cmd
 
-            cmd="fslmaths ${FileOut1} -add ${FileOut2} ${FileOut}"
-            log $cmd
-            eval $cmd 
+                one_time=false
 
-            # Fill holes in the mask
-            cmd="fslmaths ${FileOut} -fillh ${FileOut}"
-            log $cmd
-            eval $cmd  
+            fi 
 
-            # Invert the Cerebellum mask
-            FileInv="${T1path}/Cerebellum_Inv.nii.gz"
-
-            cmd="fslmaths ${FileOut1} -binv ${FileInv}"
-            log $cmd
-            eval $cmd       
-
-            #-------------------------------------------------------------------------%    
-            # Remove any parcellation contamination of the cerebellum.                             
+            # #-------------------------------------------------------------------------%    
+            # # Remove any parcellation contamination of the cerebellum.                             
             FileIn="${T1path}/T1_GM_parc_${parc}.nii.gz"
+            FileInv="${T1path}/Cerebellum_Inv.nii.gz"
             
             cmd="fslmaths ${FileIn} -mas ${FileInv} ${FileIn}"
             log $cmd
             eval $cmd  
 
-            #-------------------------------------------------------------------------%    
-            # 07.25.2017 EJC Remove intermediates of the clean-up. 
-            log "rm -vf ${FileRoot}"
-            rm -vf ${FileRoot}*
+        fi
 
-            log "rm -v ${FileOut1}"
-            rm -vf ${FileOut1}*
+        ## Add subcortical fsl parcellation to cortical parcellations
+        if ${configs_T1_addsubcort} && [[ "${psubcortonly}" -eq 0 ]]; then 
 
-            log "rm -vf ${FileOut2}"
-            rm -vf ${FileOut2}*
+            log "NONSUBCORTIICAL PARCELLATION - Adding subcorical parcels"
 
-            log "rm -vf ${T1path}/L_cerebellum_*"
-            rm -vf ${T1path}/L_cerebellum_*
+            if ! ${configs_T1_subcortUser} ; then  # default FSL subcortical
 
-            log "rm -vf ${T1path}/R_cerebellum_*"
-            rm -vf ${T1path}/R_cerebellum_*  
+                log "configs_T1_subcortUser is ${configs_T1_subcortUser} - using FSL default subcortical"
+                fileSubcort="${T1path}/T1_subcort_seg.nii.gz"
 
-            ## Add subcortical fsl parcellation to cortical parcellations
-            if [[ ${configs_T1_addsubcort} ]] && [[ "${psubcortonly}" -eq 0 ]]; then 
+            else
 
-                if [[ ! ${configs_T1_subcortUser} ]]; then  # default FSL subcortical
+                log "configs_T1_subcortUser is ${configs_T1_subcortUser} - finding User provided subcortical parcellation "  
 
-                    fileSubcort="${T1path}/T1_subcort_seg.nii.gz"
+                onesubcort=false
 
-                else
+                for ((ii=1; ii<=numParcs; ii++)); do  # exclude PARC0 - CSF - here
 
-                    nsubcor=0 
+                    parcii="PARC${ii}"
+                    parcii="${!parcii}"
+                    psubcortonlyii="PARC${ii}psubcortonly"    
+                    psubcortonlyii="${!psubcortonlyii}"                      
 
-                    for ((ii=1; ii<=numParcs; ii++)); do  # exclude PARC0 - CSF - here
+                    log "Finding Subcortical Parcellation"
+                    log "ii is ${ii} -- ${parcii} parcellation -- psubcortonlyii is -- ${psubcortonlyii}"
 
-                        parcii="PARC${ii}"
-                        parcii="${!parcii}"
-                        psubcortonlyii="PARC${ii}psubcortonly"    
-                        psubcortonlyii="${!psubcortonlyii}"
 
-                        if [[ ${psubcortonlyii} -eq 1 ]]; then  # find subcortical-onnly parcellation
+                    if [[ "${psubcortonlyii}" -eq 1 ]]; then  # find subcortical-only parcellation
 
-                            if [ ${nsubcor} -eq 0 ]; then
-                                # check that parcellation is available in T1 space
-                                fileSubcortUser="T1_parc_${parc}.nii.gz"
+                        log "SUBCORTICAL parcellation found: ${parcii}"
 
-                                if [[ -f "${T1path}/fileSubcortUser" ]]; then
+                        if ! ${onesubcort} ; then
+                            # check that parcellation is available in T1 space
+                            fileSubcortUser="T1_parc_${parcii}.nii.gz"
 
-                                    fileSubcort="${T1path}/${fileSubcortUser}"
-                                    nsubcort=1
+                            if [[ -f "${T1path}/${fileSubcortUser}" ]]; then
 
-                                fi
+                                log "SUBCORTICAL parcellation is available in T1 space: ${T1path}/${fileSubcortUser}"
+
+                                fileSubcort="${T1path}/${fileSubcortUser}"
+                                onesubcort=true  # allow only one subcortical-only parcellation
+
                             fi
+                        fi
+                    fi 
+                done
 
-                        fi 
-
-                    done
-
-                    if [ ${nsubcor} -eq 0 ]; then   # for-loop conditions not met so default to FSL subcortical 
-                        fileSubcort="${T1path}/T1_subcort_seg.nii.gz"
-                    fi
-
+                if ! ${onesubcort} ; then   # for-loop conditions not met so default to FSL subcortical 
+                    fileSubcort="${T1path}/T1_subcort_seg.nii.gz"
                 fi
-                
-                
-                log "ADD_SUBCORT_PARC using ${FileIn}"
-                # call python script
-                add_subcort_parc ${FileIn} ${pnodal} ${configs_T1_subcortUser}
 
-            fi        
+            fi
+
+            log "fileSubcort is ${fileSubcort}"
+            
+            log "ADD_SUBCORT_PARC using ${FileIn} and ${fileSubcort}"
+            # call python script
+            add_subcort_parc ${FileIn} ${pnodal} ${fileSubcort} ${configs_T1_subcortUser}
 
         fi 
+
 
         # 07.26.2017 EJC Dilate the final GM parcellations. 
         # NOTE: They will be used by f_functiona_connectivity
         #  to bring parcellations into epi space.
 
-        if [[ ${psubcortonlyii} -ne 1 ]]; then
+        if [[ ${psubcortonly} -ne 1 ]]; then
 
             fileOut4="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
             cmd="fslmaths ${fileOut2} -dilD ${fileOut4}"
             log $cmd
             eval $cmd 
             exitcode=$?
+
             if [[ ${exitcode} -ne 0 ]]; then
                 echoerr "Dilation of ${parc} parcellation error! Exist status is displayed below, for details"
                 log "exitcode: ${exitcode}"
             fi  
-
         fi 
-
     done
-
 fi

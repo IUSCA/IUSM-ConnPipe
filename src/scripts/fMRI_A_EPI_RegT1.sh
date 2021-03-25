@@ -70,7 +70,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
     eval $cmd 
 
     #-------------------------------------------------------------------------#
-    # rapply transformation to T1 WM mask.
+    # Apply transformation to T1 WM mask.
 
     fileIn="${T1path}/T1_WM_mask.nii.gz"
     fileRef="${EPIpath}/2_epi_meanvol.nii.gz"
@@ -88,13 +88,12 @@ source ${EXEDIR}/src/func/bash_funcs.sh
     # bbr registration of fMRI to rT1_dof6 based on WMseg
 
     fileIn="${EPIpath}/2_epi_meanvol.nii.gz"
-    fileOut="${EPIpath}/rT1_brain_dof6bbr.nii.gz"
+    #fileOut="${EPIpath}/rT1_brain_dof6bbr.nii.gz"
     fileRef="${EPIpath}/rT1_brain_dof6.nii.gz"
     fileOmat="${EPIpath}/epi_2_T1_bbr.mat"
     fileWMseg="${EPIpath}/rT1_WM_mask"
     cmd="flirt -in ${fileIn} \
         -ref ${fileRef} \
-        -out ${fileOut} \
         -omat ${fileOmat} \
         -wmseg ${fileWMseg} \
         -cost bbr"

@@ -28,7 +28,12 @@ print("inside Python script")
 def apply_reg(data, mask, regressors,scrubbing):
 
     # remove identical regressors (rows) if present
-    unique_regressors = np.vstack({tuple(row) for row in regressors})
+    #unique_regressors = np.vstack({tuple(row) for row in regressors})
+    print("regressors shape before removing uniques ",regressors.shape)
+    unique_regressors = [tuple(row) for row in regressors]
+    unique_regressors = np.unique(unique_regressors, axis=0)
+    print("unique_regressors shape after removing repeated rows ",unique_regressors.shape)
+
     [sizeX,sizeY,sizeZ,numTimePoints] = data.shape
     resid = np.zeros(data.shape)
 
@@ -37,7 +42,7 @@ def apply_reg(data, mask, regressors,scrubbing):
             for k in range(0,sizeZ):
                 if mask[i,j,k]:
                     TSvoxel = data[i,j,k]                                            
-                    B = np.linalg.lstsq(unique_regressors.T,TSvoxel)
+                    B = np.linalg.lstsq(unique_regressors.T,TSvoxel,rcond=None)
                     coeffs = B[0]
                     Yhat = np.sum(np.multiply(coeffs[:,None],unique_regressors),axis=0)
                     resid[i,j,k,:] = TSvoxel - Yhat
@@ -150,10 +155,16 @@ if physReg == "aCompCorr":
 
 
     elif 0 < config_param < 6:
-        print("-- Writing prespecified removal of %d components" % config_param)
+        print("-- Writing prespecified removal of %d components ----" % config_param)
+        print("regressors shape ",regressors.shape)
+        print("numphys['CSFpca'] shape ",numphys['CSFpca'].shape)
+        print("numphys['WMpca'] shape ",numphys['WMpca'].shape)
+
         components = np.vstack((regressors,\
                                 numphys['CSFpca'][:,:config_param].T,\
                                 numphys['WMpca'][:,:config_param].T))
+
+        print("components shape: ", components.shape)
         zRegressMat.append(stats.zscore(components,axis=1));
         print("    -- PCA 1 through %d" % config_param)
 
@@ -189,7 +200,7 @@ elif physReg == "PhysReg":
 
 
 ## regress-out motion/physilogical regressors 
-print("Applying motion/physicological regression")
+print("2. Applying motion/physicological regression")
 
 # load resting vol
 resting = nib.load(resting_file)

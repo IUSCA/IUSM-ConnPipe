@@ -3,48 +3,115 @@
 ############################################################################### 
 
 function f_load_motion_reg() {
-path="$1" python - <<END
+path="$1" numTimePoints="$2" python - <<END
 import os
 import numpy as np
+from scipy.io import savemat
 
 EPIpath=os.environ['path']
 print(EPIpath)
 
+print("I AM HERE")
+numTimePoints=int(os.environ['numTimePoints'])
+print(numTimePoints)
+
+QCfile_name=os.environ['QCfile_name']
+QCfile_name = ''.join([QCfile_name,'.log'])
+print("QCfile_name: ",QCfile_name)
+f=open(QCfile_name, "a+")
+
 ## FD
 file_fd=''.join([EPIpath,'/motionRegressor_fd.txt'])
-fd_scrub = np.sum(np.loadtxt(file_fd),axis=1)
+if os.path.exists(file_fd):
+    fd = np.loadtxt(file_fd)
+    print("file_fd dimensions: ",fd.ndim )
+    if fd.ndim > 1:
+        fd_scrub = np.sum(fd,axis=1)
+    elif fd.ndim == 1:
+        fd_scrub = fd
+else:
+    print("file_fd not generated; using dummy vector of zeros")
+    fd_scrub = np.zeros(numTimePoints)   
 n_fd_outliers = np.count_nonzero(fd_scrub)
 print("number of fd_outliers: ", n_fd_outliers)
+f.write( "\n number of fd_outliers: %d \n" % n_fd_outliers)
+
+# compute mean and std of motionMetric
+file_fd=''.join([EPIpath,'/motionMetric_fd.txt'])
+if os.path.exists(file_fd):
+    fd = np.loadtxt(file_fd)
+    fd_mean = np.mean(fd,axis=0)
+    fd_std = np.std(fd,axis=0)
+    fd_min = np.amin(fd,axis=0)
+    fd_max = np.amax(fd,axis=0)
+    f.write( "\n motionMatric_fd stats: \n ")
+    f.write( "Mean = %f \n" % fd_mean)
+    f.write( "Std = %f \n" % fd_std)
+    f.write( "Min = %f \n" % fd_min)
+    f.write( "Max = %f \n" % fd_max)
+
 
 ## DVARS
 file_dvars=''.join([EPIpath,'/motionRegressor_dvars.txt'])
-dvars_scrub = np.sum(np.loadtxt(file_dvars),axis=1)
+if os.path.exists(file_dvars):
+    dvar = np.loadtxt(file_dvars)
+    print("file_dvars dimensions: ",dvar.ndim )
+    if dvar.ndim > 1:
+        dvars_scrub = np.sum(dvar,axis=1)
+    elif dvar.ndim == 1:
+        dvars_scrub = dvar
+else:
+    print("file_dvars not generated; using dummy vector of zeros")
+    dvars_scrub = np.zeros(numTimePoints)
 n_dvars_outliers = np.count_nonzero(dvars_scrub)
 print("number of dvars_outliers: ", n_dvars_outliers)
+f.write( "\n number of dvars_outliers: %d \n" % n_dvars_outliers)
+
+
+# compute mean and std of motionMetric
+file_dvar=''.join([EPIpath,'/motionMetric_dvars.txt'])
+if os.path.exists(file_dvar):
+    dvar = np.loadtxt(file_dvar)
+    dvar_mean = np.mean(dvar,axis=0)
+    dvar_std = np.std(dvar,axis=0)
+    dvar_min = np.amin(dvar,axis=0)
+    dvar_max = np.amax(dvar,axis=0)
+    f.write( "\n motionMatric_dvar stats: \n ")
+    f.write( "Mean = %f \n" % dvar_mean)
+    f.write( "Std = %f \n" % dvar_std)
+    f.write( "Min = %f \n" % dvar_min)
+    f.write( "Max = %f \n" % dvar_max)
 
 scrub = np.add(fd_scrub,dvars_scrub)
 scrub = scrub == 0
 scrub = scrub.astype(bool).astype(int)
 #print(scrub)
 print("number of good vols: ",np.count_nonzero(scrub))
+f.write( "\n number of good vols: %d \n" % np.count_nonzero(scrub))
 
-
-# fname=''.join([EPIpath,'/scrubbing_goodvols.mat'])
-# np.savetxt(fname, scrub,fmt='%d')
+f.close()
 
 fname=''.join([EPIpath,'/scrubbing_goodvols.npz'])
 np.savez(fname, scrub=scrub)
 
+fname=''.join([EPIpath,'/scrubbing_goodvols.mat'])
+print("savign MATLAB file ", fname)
+mdic = {"scrub": scrub}
+savemat(fname, mdic)
 
 END
 }
 
 ##############################################################################
+source ${EXEDIR}/src/func/bash_funcs.sh
+
 EPIpath=$1
 fIn=$2
+numTimePoints=$3
 
 echo "EPIpath is -- ${EPIpath}"
 echo "fIn is -- ${fIn}"
+echo "numTimePoints is -- ${numTimePoints}"
 
 # ------------------------------------------------------------------------- #
 ## Frame Displacement regressor
@@ -56,13 +123,13 @@ filePlot="${EPIpath}/motionPlot_fd.png"
 
 if [[ -e ${fileOut1} ]]; then
     cmd="rm ${fileOut1}"
-    echo $cmd 
+    log $cmd 
     eval $cmd 
 fi
 
 if [[ -e ${fileMetric} ]]; then
     cmd="rm ${fileMetric}"
-    echo $cmd 
+    log $cmd 
     eval $cmd 
 fi
 
@@ -88,7 +155,7 @@ else   # if the variable ${configs_EPI_FDcut} exists and is different from empty
 
 fi 
 
-echo $cmd
+log $cmd
 eval $cmd 
 out=$?
 
@@ -108,13 +175,13 @@ filePlot="${EPIpath}/motionPlot_dvars.png"
 
 if [[ -e ${fileMetric} ]]; then
     cmd="rm ${fileMetric}"
-    echo $cmd 
+    log $cmd 
     eval $cmd 
 fi
 
 if [ -z ${configs_EPI_DVARScut+x} ]; then
 
-    echo "fsl_motion_outliers - Will use box-plot cutoff = P75 + 1.5 x IQR"
+    log "fsl_motion_outliers - Will use box-plot cutoff = P75 + 1.5 x IQR"
 
     cmd="fsl_motion_outliers -i ${fIn} \
         -o ${fileOut} \
@@ -134,19 +201,17 @@ else
 
 fi 
 
-echo $cmd
+log $cmd
 eval $cmd 
 out=$?
 
 if [[ ! $out -eq 0 ]]; then
-    echo "Dvars exit code"
-    echo "$out"
+    log "Dvars exit code"
+    log "$out"
 fi
 
-if [[ -e ${fileMetric} ]] && [[ -e ${fileOut1} ]]; then
-    echo "calling f_load_motion_reg:"
-    f_load_motion_reg ${EPIpath}
-else
-    echo "WARNING File ${fileMetric} and/or ${fileOut1} not found!"
-    exit 1
-fi
+
+log "calling f_load_motion_reg:"
+cmd="f_load_motion_reg ${EPIpath} ${numTimePoints}"
+log $cmd
+eval $cmd

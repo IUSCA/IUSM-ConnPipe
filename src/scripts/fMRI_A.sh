@@ -41,7 +41,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             && [ $((i+1)) -le "${configs_EPI_epiMax}" ]; then
 
             export EPIpath="${epiList[$i]}"
-            export GREFMpath=="${path2data}/${SUBJ}/${configs_grefmFolder}"
+            
             ind=`echo ${EPIpath} | sed 's/.*\EPI//'`
             # check if en is a number or not
             re='^[0-9]+$'
@@ -55,7 +55,6 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             log "fMRI_A on subject ${SUBJ}"
             log "EPI-series ${EPIpath}"
             log "EPI session number ${EPInum}"
-            log "GREFM dir ${GREFMpath}"
 
             ## functional connectivity
 
@@ -92,16 +91,6 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                     log "${fileNiigz} file not created. Exiting... "
                     exit 1
                 fi                 
-            else
-                if [[ -f "${EPIpath}/0_param_dcm_hdr.sh" ]]; then
-                    # echo "The next three lines should be uncommented but leave like this for now"
-                    log "Sourcing parameters from ${EPIpath}/0_param_dcm_hdr.sh"
-                    source ${EPIpath}/0_param_dcm_hdr.sh 
-                    export flags_EPI_ReadHeaders=false
-                else
-                    log "File ${EPIpath}/0_param_dcm_hdr.sh not found; Exiting..."
-                    exit 1
-                fi 
             fi
 
             #### Read info from the headers of the dicom fMRI volumes
@@ -118,7 +107,18 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                 fi  
 
                 log "Sourcing parameters read from header and written to ${EPIpath}/0_param_dcm_hdr.sh"
-                source ${EPIpath}/0_param_dcm_hdr.sh                
+                source ${EPIpath}/0_param_dcm_hdr.sh   
+
+            else
+                log "SOURCING header parameters from file ${EPIpath}/0_param_dcm_hdr.sh"
+
+                if [[ -f "${EPIpath}/0_param_dcm_hdr.sh" ]]; then
+                    source ${EPIpath}/0_param_dcm_hdr.sh 
+                else
+                    log "File ${EPIpath}/0_param_dcm_hdr.sh not found; Please set flags_EPI_ReadHeaders=true. Exiting..."
+                    exit 1
+                fi     
+
             fi
 
 
@@ -178,6 +178,10 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                     echoerr "problem at fMRI_A_EPI_MotionCorr. exiting."
                     exit 1
                 fi
+
+                # 0_param_dcm_hdr.sh has been modified in MotionCorr, so needs to be sourced again
+                log "Sourcing parameters read from header and written to ${EPIpath}/0_param_dcm_hdr.sh"
+                source ${EPIpath}/0_param_dcm_hdr.sh
             fi 
 
 
@@ -277,8 +281,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                 log "WARNING Skipping Physiological Regressors. Please set flags_EPI_PhysiolReg=true to run Phys Regression"
             fi   
 
-            ### AAK - COMMENT OUT THIS SECTION WHEN TESTING TO AVOID HAVING TO RUN NUISANCE REG
-            if ${flags_EPI_PhysiolReg} || ${flags_EPI_NuisanceReg}; then
+            if ${flags_EPI_ApplyReg}; then  
 
                 echo "APPLYING REGRESSORS"
 

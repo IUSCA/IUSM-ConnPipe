@@ -15,7 +15,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 if ${runAll}; then
 	find ${path2data} -maxdepth 1 -mindepth 1 -type d -printf '%f\n' \
-	> ${path2data}/${subj2run}	
+	| sort > ${path2data}/${subj2run}	
 fi 
 
 ################################################################################
@@ -45,11 +45,12 @@ fi
 
 export configs_T1="T1"
 export configs_epiFolder="EPI1"
-    export configs_sefmFolder="UNWARP1" # Reserved for Field Mapping series
-        export configs_APdcm="SEFM_AP_DICOMS" # Spin Echo A-P
-        export configs_PAdcm="SEFM_PA_DICOMS" # Spin Echo P-A
 
-export configs_grefmFolder="GREFM_GUST"  # Reserved for Field Mapping series
+export configs_sefmFolder="UNWARP1" # Reserved for Field Mapping series
+	export configs_APdcm="SEFM_AP_DICOMS" # Spin Echo A-P
+	export configs_PAdcm="SEFM_PA_DICOMS" # Spin Echo P-A
+
+export configs_grefmFolder="GREFM"  # Reserved for Field Mapping series
 	export configs_GREmagdcm="MAG_DICOMS" # Gradient echo FM magnitude series
 	export configs_GREphasedcm="PHASE_DICOMS" # Gradient echo FM phase map series
 
@@ -57,9 +58,18 @@ export configs_DWI="DWI"
     export configs_unwarpFolder="UNWARP"
         export configs_dcmPA="B0_PA_DCM" #b0 opposite phase encoding
 
-export configs_dcmFolder="DICOMS"
+#export configs_dcmFolder="DICOMS"
 export configs_dcmFiles="dcm" # specify Dicom file extension
 export configs_niiFiles="nii" # Nifti-1 file extension
+
+## USER: select only one option below (single phase or two phase)
+## Single phase ##
+# export configs_dcmFolder="DICOMS"
+
+## Two phase##
+# Allow two DICOM directories (e.g., AP/PA, LR/RL,...).Both phase directions must exist  
+# export configs_dcmFolder1="DICOMS1" # Specify first phase direction (e.g., AP)
+# export configs_dcmFolder2="DICOMS2" # Specify reverse phase data direction (e.g., PA)
 
 
 ################################################################################
@@ -71,7 +81,7 @@ export pathFSLstandard="${FSLDIR}/data/standard"
 
 ## FOR IUSM USERS ONLY - DURING DEVELOPMENT PHASE, PLEASE USE THIS "pathSM" AS THE 
 ## SUPPLEMENTARY MATERIALS PATH. THIS WILL EVENTUALLY LIVE IN A REPOSITORY 
-export pathSM="/N/project/project_name/ConnPipelineSM"
+export pathSM="/N/project/ProjectName/ConnPipelineSM"
 export pathMNItmplates="${pathSM}/MNI_templates"
 export pathBrainmaskTemplates="${pathSM}/brainmask_templates"
 export pathParcellations="${pathSM}/Parcellations"
@@ -86,7 +96,7 @@ export PARC0="CSFvent"
 export PARC0dir="${pathMNItmplates}/MNI152_T1_1mm_VentricleMask.nii.gz"
 export PARC0pcort=0;
 export PARC0pnodal=0;
-export PARC1psubcortonly=0;
+export PARC0psubcortonly=0;
 
 # required
 # Schaefer parcellation of yeo17 into 200 nodes
@@ -112,8 +122,8 @@ export PARC3pnodal=0;
 export PARC3psubcortonly=0;
 
 # optional
-export PARC4="tian_subcortical_S3"
-export PARC4dir="Tian_Subcortex_S3_3T_FSLMNI152_1mm"
+export PARC4="tian_subcortical_S2"
+export PARC4dir="Tian_Subcortex_S2_3T_FSLMNI152_1mm"
 export PARC4pcort=0;
 export PARC4pnodal=1;
 export PARC4psubcortonly=1;
@@ -133,7 +143,7 @@ export numParcs=4  # CSF doesn't count; numParcs cannot be less than 1. Schaefer
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export T1_PREPARE_A=true
+export T1_PREPARE_A=false
 
 if $T1_PREPARE_A; then
 
@@ -176,7 +186,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export T1_PREPARE_B=true
+export T1_PREPARE_B=false
 
 if $T1_PREPARE_B; then
 
@@ -184,6 +194,11 @@ if $T1_PREPARE_B; then
 	export flags_T1_reg2MNI=true
 		export configs_T1_useExistingMats=false
 		export configs_T1_useMNIbrain=true
+			if ${configs_T1_useMNIbrain}; then
+				export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm_brain.nii.gz"
+			else
+				export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm.nii.gz"
+			fi
 		export configs_T1_fnirtSubSamp="4,4,2,1"
 	# segmentation flags
 	export flags_T1_seg=true		
@@ -200,8 +215,6 @@ if $T1_PREPARE_B; then
 											  # Name of user-provided subcortical parcellation (assumed to be found in ConnPipeSM folder)
 											  # should be set in the desired parcellation name for index "N" with "psubcortonly=1"
 
-	export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm.nii.gz"
-
 fi 
 
 
@@ -210,28 +223,56 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export fMRI_A=true
+export fMRI_A=false
 
 if $fMRI_A; then
+
+	export scanner="SIEMENS" #  SIEMENS or GE
+	log "SCANNER ${scanner}"
 
 	# # set number of EPI sessions/scans
 	export configs_EPI_epiMin=1; # minimum scan index
 	export configs_EPI_epiMax=4; # maximum scan index
 
-	export flags_EPI_dcm2niix=true; # dicom import
+	export flags_EPI_dcm2niix=false; # dicom import
 
-	export flags_EPI_ReadHeaders=true; # obtain pertinent scan information
+	export flags_EPI_ReadHeaders=false; # obtain pertinent scan information
+
 		export flags_EPI_UseJson=true; # obtain pertinent scan information through json files generated by dcm2niix
-		export scanner_param_TR="RepetitionTime"  # "RepetitionTime" for Siemens; "tr" for GE
-		export scanner_param_TE="EchoTime"  # "EchoTime" for Siemens; "te" for GE
-		export scanner_param_FlipAngle="FlipAngle"  # "FlipAngle" for Siemens; "flip_angle" for GE
-		export scanner_param_EffectiveEchoSpacing="EffectiveEchoSpacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
-		export scanner_param_BandwidthPerPixelPhaseEncode="BandwidthPerPixelPhaseEncode"  # "BandwidthPerPixelPhaseEncode" for Siemens; unknown for GE
-		export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
 
-	export flags_EPI_SpinEchoUnwarp=true # Requires UNWARP directory and approporiate dicoms.
+		if [[ ${scanner} == "SIEMENS" ]]; then
+			export scanner_param_TR="RepetitionTime"  # "RepetitionTime" for Siemens; "tr" for GE
+			export scanner_param_TE="EchoTime"  # "EchoTime" for Siemens; "te" for GE
+			export scanner_param_FlipAngle="FlipAngle"  # "FlipAngle" for Siemens; "flip_angle" for GE
+			export scanner_param_EffectiveEchoSpacing="EffectiveEchoSpacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
+			export scanner_param_BandwidthPerPixelPhaseEncode="BandwidthPerPixelPhaseEncode"  # "BandwidthPerPixelPhaseEncode" for Siemens; unknown for GE
+			export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
+			export scanner_param_TotalReadoutTime="TotalReadoutTime"
+			export scammer_param_AcquisitionMatrix="AcquisitionMatrixPE"
+			export scanner_param_PhaseEncodingDirection="PhaseEncodingDirection"
+		elif [[ ${scanner} == "GE" ]]; then
+			export scanner_param_TR="tr"  # "RepetitionTime" for Siemens; "tr" for GE
+			export scanner_param_TE="te"  # "EchoTime" for Siemens; "te" for GE
+			export scanner_param_FlipAngle="flip_angle"  # "FlipAngle" for Siemens; "flip_angle" for GE
+			export scanner_param_EffectiveEchoSpacing="effective_echo_spacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
+			export scanner_param_BandwidthPerPixelPhaseEncode="pixel_bandwidth"  # "BandwidthPerPixelPhaseEncode" for Siemens; unknown for GE
+			export scanner_param_slice_fractimes="slice_timing"  # "SliceTiming" for Siemens; "slice_timing" for GE
+			export scanner_param_TotalReadoutTime="TotalReadoutTime"
+			export scammer_param_AcquisitionMatrix="acquisition_matrix"
+			export scanner_param_PhaseEncodingDirection="phase_encode_direction"
+		fi
+
+	#------------------------------------------------------------------------------------------------------------	
+	##########################################################
+	## User must select either SpinEchoUnwarp or GREFMUnwarp. 
+	##########################################################
+	export flags_EPI_SpinEchoUnwarp=false # Requires UNWARP directory and approporiate dicoms.
     	# # Allow multiple UNWARP directories (0: UNWARP; 1: UNWARP1, 2: UNWARP2) 
-    	export configs_EPI_SEindex=1 # Appends index to configs_sefmFolder name
+    	export configs_EPI_multiSEfieldmaps=true # false - single pair of SE fieldmaps within EPI folder
+												  # true -  one or multiple UNWARP folders at the subject level (UNWARP1, UNWARP2,...)
+			# set only if configs_EPI_multiSEfieldmaps=true:
+			# specify number of UNWARP directories (0: UNWARP; 1: UNWARP1, 2: UNWARP2)
+			export configs_EPI_SEindex=1
     	export configs_EPI_skipSEmap4EPI=1 # Skip SEmap calculation for EPInum > configs_EPI_skipGREmap4EPI
                 ##  e.g.; 1 to skip redoing SEmap for EPIs 2-6; 5 to skip for EPI6
 
@@ -241,11 +282,26 @@ if $fMRI_A; then
 
 	# # topup (see www.mccauslanddenter.sc.edu/cml/tools/advanced-dti - Chris Rorden's description
 		export flags_EPI_RunTopup=true # 1=Run topup (1st pass), 0=Do not rerun if previously completed. 
-    	export configs_EPI_skipGREmap4EPI=true # Skip GREmap calculation for EPInum > configs_EPI_skipGREmap4EPI
-                # false to ignore. true to skip redoing GREmap for EPIs 2-6
 
 	# # Gradient recalled echo Field Map Acquisition
 	export flags_EPI_GREFMUnwarp=false # Requires GREfieldmap directory and appropriate dicoms
+    	
+		export configs_use_DICOMS=false  # set to true if Extract TE1 and TE2 from the first image of Gradient Echo Magnitude Series
+										 # set to false if gre_fieldmap_mag already generated (i.e. STANFORD data)	
+										# if set to 'false', GREFMUnwarp code will look for a single Magnitude file and try to extract Mag1 and Mag2
+										# or, it will look for Mag1 and Mag2
+			export configs_extract_twoMags=true
+			export configs_Mag_file="gre_fieldmap_mag"
+				export configs_Mag1="gre_fieldmap_mag_0000.nii.gz"  #if Mag1 and Mag2 already exist, name them here
+				export configs_Mag2="gre_fieldmap_mag_0001.nii.gz"
+			export configs_Phase_file="gre_fieldmap_phasemap"
+			
+		export configs_convert2radss=true   # if fieldmap_phasemap is in Hz, then it must be converted to rads/s 
+												# set to true for NANSTAN
+		export configs_fsl_prepare_fieldmap=false
+		
+		export configs_EPI_skipGREmap4EPI=1 # Skip GREmap calculation for EPInum => configs_EPI_skipGREmap4EPI
+                # 0 to ignore. 1 to skip redoing GREmap for EPIs 2-6
 
 		export configs_EPI_GREbetf=0.5; # GRE-specific bet values. Do not change
 		export configs_EPI_GREbetg=0;   # GRE-specific bet input. Change if needed 
@@ -254,34 +310,52 @@ if $fMRI_A; then
 		# Do not use configs.EPI.EPIdwell. Use params.EPI.EffectiveEchoSpacing extracted from the json header
      	# export configs_EPI_EPIdwell = 0.000308; # Dwell time (sec) for the EPI to be unwarped 
 
-	export flags_EPI_SliceTimingCorr=true
+	if ${flags_EPI_SpinEchoUnwarp} && ${flags_EPI_GREFMUnwarp}; then
+		log "ERROR 	Please select one option only: Spin Echo Unwarp or Gradient Echo Unwarp. Exiting... "
+		exit 1
+	fi
+	#------------------------------------------------------------------------------------------------------------	
+
+	export flags_EPI_SliceTimingCorr=false
 		#export flags_EPI_UseUnwarped=true # Use unwarped EPI if both warped and unwarped are available.
+		
+		export configs_EPI_minTR=1.6
 		export configs_EPI_UseTcustom=1;# 1: use header-extracted times (suggested)
 
-	export flags_EPI_MotionCorr=true
+	export flags_EPI_MotionCorr=false
 
-	export flags_EPI_RegT1=true;
+	export flags_EPI_RegT1=false
 		export configs_EPI_epibetF=0.3000;
 
-	export flags_EPI_RegOthers=true;
-		export configs_EPI_GMprobthr=0.2; # Threshold the GM probability image; change from 0.25 to 0.2 or 0.15										
-		export configs_EPI_minVoxelsClust=8; # originally hardwired to 8
+	export flags_EPI_RegOthers=false
+		export configs_EPI_GMprobthr=0.2 # Threshold the GM probability image; change from 0.25 to 0.2 or 0.15										
+		export configs_EPI_minVoxelsClust=8 # originally hardwired to 8
 
-	export flags_EPI_IntNorm4D=true; # Intensity normalization to global 4D mean of 1000
+	export flags_EPI_IntNorm4D=false # Intensity normalization to global 4D mean of 1000
 
 	########## MOTION AND OUTLIER CORRECTION ###############
-	export flags_EPI_NuisanceReg=true
+	export flags_EPI_NuisanceReg=false
 	## Nuisance Regressors. There are two options that user can select from:
 	# 1) ICA-based denoising; WARNING: This will smooth your data.
 	# 2) Head Motion Parameter Regression.  
 	## If user sets flags_NuisanceReg_AROMA=true, then flags_NuisanceReg_HeadParam=false
 	## If user sets flags_NuisanceReg_AROMA=false, then flags_NuisanceReg_HeadParam=true
 
-		export flags_NuisanceReg_AROMA=true;  
+		export flags_NuisanceReg_AROMA=true  
+			## USER: by default, ICA_AROMA will estimate the dimensionality (i.e. num of independent components) for you; however, for higher multiband
+			## factors with many time-points and high motion subjects, it may be useful for the user to set the dimensionality. THis can be done by
+			## setting the desired number of componenets in the following config flag. Leave undefined for automatic estimation 
+			export flag_AROMA_dim=
 			if ${flags_NuisanceReg_AROMA}; then # if using ICA-AROMA
 				nR="aroma" # set filename postfix for output image
 				export flags_NuisanceReg_HeadParam=false
-				export ICA_AROMA_path="${PYpck}/ICA-AROMA" #ONLY NEEDED IF NOT USING HCP ica-aroma MODULE
+				
+				# SET THESE VARIABLES IF NOT USING HCP ica-aroma MODULE
+				ICA_AROMA_path="${PYpck}/ICA-AROMA" 
+				export run_ICA_AROMA="python ${ICA_AROMA_path}/ICA_AROMA.py"
+				## UNCOMMENT FOLLOWING LINE IF USING HPC ica-aroma MODULE:
+				# export run_ICA_AROMA="ICA_AROMA.py"
+
 				if [[ -e "${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz" ]]; then
 					fileMNI2mm="${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz"
 				else
@@ -300,14 +374,14 @@ if $fMRI_A; then
 			fi
 
 	########## PHYSIOLOGICAL REGRESSORS ###############
-	export flags_EPI_PhysiolReg=true;  
+	export flags_EPI_PhysiolReg=false;  
 	# Two options that the user can select from:
 	# 1) flags_PhysiolReg_aCompCorr=true - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
 	# 2) flags_PhysiolReg_aCompCorr=false - mean WM and CSF signal regression
 		export flags_PhysiolReg_aCompCorr=true  
 		if ${flags_PhysiolReg_aCompCorr}; then  ### if using aCompCorr
 			export flags_PhysiolReg_WM_CSF=false
-			export configs_EPI_numPC=4; # 1-5; the maximum and recommended number is 5 
+			export configs_EPI_numPC=5; # 1-5; the maximum and recommended number is 5 
 										  # set to 6 to include all 
 				if [[ "${configs_EPI_numPC}" -ge 0 && "${configs_EPI_numPC}" -le 5 ]]; then
 					nR="${nR}_pca${configs_EPI_numPC}"
@@ -345,18 +419,21 @@ if $fMRI_A; then
 		fi
 
 		export flags_EPI_GS=true # global signal regression 
-			nR="${nR}_Gs${configs_EPI_numGS}"
+			
 			export configs_EPI_numGS=4 # 1-orig; 2-orig+deriv; 4-orig+deriv+sq
+			nR="${nR}_Gs${configs_EPI_numGS}"
 
 		export nR 
 
-	export flags_EPI_DemeanDetrend=true
+	export flags_EPI_ApplyReg=false
 
-	export flags_EPI_BandPass=true
+	export flags_EPI_DemeanDetrend=false
+
+	export flags_EPI_BandPass=false
 		export configs_EPI_fMin=0.009
 		export configs_EPI_fMax=0.08	
 		
-	export flags_EPI_ROIs=true
+	export flags_EPI_ROIs=false
 
 fi
 
@@ -369,13 +446,32 @@ export DWI_A=true
 
 if $DWI_A; then
 
+	export scanner="SIEMENS" #  SIEMENS or GE
+	log "SCANNER ${scanner}"
+
+	if [[ ${scanner} == "SIEMENS" ]]; then
+		export scanner_param_EffectiveEchoSpacing="EffectiveEchoSpacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
+		export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
+		export scanner_param_TotalReadoutTime="TotalReadoutTime"
+		export scammer_param_AcquisitionMatrix="AcquisitionMatrixPE"
+		export scanner_param_PhaseEncodingDirection="PhaseEncodingDirection"
+	elif [[ ${scanner} == "GE" ]]; then
+		export scanner_param_EffectiveEchoSpacing="effective_echo_spacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
+		export scanner_param_slice_fractimes="slice_timing"  # "SliceTiming" for Siemens; "slice_timing" for GE
+		export scanner_param_TotalReadoutTime="TotalReadoutTime"
+		export scammer_param_AcquisitionMatrix="acquisition_matrix"
+		export scanner_param_PhaseEncodingDirection="phase_encode_direction"
+	fi
+
 	export flags_DWI_dcm2niix=true # dicom to nifti coversion
+								# not needed if json file(s) are provided/extracted
 		export configs_DWI_readout=[] # if empty get from dicom; else specify value
 	export flags_DWI_topup=true # FSL topup destortion field estimation
 		export configs_DWI_b0cut=1 # maximum B-value to be considered B0
 	export flags_DWI_eddy=true # FSL EDDY distortion correction
 		export configs_DWI_EDDYf='0.3' # fsl bet threshold for b0 brain mask used by EDDY
 		export configs_DWI_repolON=true # use eddy_repol to interpolate missing/outlier data
+		export configs_DWI_MBjson=true # read the slices/MB-groups info from the json file (--json option)
 	export flags_DWI_DTIfit=true  # Tensor estimation and generation of scalar maps
 		export configs_DWI_DTIfitf='0.4' # brain extraction (FSL bet -f) parameter 
 
@@ -383,7 +479,7 @@ fi
 
 
 
-export DWI_B=true
+export DWI_B=false
 
 if $DWI_B; then
 

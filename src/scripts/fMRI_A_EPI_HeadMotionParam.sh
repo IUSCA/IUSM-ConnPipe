@@ -20,6 +20,7 @@ function f_load_motion_reg() {
 path="$1" numReg="$2" python - <<END
 import os
 import numpy as np
+from scipy.io import savemat
 
 EPIpath=os.environ['path']
 
@@ -45,6 +46,10 @@ for i in range(columns):
 # np.savetxt(fname, motion,fmt='%2.7f')
 fname=''.join([EPIpath,'/HMPreg/motion12_regressors.npz'])
 np.savez(fname,motion_deriv=motion_deriv,motion=motion)
+fname=''.join([EPIpath,'/HMPreg/motion12_regressors.mat'])
+print("savign MATLAB file ", fname)
+mdic = {"motion_deriv": motion_deriv,"motion": motion}
+savemat(fname, mdic)
 
 if numReg == 24:
     motion_sq = np.power(motion,2)
@@ -57,6 +62,10 @@ if numReg == 24:
 # np.savetxt(fname, motion_deriv_sq,fmt='%2.7f')
 fname=''.join([EPIpath,'/HMPreg/motion_sq_regressors.npz'])
 np.savez(fname,motion_sq=motion_sq,motion_deriv_sq=motion_deriv_sq)
+fname=''.join([EPIpath,'/HMPreg/motion_sq_regressors.mat'])
+print("savign MATLAB file ", fname)
+mdic = {"motion_sq": motion_sq, "motion_deriv_sq": motion_deriv_sq}
+savemat(fname, mdic)
 
 END
 }

@@ -69,21 +69,24 @@ fi
 
 AROMApath="${EPIpath}/AROMA"
 
-if [[ ! -d "${AROMApath}" ]]; then
-    cmd="mkdir ${AROMApath}"
-    log "AROMA - creating directory"
+if [[ -d "${AROMApath}" ]]; then
+    # rename existing directory before creating a new one
+    today=$(date +"%m_%d_%Y_%H_%M")
+    cmd="mv ${AROMApath} ${AROMApath}_${today}"
     log $cmd
-    eval $cmd 
-fi 
+    eval $cmd
+fi
+
+cmd="mkdir ${AROMApath}"
+log "AROMA - creating directory"
+log $cmd
+eval $cmd
 
 AROMAreg_path="${AROMApath}/registration"
-
-if [[ ! -d "${AROMAreg_path}" ]]; then
-    cmd="mkdir ${AROMAreg_path}"
-    log "AROMAreg - creating directory"
-    log $cmd
-    eval $cmd 
-fi 
+cmd="mkdir ${AROMAreg_path}"
+log "AROMAreg - creating directory"
+log $cmd
+eval $cmd 
 
 echo "## Generating Inputs"
 echo "#### EPI to T1 linear transform"
@@ -101,55 +104,39 @@ fileMNI2mm="${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz"
 filedof12mat="${AROMAreg_path}/T1_2_MNI2mm_dof12.mat"
 filedof12img="${AROMAreg_path}/rT1_dof12_2mm.nii.gz"
 
-if [[ ! -e "${filedof12mat}" ]]; then
 
-    cmd="flirt -in ${fileT1} \
-    -ref ${fileMNI2mm} \
-    -omat ${filedof12mat} \
-    -dof 12 -cost mutualinfo \
-    -interp spline -out ${filedof12img}"
+cmd="flirt -in ${fileT1} \
+-ref ${fileMNI2mm} \
+-omat ${filedof12mat} \
+-dof 12 -cost mutualinfo \
+-interp spline -out ${filedof12img}"
+log $cmd
+eval $cmd 
 
-    log $cmd
-    eval $cmd 
-
-else
-    echo "### Using existing T1->MNI_2mm linear transformation"
-fi 
 
 fileWarpImg="${AROMAreg_path}/rT1_warped_2mm.nii.gz"
 fileWarpField="${AROMAreg_path}/T1_2_MNI2mm_warpfield.nii.gz" 
 
-if [[ ! -e "${fileWarpField}" ]]; then
-
-    cmd="fnirt \
-    --in=${fileT1} \
-    --ref=${fileMNI2mm} \
-    --aff=${filedof12mat} \
-    --iout=${fileWarpImg} \
-    --cout=${fileWarpField}"
-    log $cmd
-    eval $cmd 
-
-else
-    echo "### Using existing T1->MNI_2mm nonlinear transformation"
-fi  
+cmd="fnirt \
+--in=${fileT1} \
+--ref=${fileMNI2mm} \
+--aff=${filedof12mat} \
+--iout=${fileWarpImg} \
+--cout=${fileWarpField}"
+log $cmd
+eval $cmd 
 
 # 6mm FWHM EPI data smoothing
 echo "### Smoothing EPI data by 6mm FWHM"
 fileEPI="${EPIpath}/4_epi.nii.gz"
 fileSmooth="${AROMApath}/s6_4_epi.nii.gz" 
 
-if [[ ! -e "${fileSmooth}" ]]; then
+cmd="fslmaths ${fileEPI} \
+-kernel gauss 2.547965400864057 \
+-fmean ${fileSmooth}"
+log $cmd
+eval $cmd 
 
-    cmd="fslmaths ${fileEPI} \
-    -kernel gauss 2.547965400864057 \
-    -fmean ${fileSmooth}"
-    log $cmd
-    eval $cmd 
-
-else
-    echo "### Using existing smoothed s6_4_epi data"
-fi        
 
 # mcFLIRT realignment parameters 
 echo "#### mcFLIRT realignment parameters"
@@ -171,13 +158,27 @@ if [[ -d "${AROMAout}" ]]; then
     eval $cmd     
 fi
 
-#cmd="${ICA_AROMA_path}/ICA_AROMA.py \
-cmd="ICA_AROMA.py \
+# set number of components if user doesn't want automatic estimation
+if [[ ! -z "${flag_AROMA_dim}" ]]; then
+
+    re='^[0-9]+$'
+
+    if [[ ${flag_AROMA_dim} =~ $re ]] ; then  # check that it is a number 
+        AROMA_dim="-dim ${flag_AROMA_dim}"
+    else
+        log "WARNING flag_AROMA_dim should be a number; running AROMA with automatic estimation of number of components"
+        AROMA_dim=" "
+    fi
+else
+    AROMA_dim=" "
+fi 
+
+cmd="${run_ICA_AROMA} \
 -in ${fileSmooth} \
 -out ${AROMAout} \
 -mc ${fileMovePar} \
 -affmat ${fileMat} \
--warp ${fileWarpField}"
+-warp ${fileWarpField} ${AROMA_dim}"
 log $cmd 
 out=`$cmd`
 log "$out"

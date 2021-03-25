@@ -46,6 +46,7 @@ EPIpath="$1" fileIN="$2" aCompCorr="$3" num_comp="$4" PhReg_path="$5" numGS="$6"
 import os
 import numpy as np
 import nibabel as nib
+from scipy.io import savemat
 
 
 EPIpath=os.environ['EPIpath']
@@ -61,6 +62,11 @@ print("PhReg_path",PhReg_path)
 numGS=int(os.environ['numGS'])
 print("numGS",numGS)
 
+QCfile_name=os.environ['QCfile_name']
+QCfile_name = ''.join([QCfile_name,'.log'])
+print("QCfile_name: ",QCfile_name)
+f=open(QCfile_name, "a+")
+
 def get_ts(vol,numTP,rest):
     numVoxels = np.count_nonzero(vol);
     print("numVoxels - ",numVoxels)
@@ -75,6 +81,8 @@ def get_ts(vol,numTP,rest):
 def get_pca(data, n_comp):
     
     from sklearn.decomposition import PCA
+
+    print("data shape: ",data.shape)
 
     pca = PCA()  #(n_components = n_comp) 
     pca.fit(data)
@@ -97,12 +105,50 @@ resting_vol = resting.get_data()
 print("resting_vol.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 
 fname = ''.join([EPIpath,'/rT1_CSFvent_mask_eroded.nii.gz'])
-volCSFvent = nib.load(fname)
-volCSFvent_vol = volCSFvent.get_data()
+volCSFvent_vol = nib.load(fname).get_data()
+numVoxels = np.count_nonzero(volCSFvent_vol);
+if numVoxels < numTimePoints:
+    fname = ''.join([EPIpath,'/rT1_CSFvent_mask.nii.gz'])
+    volCSFvent_vol = nib.load(fname).get_data()
+    numVoxels = np.count_nonzero(volCSFvent_vol);
+    if numVoxels < numTimePoints:
+        print("WARNING: number of voxels in non-eroded CSFvent mask is smaller than number of Time points; PCA will fail")
+        f.write("\n WARNING: number of voxels in non-eroded CSFvent mask is smaller than number of Time points; PCA will fail \n")
+    else:
+        print("WARNING: using non-eroded CSFvent mask in PhysiolReg")
+        f.write("\n WARNING: using non-eroded CSFvent mask in PhysiolReg \n")
+else:
+    print("Using eroded CSFvent mask in PhysiolReg")
+    f.write("\n ==> Using eroded CSFvent mask in PhysiolReg \n")
+
+
 
 fname = ''.join([EPIpath,'/rT1_WM_mask_eroded.nii.gz'])
-volWM = nib.load(fname)
-volWM_vol = volWM.get_data()
+volWM_vol = nib.load(fname).get_data()
+numVoxels = np.count_nonzero(volWM_vol);
+if numVoxels < numTimePoints:
+    fname = ''.join([EPIpath,'/rT1_WM_mask_eroded_2nd.nii.gz'])
+    volWM_vol = nib.load(fname).get_data()
+    numVoxels = np.count_nonzero(volWM_vol);
+    if numVoxels < numTimePoints:
+        fname = ''.join([EPIpath,'/rT1_WM_mask_eroded_1st.nii.gz'])
+        volWM_vol = nib.load(fname).get_data()
+        numVoxels = np.count_nonzero(volWM_vol);
+        if numVoxels < numTimePoints:
+            print("WARNING: number of voxels in 1st eroded WM mask is smaller than number of Time points; PCA will fail")
+            f.write("\n WARNING: number of voxels in 1st-eroded WM mask is smaller than number of Time points; PCA will fail \n")
+        else:
+            print("WARNING: using 1st-eroded WM mask")
+            f.write("\n WARNING: using 1st-eroded WM mask in PhysiolReg \n")
+    else:
+        print("WARNING: using 2nd-eroded WM mask")
+        f.write("\n WARNING: using 2nd-eroded WM mask in PhysiolReg \n")
+
+else:
+    print("Using 3rd eroded WM mask in PhysiolReg")
+    f.write("\n ==> Using 3rd eroded WM mask in PhysiolReg \n")
+
+f.close()
 
 fname = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
 volGS = nib.load(fname)
@@ -128,6 +174,10 @@ if aCompCorr.lower() in ['true','1']:
     # save the data
     fname = ''.join([PhReg_path,'/dataPCA_WM-CSF.npz'])
     np.savez(fname,CSFpca=CSFpca,CSFvar=CSFvar,CSFmask=CSFmask,CSFts=CSFts,WMpca=WMpca,WMvar=WMvar,WMmask=WMmask,WMts=WMts)
+    fname = ''.join([PhReg_path,'/dataPCA_WM-CSF.mat'])
+    print("savign MATLAB file ", fname)
+    mdic = {"CSFpca" : CSFpca,"CSFvar" : CSFvar,"CSFmask" : CSFmask,"CSFts" : CSFts,"WMpca" : WMpca,"WMvar" : WMvar,"WMmask" : WMmask,"WMts" : WMts}
+    savemat(fname, mdic)
     print("Saved aCompCor PCA regressors")
 
 else:
@@ -145,7 +195,12 @@ else:
     # save the data
     fname = ''.join([PhReg_path,'/dataMnRg_WM-CSF.npz'])
     np.savez(fname,CSFavg=CSFavg,CSFavg_sq=CSFavg_sq,CSFderiv=CSFderiv,CSFderiv_sq=CSFderiv_sq,WMavg=WMavg,WMavg_sq=WMavg_sq,WMderiv=WMderiv,WMderiv_sq=WMderiv_sq)
-    print("saved mean CSF WM signal, derivatives, and quadtatics")    
+    print("savign MATLAB file ", fname)
+    fname = ''.join([PhReg_path,'/dataMnRg_WM-CSF.mat'])
+    mdic = {"CSFavg" : CSFavg,"CSFavg_sq" : CSFavg_sq,"CSFderiv" : CSFderiv,"CSFderiv_sq" : CSFderiv_sq,"WMavg" : WMavg,"WMavg_sq" : WMavg_sq,"WMderiv" : WMderiv,"WMderiv_sq" : WMderiv_sq}
+    savemat(fname, mdic)
+    print("saved mean CSF WM signal, derivatives, and quadtatics")  
+      
 
 if 0 < numGS < 5:
     GSavg = np.mean(GSts,axis=0)
@@ -159,6 +214,10 @@ if 0 < numGS < 5:
     # save the data
     fname = ''.join([PhReg_path,'/dataGS.npz'])
     np.savez(fname,GSavg=GSavg,GSavg_sq=GSavg_sq,GSderiv=GSderiv,GSderiv_sq=GSderiv_sq)
+    print("savign MATLAB file ", fname)
+    fname = ''.join([PhReg_path,'/dataGS.mat'])
+    mdic = {"GSavg" : GSavg,"GSavg_sq" : GSavg_sq, "GSderiv" : GSderiv,"GSderiv_sq" : GSderiv_sq}
+    savemat(fname, mdic)
     print("saved global signal regressors")      
 
 END
@@ -230,7 +289,5 @@ else
 fi
 
 time_series ${EPIpath} ${fileIN} ${flags_PhysiolReg_aCompCorr} ${configs_EPI_numPC} ${PhReg_path} ${configs_EPI_numGS}
-
-
 
 
