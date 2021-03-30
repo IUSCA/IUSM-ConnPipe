@@ -37,8 +37,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
         echo "${epiList[$i]} directory not found"
     else
         # Operating on the scans set in configs
-        if [ $((i+1)) -ge "${configs_EPI_epiMin}" ] \
-            && [ $((i+1)) -le "${configs_EPI_epiMax}" ]; then
+        if [ $((i+1)) -ge "${configs_EPI_epiMin}" ] && [ $((i+1)) -le "${configs_EPI_epiMax}" ]; then
 
             export EPIpath="${epiList[$i]}"
             

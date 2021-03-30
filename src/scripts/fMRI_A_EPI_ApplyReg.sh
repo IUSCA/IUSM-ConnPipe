@@ -157,12 +157,28 @@ if physReg == "aCompCorr":
     elif 0 < config_param < 6:
         print("-- Writing prespecified removal of %d components ----" % config_param)
         print("regressors shape ",regressors.shape)
+
+        # Ensure that we have all CSF needed components
         print("numphys['CSFpca'] shape ",numphys['CSFpca'].shape)
+        if numphys['CSFpca'].ndim == 2:
+            csf = numphys['CSFpca'][:,:config_param].T
+            print("--- Using CSF PC number %d" % config_param)
+        else:  # PCS failed and we used the mean signal and CSFpca is a singleton
+            csf = numphys['CSFpca'][None,:]
+            print("--- Using CSF mean signal")
+
+        # Ensure that we have all needed WM components
         print("numphys['WMpca'] shape ",numphys['WMpca'].shape)
+        if numphys['WMpca'].ndim == 2:
+            wm = numphys['WMpca'][:,:config_param].T
+            print("--- Using WM PC number %d" % config_param)
+        else:  # WM PCA failed and we used the mean signal
+            wm = numphys['WMpca'][None,:]
+            print("--- Using WM mean signal")
 
         components = np.vstack((regressors,\
-                                numphys['CSFpca'][:,:config_param].T,\
-                                numphys['WMpca'][:,:config_param].T))
+                                csf,\
+                                wm))
 
         print("components shape: ", components.shape)
         zRegressMat.append(stats.zscore(components,axis=1));

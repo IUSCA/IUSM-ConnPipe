@@ -42,7 +42,10 @@ END
 }
 
 function time_series() {
-EPIpath="$1" fileIN="$2" aCompCorr="$3" num_comp="$4" PhReg_path="$5" numGS="$6" python - <<END
+EPIpath="$1" fileIN="$2" aCompCorr="$3" \
+    num_comp="$4" PhReg_path="$5" \
+    numGS="$6" python - <<END
+
 import os
 import numpy as np
 import nibabel as nib
@@ -114,12 +117,15 @@ if numVoxels < numTimePoints:
     if numVoxels < numTimePoints:
         print("WARNING: number of voxels in non-eroded CSFvent mask is smaller than number of Time points; PCA will fail")
         f.write("\n WARNING: number of voxels in non-eroded CSFvent mask is smaller than number of Time points; PCA will fail \n")
+        flag_PCA_CSF=False
     else:
         print("WARNING: using non-eroded CSFvent mask in PhysiolReg")
         f.write("\n WARNING: using non-eroded CSFvent mask in PhysiolReg \n")
+        flag_PCA_CSF=True
 else:
     print("Using eroded CSFvent mask in PhysiolReg")
     f.write("\n ==> Using eroded CSFvent mask in PhysiolReg \n")
+    flag_PCA_CSF=True
 
 
 
@@ -137,16 +143,19 @@ if numVoxels < numTimePoints:
         if numVoxels < numTimePoints:
             print("WARNING: number of voxels in 1st eroded WM mask is smaller than number of Time points; PCA will fail")
             f.write("\n WARNING: number of voxels in 1st-eroded WM mask is smaller than number of Time points; PCA will fail \n")
+            flag_PCA_WM=False
         else:
             print("WARNING: using 1st-eroded WM mask")
             f.write("\n WARNING: using 1st-eroded WM mask in PhysiolReg \n")
+            flag_PCA_WM=True
     else:
         print("WARNING: using 2nd-eroded WM mask")
         f.write("\n WARNING: using 2nd-eroded WM mask in PhysiolReg \n")
-
+        flag_PCA_WM=True
 else:
     print("Using 3rd eroded WM mask in PhysiolReg")
     f.write("\n ==> Using 3rd eroded WM mask in PhysiolReg \n")
+    flag_PCA_WM=True
 
 f.close()
 
@@ -166,11 +175,26 @@ volGS_vol = volGS.get_data()
 # fname = ''.join([PhReg_path,'/GSmask.npz'])
 # np.savez(fname,GSmask=GSmask)
 
+if flag_PCA_CSF is False and flag_PCA_WM is False and aCompCorr.lower() in ['true','1']:
+    aCompCorr='false'
+    f.write("\n WARNING: PCA will fail for both CSF and WM.\n")
+    f.write("\n Using Head Motion Parameters for regression, instead of aCompCorr \n")
+
 if aCompCorr.lower() in ['true','1']:
     print("-------------aCompCorr--------------")
-    [CSFpca,CSFvar] = get_pca(CSFts.T,num_comp)
-    [WMpca,WMvar] = get_pca(WMts.T,num_comp)
     
+    if flag_PCA_CSF:
+        [CSFpca,CSFvar] = get_pca(CSFts.T,num_comp)
+    else:
+        CSFpca = np.mean(CSFts,axis=0)
+        CSFvar = 0
+
+    if flag_PCA_WM:
+        [WMpca,WMvar] = get_pca(WMts.T,num_comp)
+    else:
+        WMpca = np.mean(WMts,axis=0)
+        WMvar = 0
+
     # save the data
     fname = ''.join([PhReg_path,'/dataPCA_WM-CSF.npz'])
     np.savez(fname,CSFpca=CSFpca,CSFvar=CSFvar,CSFmask=CSFmask,CSFts=CSFts,WMpca=WMpca,WMvar=WMvar,WMmask=WMmask,WMts=WMts)
@@ -288,6 +312,8 @@ else
     configs_EPI_numGS=0
 fi
 
-time_series ${EPIpath} ${fileIN} ${flags_PhysiolReg_aCompCorr} ${configs_EPI_numPC} ${PhReg_path} ${configs_EPI_numGS}
+time_series ${EPIpath} \
+    ${fileIN} ${flags_PhysiolReg_aCompCorr} \
+    ${configs_EPI_numPC} ${PhReg_path} ${configs_EPI_numGS}
 
 
