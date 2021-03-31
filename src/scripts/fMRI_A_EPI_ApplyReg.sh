@@ -23,8 +23,6 @@ import numpy as np
 import nibabel as nib
 from scipy import stats
 
-print("inside Python script")
-
 def apply_reg(data, mask, regressors,scrubbing):
 
     # remove identical regressors (rows) if present
@@ -51,40 +49,54 @@ def apply_reg(data, mask, regressors,scrubbing):
 
     return resid
 
+###### print to log files #######
+QCfile_name=os.environ['QCfile_name']
+QCfile_name = ''.join([QCfile_name,'.log'])
+print("QCfile_name: ",QCfile_name)
+fqc=open(QCfile_name, "a+")
+
+logfile_name=os.environ['logfile_name']
+logfile_name = ''.join([logfile_name,'.log'])
+print("logfile_name: ",logfile_name)
+flog=open(logfile_name, "a+")
+
 EPIpath=os.environ['EPIpath']
 nuisanceReg=os.environ['nuisanceReg']
-print("nuisanceReg",nuisanceReg)
+flog.write("\n"+"nuisanceReg "+ nuisanceReg)
 config_param=int(os.environ['config_param'])
-print("config_param",config_param)
+flog.write("\n"+"config_param "+ str(config_param))
 numReg=int(os.environ['numReg'])
-print("numReg",numReg)
+flog.write("\n"+"numReg "+ str(numReg))
 numGS=int(os.environ['numGS'])
-print("numGS",numGS)
+flog.write("\n"+"numGS "+ str(numGS))
 physReg=os.environ['physReg']
-print("physReg",physReg)
+flog.write("\n"+"physReg "+ physReg)
 PhReg_path = ''.join([EPIpath,'/',nuisanceReg,'/',physReg])
-print("PhReg_path ",PhReg_path )
+flog.write("\n"+"PhReg_path "+ PhReg_path )
 postfix=os.environ['postfix']
-print("postfix",postfix)
+flog.write("\n"+"postfix "+ postfix)
 scrub=os.environ['scrub']
-print("scrub",scrub)
+flog.write("\n"+"scrub "+ scrub)
 resting_file=os.environ['resting_file']
-print("resting_file",resting_file)
+flog.write("\n"+"resting_file "+ resting_file)
 resting_file = ''.join([EPIpath,resting_file]) 
-print("full resting file is ",resting_file)
+flog.write("\n"+"full resting file is "+ resting_file)
 
-print("REGRESSORS -- Creating regressor matrix with the follwing:")
+flog.write("\n REGRESSORS -- Creating regressor matrix with the follwing:")
 
 
 if nuisanceReg == "AROMA":
     print("1. Applying AROMA regressors")
+    flog.write("\n 1. Applying AROMA regressors")
     regressors = np.array([])
 
 elif nuisanceReg == "HMPreg":
     print("1. Applying Head Motion Param regressors") 
+    flog.write("\n 1. Applying Head Motion Param regressors")
 
     if numReg == 24:
         print(" -- 24 Head motion regressors")
+        flog.write("\n  -- 24 Head motion regressors")
         fname=''.join([EPIpath,'/HMPreg/motion12_regressors.npz'])
         m12reg = np.load(fname)
         print(sorted(m12reg.files))
@@ -92,15 +104,15 @@ elif nuisanceReg == "HMPreg":
         m_sq_reg = np.load(fname)  
         print(sorted(m_sq_reg.files))
         regressors = np.vstack((m12reg['motion'].T,m12reg['motion_deriv'].T,m_sq_reg['motion_sq'].T,m_sq_reg['motion_deriv_sq'].T))
-        print("regressors shape ",regressors.shape)
     elif numReg == 12:
         print(" -- 12 Head motion regressors")
+        flog.write("\n -- 12 Head motion regressors")
         fname=''.join([EPIpath,'/HMPreg/motion12_regressors.npz'])
         m12reg = np.load(fname)
         print(sorted(m12reg.files))
         regressors = np.vstack((m12reg['motion'].T,m12reg['motion_deriv'].T))
-        print("regressors shape ",regressors.shape)
 
+flog.write("\n regressors shape " + str(regressors.shape))
 
 if numGS > 0:
     fname = ''.join([PhReg_path,'/dataGS.npz'])
@@ -112,7 +124,9 @@ if numGS > 0:
         else:
             regressors = gsreg 
         print("   -- 1 global signal regressor ")
+        flog.write("\n  -- 1 global signal regressor )
         print("regressors shape ",regressors.shape)
+        flog.write("\n regressors shape " + str(regressors.shape))
     if numGS == 2:
         gsreg = np.vstack((dataGS['GSavg'],dataGS['GSderiv']))
         if regressors.size:
@@ -121,7 +135,9 @@ if numGS > 0:
             regressors = gsreg    
         
         print("   -- 2 global signal regressor ")
+        flog.write("\n  -- 2 global signal regressor )
         print("regressors shape ",regressors.shape)
+        flog.write("\n regressors shape " + str(regressors.shape))
     if numGS == 4:
         gsreg = np.vstack((dataGS['GSavg'],\
                            dataGS['GSavg_sq'],\
@@ -133,7 +149,9 @@ if numGS > 0:
             regressors = gsreg
 
         print("   -- 4 global signal regressor ")   
-        print("regressors shape ",regressors.shape)             
+        flog.write("\n  -- 4 global signal regressor )
+        print("regressors shape ",regressors.shape)  
+        flog.write("\n regressors shape " + str(regressors.shape))           
 
 
 if physReg == "aCompCorr":

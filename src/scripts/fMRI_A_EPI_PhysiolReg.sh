@@ -180,20 +180,26 @@ if flag_PCA_CSF is False and flag_PCA_WM is False and aCompCorr.lower() in ['tru
     f.write("\n WARNING: PCA will fail for both CSF and WM.\n")
     f.write("\n Using Head Motion Parameters for regression, instead of aCompCorr \n")
 
+
 if aCompCorr.lower() in ['true','1']:
     print("-------------aCompCorr--------------")
+    f.write("\n -------------aCompCorr--------------.\n")
     
     if flag_PCA_CSF:
         [CSFpca,CSFvar] = get_pca(CSFts.T,num_comp)
+        f.write("\n Running PCA on CSF time-series.\n")
     else:
         CSFpca = np.mean(CSFts,axis=0)
         CSFvar = 0
+        f.write("\n WARNING Cannot Perform PCA on CSF time-series. Using mean signal instead.\n")
 
     if flag_PCA_WM:
         [WMpca,WMvar] = get_pca(WMts.T,num_comp)
+        f.write("\n Running PCA on WM time-series.\n")
     else:
         WMpca = np.mean(WMts,axis=0)
         WMvar = 0
+        f.write("\n WARNING Cannot Perform PCA on WM time-series. Using mean signal instead.\n")
 
     # save the data
     fname = ''.join([PhReg_path,'/dataPCA_WM-CSF.npz'])
@@ -206,6 +212,7 @@ if aCompCorr.lower() in ['true','1']:
 
 else:
     print("-------------Mean CSF and WM Regression--------------")
+    f.write("\n ------------Mean CSF and WM Regression--------------.\n")
     CSFavg = np.mean(CSFts,axis=0)
     CSFderiv = np.append(0,np.diff(CSFavg));
     CSFavg_sq = np.power(CSFavg,2)
