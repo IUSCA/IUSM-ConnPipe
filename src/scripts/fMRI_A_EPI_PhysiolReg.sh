@@ -51,24 +51,24 @@ import numpy as np
 import nibabel as nib
 from scipy.io import savemat
 
+###### print to log files #######
+QCfile_name = ''.join([os.environ['QCfile_name'],'.log'])
+fqc=open(QCfile_name, "a+")
+logfile_name = ''.join([os.environ['logfile_name'],'.log'])
+flog=open(logfile_name, "a+")
 
+flog.write("\n *** python time_series **** ")
 EPIpath=os.environ['EPIpath']
-print("EPIpath",EPIpath)
 fileIN=os.environ['fileIN']
-print("fileIN",fileIN)
+flog.write("\n"+"fileIN "+ fileIN)
 aCompCorr=os.environ['aCompCorr']
-print("aCompCorr",aCompCorr)
+flog.write("\n aCompCorr "+ aCompCorr)
 num_comp=int(os.environ['num_comp'])
-print("num_comp",num_comp)
+flog.write("\n num_comp "+ str(num_comp))
 PhReg_path=os.environ['PhReg_path']
-print("PhReg_path",PhReg_path)
+flog.write("\n PhReg_path "+ PhReg_path)
 numGS=int(os.environ['numGS'])
-print("numGS",numGS)
-
-QCfile_name=os.environ['QCfile_name']
-QCfile_name = ''.join([QCfile_name,'.log'])
-print("QCfile_name: ",QCfile_name)
-f=open(QCfile_name, "a+")
+flog.write("\n numGS "+ str(numGS))
 
 def get_ts(vol,numTP,rest):
     numVoxels = np.count_nonzero(vol);
@@ -116,15 +116,15 @@ if numVoxels < numTimePoints:
     numVoxels = np.count_nonzero(volCSFvent_vol);
     if numVoxels < numTimePoints:
         print("WARNING: number of voxels in non-eroded CSFvent mask is smaller than number of Time points; PCA will fail")
-        f.write("\n WARNING: number of voxels in non-eroded CSFvent mask is smaller than number of Time points; PCA will fail \n")
+        fqc.write("\n WARNING: number of voxels in non-eroded CSFvent mask is smaller than number of Time points; PCA will fail \n")
         flag_PCA_CSF=False
     else:
         print("WARNING: using non-eroded CSFvent mask in PhysiolReg")
-        f.write("\n WARNING: using non-eroded CSFvent mask in PhysiolReg \n")
+        fqc.write("\n WARNING: using non-eroded CSFvent mask in PhysiolReg \n")
         flag_PCA_CSF=True
 else:
     print("Using eroded CSFvent mask in PhysiolReg")
-    f.write("\n ==> Using eroded CSFvent mask in PhysiolReg \n")
+    fqc.write("\n ==> Using eroded CSFvent mask in PhysiolReg \n")
     flag_PCA_CSF=True
 
 
@@ -142,22 +142,20 @@ if numVoxels < numTimePoints:
         numVoxels = np.count_nonzero(volWM_vol);
         if numVoxels < numTimePoints:
             print("WARNING: number of voxels in 1st eroded WM mask is smaller than number of Time points; PCA will fail")
-            f.write("\n WARNING: number of voxels in 1st-eroded WM mask is smaller than number of Time points; PCA will fail \n")
+            fqc.write("\n WARNING: number of voxels in 1st-eroded WM mask is smaller than number of Time points; PCA will fail \n")
             flag_PCA_WM=False
         else:
             print("WARNING: using 1st-eroded WM mask")
-            f.write("\n WARNING: using 1st-eroded WM mask in PhysiolReg \n")
+            fqc.write("\n WARNING: using 1st-eroded WM mask in PhysiolReg \n")
             flag_PCA_WM=True
     else:
         print("WARNING: using 2nd-eroded WM mask")
-        f.write("\n WARNING: using 2nd-eroded WM mask in PhysiolReg \n")
+        fqc.write("\n WARNING: using 2nd-eroded WM mask in PhysiolReg \n")
         flag_PCA_WM=True
 else:
     print("Using 3rd eroded WM mask in PhysiolReg")
-    f.write("\n ==> Using 3rd eroded WM mask in PhysiolReg \n")
+    fqc.write("\n ==> Using 3rd eroded WM mask in PhysiolReg \n")
     flag_PCA_WM=True
-
-f.close()
 
 fname = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
 volGS = nib.load(fname)
@@ -177,35 +175,42 @@ volGS_vol = volGS.get_data()
 
 if flag_PCA_CSF is False and flag_PCA_WM is False and aCompCorr.lower() in ['true','1']:
     aCompCorr='false'
-    f.write("\n WARNING: PCA will fail for both CSF and WM.\n")
-    f.write("\n Using Head Motion Parameters for regression, instead of aCompCorr \n")
+    fqc.write("\n WARNING: PCA will fail for both CSF and WM.\n")
+    fqc.write("\n Using Head Motion Parameters for regression, instead of aCompCorr \n")
+
 
 if aCompCorr.lower() in ['true','1']:
     print("-------------aCompCorr--------------")
+    flog.write("\n Physiological Reg: aCompCorr.\n")
     
     if flag_PCA_CSF:
         [CSFpca,CSFvar] = get_pca(CSFts.T,num_comp)
+        flog.write("\n Running PCA on CSF time-series.\n")
     else:
         CSFpca = np.mean(CSFts,axis=0)
         CSFvar = 0
+        flog.write("\n WARNING Cannot Perform PCA on CSF time-series. Using mean signal instead.\n")
 
     if flag_PCA_WM:
         [WMpca,WMvar] = get_pca(WMts.T,num_comp)
+        flog.write("\n Running PCA on WM time-series.\n")
     else:
         WMpca = np.mean(WMts,axis=0)
         WMvar = 0
+        flog.write("\n WARNING Cannot Perform PCA on WM time-series. Using mean signal instead.\n")
 
     # save the data
     fname = ''.join([PhReg_path,'/dataPCA_WM-CSF.npz'])
     np.savez(fname,CSFpca=CSFpca,CSFvar=CSFvar,CSFmask=CSFmask,CSFts=CSFts,WMpca=WMpca,WMvar=WMvar,WMmask=WMmask,WMts=WMts)
     fname = ''.join([PhReg_path,'/dataPCA_WM-CSF.mat'])
-    print("savign MATLAB file ", fname)
+    print("saving MATLAB file ", fname)
     mdic = {"CSFpca" : CSFpca,"CSFvar" : CSFvar,"CSFmask" : CSFmask,"CSFts" : CSFts,"WMpca" : WMpca,"WMvar" : WMvar,"WMmask" : WMmask,"WMts" : WMts}
     savemat(fname, mdic)
     print("Saved aCompCor PCA regressors")
 
 else:
     print("-------------Mean CSF and WM Regression--------------")
+    flog.write("\n Physiological Reg: Mean CSF and WM Regression.\n")
     CSFavg = np.mean(CSFts,axis=0)
     CSFderiv = np.append(0,np.diff(CSFavg));
     CSFavg_sq = np.power(CSFavg,2)
@@ -242,7 +247,12 @@ if 0 < numGS < 5:
     fname = ''.join([PhReg_path,'/dataGS.mat'])
     mdic = {"GSavg" : GSavg,"GSavg_sq" : GSavg_sq, "GSderiv" : GSderiv,"GSderiv_sq" : GSderiv_sq}
     savemat(fname, mdic)
-    print("saved global signal regressors")      
+    print("saved global signal regressors")    
+
+
+fqc.close()
+flog.close()
+
 
 END
 }

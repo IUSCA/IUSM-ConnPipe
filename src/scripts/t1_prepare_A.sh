@@ -22,8 +22,8 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
         log "T1_PREPARE_A"
 
 		##### DICOM 2 nifti ######
-
 		if ${flags_T1_dcm2niix}; then
+			log "###### DICOM 2 nifti ######" 
 			# if .IMA or .IMA.dcm or .dcm files exis inside T1/DICOMS
 			dicomfiles=`find $T1path/${configs_dcmFolder} -maxdepth 1 -name "*.${configs_dcmFiles}*" | wc -l`
 			if [[ $dicomfiles -eq 0 ]]; then 
@@ -54,32 +54,49 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 				log $cmd
 				eval $cmd 
 				if ${configs_T1_useCropped}; then
-					gzip -f $T1path/${configs_T1}_Crop_1.nii
-					mv $T1path/${configs_T1}_Crop_1.nii.gz $T1path/${configs_T1}.nii.gz
+					log "Using cropped field-of-view output of dcm2niix"
+					cmd="gzip -f $T1path/${configs_T1}_Crop_1.nii"
+					log $cmd
+					eval $cmd 
+					cmd="mv $T1path/${configs_T1}_Crop_1.nii.gz $T1path/${configs_T1}.nii.gz"
+					log $cmd
+					eval $cmd 
 				else
-					gzip -f $T1path/${configs_T1}_orig.nii
-					mv $T1path/${configs_T1}_orig.nii.gz $T1path/${configs_T1}.nii.gz
+					cmd="gzip -f $T1path/${configs_T1}_orig.nii"
+					log $cmd
+					eval $cmd
+					cmd="mv $T1path/${configs_T1}_orig.nii.gz $T1path/${configs_T1}.nii.gz"
+					log $cmd
+					eval $cmd
 				fi
 			fi			
 		fi
 
 		##### T1 denoiser ######
-		
 		if ${flags_T1_denoiser}; then
-			#singularity pull --name ants.simg docker://brainlife/ants 
-			#singularity shell ants.simg 
+			
+			log "********** Denoising ***********"
+
 			fileIn="$T1path/${configs_T1}.nii.gz"
+			file4fslanat="$T1path/${configs_T1_denoised}"
+
 			if ${flag_ANTS}; then 
-				cmd="DenoiseImage -v -d 3 -n Gaussian -p 1 -r 1 -i $fileIn -o $T1path/${configs_T1_denoised}.nii.gz"
+				log "Denoising T1 with ANTS"
+				cmd="DenoiseImage -v -d 3 -n Gaussian -p 1 -r 1 -i $fileIn -o ${file4fslanat}.nii.gz"
 			else
-				cmd="susan $T1path/${configs_T1} 56.5007996 3 3 1 0 $T1path/${configs_T1_denoised}"
+				log "Denoising T1 with SUSAN"
+				cmd="susan $T1path/${configs_T1} 56.5007996 3 3 1 0 ${file4fslanat}"
 			fi			
 			log $cmd
 			eval $cmd 
+		else
+			log "WARNING - Skipping T1 Denoising"
+			file4fslanat="$T1path/${configs_T1}"
 		fi 
 
 		##### FSL ANAT ######
 		if ${flags_T1_anat}; then
+			log "********** FSL ANAT ***********"
 
 			# strongbias should be more appropriate for multi-channel coils on 3T scanners.        	
 			if [ ${configs_T1_bias} -eq "0" ]; then
@@ -89,6 +106,7 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 			else 
 				T1bias=" "
 			fi
+			log "T1bias is ${T1bias}"
 
 			# add nocrop option if registration fails	
 			if [ ${configs_T1_crop} -eq "0" ]; then
@@ -96,27 +114,29 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 			else 
 				T1crop=" "
 			fi
-
+			
+			log "T1crop is ${T1crop}"
 
 			T1args="${T1bias} ${T1crop}"
 
-			if [[ -d "${T1path}/${configs_T1_denoised}.anat" ]]; then
-				cmd="rm -fr ${T1path}/${configs_T1_denoised}.anat"
+			if [[ -d "${file4fslanat}.anat" ]]; then
+				cmd="rm -fr ${file4fslanat}.anat"
 				log $cmd
 				eval $cmd 
 			fi
 
-			if [[ -e "$T1path/${configs_T1_denoised}.nii.gz" ]]; then
-				cmd="fsl_anat --noreg --nononlinreg --noseg ${T1args} -i ${T1path}/${configs_T1_denoised}.nii.gz"
+			if [[ -e "${file4fslanat}.nii.gz" ]]; then
+				log "Running fsl_anat on ${file4fslanat}.nii.gz"
+				cmd="fsl_anat --noreg --nononlinreg --noseg ${T1args} -i ${file4fslanat}.nii.gz"
 				log ${cmd}
 				eval ${cmd}
 			else
-				log "$T1path/${configs_T1_denoised}.nii.gz not found"
+				log "${file4fslanat}.nii.gz not found"
 				exit 1
 			fi 
 
-			if [[ -e "${T1path}/${configs_T1_denoised}.anat/T1_biascorr.nii.gz" ]]; then
-				cmd="cp ${T1path}/${configs_T1_denoised}.anat/T1_biascorr.nii.gz ${T1path}/T1_fov_denoised.nii.gz"
+			if [[ -e "${file4fslanat}.anat/T1_biascorr.nii.gz" ]]; then
+				cmd="cp ${file4fslanat}.anat/T1_biascorr.nii.gz ${T1path}/T1_fov_denoised.nii.gz"
 				log $cmd
 				eval $cmd 
 				cmd="gunzip ${T1path}/T1_fov_denoised.nii.gz"
@@ -127,7 +147,7 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 					echo 'FSL_ANAT NOT COMPLETED'
 				fi
 			else
-				log "${T1path}/${configs_T1_denoised}.anat/T1_biascorr.nii.gz not found"
+				log "${file4fslanat}.anat/T1_biascorr.nii.gz not found"
 				exit 1	
 			fi 
 		fi 
