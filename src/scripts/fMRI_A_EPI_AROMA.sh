@@ -21,6 +21,10 @@ fIn1="$1" fIn2="$2" python - <<END
 import os
 import numpy as np
 
+###### print to log files #######
+logfile_name = ''.join([os.environ['logfile_name'],'.log'])
+flog=open(logfile_name, "a+")
+
 fIn1=os.environ['fIn1']
 #print("fIn1: ", fIn1)
 
@@ -38,7 +42,6 @@ motionICs = np.loadtxt(fIn2, delimiter=",",dtype=np.int32)
 peVar = np.zeros(len(motionICs))
 ptVar = np.zeros(len(motionICs))
 
-
 for i in range(0,len(motionICs)):
     ind = motionICs[i]
     peVar[i] = ICstats[ind-1,0]
@@ -48,8 +51,12 @@ peVar = np.sum(peVar)
 ptVar = np.sum(ptVar)
 
 print("%.2f percent of explained variance in removed motion components" % peVar)
-print("%.2f percent of total variance in removed motion components" % ptVar)
+flog.write("\n "+ str(peVar)+ " percent of explained variance in removed motion components")
 
+print("%.2f percent of total variance in removed motion components" % ptVar)
+flog.write("\n "+ str(ptVar)+ " percent of total variance in removed motion components")
+
+flog.close()
 
 END
 }

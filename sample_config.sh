@@ -54,22 +54,20 @@ export configs_grefmFolder="GREFM"  # Reserved for Field Mapping series
 	export configs_GREmagdcm="MAG_DICOMS" # Gradient echo FM magnitude series
 	export configs_GREphasedcm="PHASE_DICOMS" # Gradient echo FM phase map series
 
-export configs_DWI="DWI"
-    export configs_unwarpFolder="UNWARP"
-        export configs_dcmPA="B0_PA_DCM" #b0 opposite phase encoding
-
-#export configs_dcmFolder="DICOMS"
+export configs_dcmFolder="DICOMS"
 export configs_dcmFiles="dcm" # specify Dicom file extension
 export configs_niiFiles="nii" # Nifti-1 file extension
 
+export configs_DWI="DWI"
+    export configs_unwarpFolder="UNWARP"
+        export configs_dcmPA="B0_PA_DCM" #b0 opposite phase encoding
 ## USER: select only one option below (single phase or two phase)
-## Single phase ##
-# export configs_dcmFolder="DICOMS"
-
-## Two phase##
-# Allow two DICOM directories (e.g., AP/PA, LR/RL,...).Both phase directions must exist  
-# export configs_dcmFolder1="DICOMS1" # Specify first phase direction (e.g., AP)
-# export configs_dcmFolder2="DICOMS2" # Specify reverse phase data direction (e.g., PA)
+### Single phase ###
+	# export configs_DWI_dcmFolder="DICOMS"
+### Two phase###
+#Allow two DICOM directories (e.g., AP/PA, LR/RL,...).Both phase directions must exist  
+	export configs_DWI_dcmFolder1="DICOMS1" # Specify first phase direction (e.g., AP)
+	export configs_DWI_dcmFolder2="DICOMS2" # Specify reverse phase data direction (e.g., PA)
 
 
 ################################################################################
@@ -81,7 +79,7 @@ export pathFSLstandard="${FSLDIR}/data/standard"
 
 ## FOR IUSM USERS ONLY - DURING DEVELOPMENT PHASE, PLEASE USE THIS "pathSM" AS THE 
 ## SUPPLEMENTARY MATERIALS PATH. THIS WILL EVENTUALLY LIVE IN A REPOSITORY 
-export pathSM="/N/project/ProjectName/ConnPipelineSM"
+export pathSM="/N/project/ConnPipelineSM"
 export pathMNItmplates="${pathSM}/MNI_templates"
 export pathBrainmaskTemplates="${pathSM}/brainmask_templates"
 export pathParcellations="${pathSM}/Parcellations"
@@ -148,17 +146,27 @@ export T1_PREPARE_A=false
 if $T1_PREPARE_A; then
 
 	export flags_T1_dcm2niix=true  # dicom to nifti conversion 
-		export configs_T1_useCropped=false; # use cropped field-of-view output of dcm2niix
+		export configs_T1_useCropped=false # use cropped field-of-view output of dcm2niix
 		
 	export flags_T1_denoiser=true # denoising
-		# export configs_T1_denoised="T1_denoised_SUSAN"  ## this should eventually be an input param SUSAN vs ANTS
-	
-	export flags_T1_anat=true # run FSL_anat
-		export configs_T1_bias=1; # 0 = no; 1 = weak; 2 = strong
-		export configs_T1_crop=0; # 0 = no; 1 = yes (lots already done by dcm2niix)
+		# Set denoising option
+		export flag_ANTS=true # other option available is FSL's SUSAN, set flag_ANTS=false to use SUSAN instead 
+		# =========================================================================================
+		# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
+		#===========================================================================================
+		if ${flag_ANTS}; then 
+			export configs_T1_denoised="T1_denoised_ANTS" 
+		else
+			export configs_T1_denoised="T1_denoised_SUSAN"
+		fi
+		#===========================================================================================
 
-	export flags_T1_extract_and_mask=true; # brain extraction and mask generation (only needed for double BET)
-		export configs_antsTemplate="MICCAI"  # options are: ANTS (MICCAI, NKI, IXI) or bet
+	export flags_T1_anat=true # run FSL_anat
+		export configs_T1_bias=0 # 0 = no; 1 = weak; 2 = strong
+		export configs_T1_crop=0 # 0 = no; 1 = yes (lots already done by dcm2niix)
+
+	export flags_T1_extract_and_mask=true # brain extraction and mask generation (only needed for double BET)
+		export configs_antsTemplate="NKI"  # options are: ANTS (MICCAI, NKI, IXI) or bet
 		export configs_T1_A_betF="0.3" # this are brain extraction parameters with FSL bet
 		export configs_T1_A_betG="-0.1"  # see fsl bet help page for more details
 		export config_brainmask_overlap_thr="0.90"  # this is the threshold to assess whether or not the ANTS and BET masks are similar 'ehough"'
@@ -168,18 +176,6 @@ if $T1_PREPARE_A; then
 	export flags_T1_re_extract=true; # brain extraction with mask
 
 fi 
-
-# =========================================================================================
-# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
-#===========================================================================================
-	# Set denoising option
-	export flag_ANTS=true # other option available is FSL's SUSAN, set flag_ANTS=false to use SUSAN instead 
-	if ${flag_ANTS}; then 
-		export configs_T1_denoised="T1_denoised_ANTS" 
-	else
-		export configs_T1_denoised="T1_denoised_SUSAN"
-	fi
-#===========================================================================================
 
 ################################################################################
 ############################# T1_PREPARE_B #####################################
@@ -194,11 +190,6 @@ if $T1_PREPARE_B; then
 	export flags_T1_reg2MNI=true
 		export configs_T1_useExistingMats=false
 		export configs_T1_useMNIbrain=true
-			if ${configs_T1_useMNIbrain}; then
-				export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm_brain.nii.gz"
-			else
-				export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm.nii.gz"
-			fi
 		export configs_T1_fnirtSubSamp="4,4,2,1"
 	# segmentation flags
 	export flags_T1_seg=true		
@@ -214,7 +205,15 @@ if $T1_PREPARE_B; then
 		export configs_T1_subcortUser=true   # false = default FSL; true = user-provided
 											  # Name of user-provided subcortical parcellation (assumed to be found in ConnPipeSM folder)
 											  # should be set in the desired parcellation name for index "N" with "psubcortonly=1"
-
+	# =========================================================================================
+	# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
+	#===========================================================================================
+		if ${configs_T1_useMNIbrain}; then
+			export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm_brain.nii.gz"
+		else
+			export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm.nii.gz"
+		fi
+	#===========================================================================================
 fi 
 
 
@@ -223,11 +222,11 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export fMRI_A=false
+export fMRI_A=true
 
 if $fMRI_A; then
 
-	export scanner="SIEMENS" #  SIEMENS or GE
+	export scanner="GE" #  SIEMENS or GE
 	log "SCANNER ${scanner}"
 
 	# # set number of EPI sessions/scans
@@ -240,6 +239,9 @@ if $fMRI_A; then
 
 		export flags_EPI_UseJson=true; # obtain pertinent scan information through json files generated by dcm2niix
 
+		# =========================================================================================
+		# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
+		#===========================================================================================
 		if [[ ${scanner} == "SIEMENS" ]]; then
 			export scanner_param_TR="RepetitionTime"  # "RepetitionTime" for Siemens; "tr" for GE
 			export scanner_param_TE="EchoTime"  # "EchoTime" for Siemens; "te" for GE
@@ -261,8 +263,8 @@ if $fMRI_A; then
 			export scammer_param_AcquisitionMatrix="acquisition_matrix"
 			export scanner_param_PhaseEncodingDirection="phase_encode_direction"
 		fi
+		#===========================================================================================
 
-	#------------------------------------------------------------------------------------------------------------	
 	##########################################################
 	## User must select either SpinEchoUnwarp or GREFMUnwarp. 
 	##########################################################
@@ -310,11 +312,14 @@ if $fMRI_A; then
 		# Do not use configs.EPI.EPIdwell. Use params.EPI.EffectiveEchoSpacing extracted from the json header
      	# export configs_EPI_EPIdwell = 0.000308; # Dwell time (sec) for the EPI to be unwarped 
 
+	# =========================================================================================
+	# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
+	#===========================================================================================
 	if ${flags_EPI_SpinEchoUnwarp} && ${flags_EPI_GREFMUnwarp}; then
 		log "ERROR 	Please select one option only: Spin Echo Unwarp or Gradient Echo Unwarp. Exiting... "
 		exit 1
 	fi
-	#------------------------------------------------------------------------------------------------------------	
+	#===========================================================================================	
 
 	export flags_EPI_SliceTimingCorr=false
 		#export flags_EPI_UseUnwarped=true # Use unwarped EPI if both warped and unwarped are available.
@@ -342,18 +347,24 @@ if $fMRI_A; then
 	## If user sets flags_NuisanceReg_AROMA=false, then flags_NuisanceReg_HeadParam=true
 
 		export flags_NuisanceReg_AROMA=true  
-			## USER: by default, ICA_AROMA will estimate the dimensionality (i.e. num of independent components) for you; however, for higher multiband
-			## factors with many time-points and high motion subjects, it may be useful for the user to set the dimensionality. THis can be done by
-			## setting the desired number of componenets in the following config flag. Leave undefined for automatic estimation 
-			export flag_AROMA_dim=
+
+			
 			if ${flags_NuisanceReg_AROMA}; then # if using ICA-AROMA
+				## USER: by default, ICA_AROMA will estimate the dimensionality (i.e. num of independent components) for you; however, for higher multiband
+				## factors with many time-points and high motion subjects, it may be useful for the user to set the dimensionality. THis can be done by
+				## setting the desired number of componenets in the following config flag. Leave undefined for automatic estimation 
+				export flag_AROMA_dim=
+
+				# =========================================================================================
+				# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
+				#===========================================================================================
 				nR="aroma" # set filename postfix for output image
 				export flags_NuisanceReg_HeadParam=false
 				
-				# SET THESE VARIABLES IF NOT USING HCP ica-aroma MODULE
+				# Use the ICA-AROMA package contained in the ConnPipe-SuppMaterials
 				ICA_AROMA_path="${PYpck}/ICA-AROMA" 
 				export run_ICA_AROMA="python ${ICA_AROMA_path}/ICA_AROMA.py"
-				## UNCOMMENT FOLLOWING LINE IF USING HPC ica-aroma MODULE:
+				## UNCOMMENT FOLLOWING LINE **ONLY** IF USING HPC ica-aroma MODULE:
 				# export run_ICA_AROMA="ICA_AROMA.py"
 
 				if [[ -e "${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz" ]]; then
@@ -361,20 +372,30 @@ if $fMRI_A; then
 				else
 					fileMNI2mm="${pathMNItmplates}/MNI152_T1_2mm_brain.nii.gz"
 				fi
-			else                         # if using Head Motion Parameters
+				#===========================================================================================
+			else   # if using Head Motion Parameters
 				export flags_NuisanceReg_HeadParam=true
-					nR="hmp${configs_EPI_numReg}"   # set filename postfix for output image
+					
 					export configs_EPI_numReg=24  # 12 (orig and deriv) or 24 (+sq of 12)
-						if [[ "${configs_EPI_numReg}" -ne 12 && "${configs_EPI_numReg}" -ne 24 ]]; then
-							log "WARNING the variable config_EPI_numReg must have values '12' or '24'. \
-								Please set the corect value in the config.sh file"
-						fi			
 					export configs_EPI_scrub=true    # perform scrubbing based on FD and DVARS criteria
+				# =========================================================================================
+				# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
+				#===========================================================================================					
+					nR="hmp${configs_EPI_numReg}"   # set filename postfix for output image
+					
+					if [[ "${configs_EPI_numReg}" -ne 12 && "${configs_EPI_numReg}" -ne 24 ]]; then
+						log "WARNING the variable config_EPI_numReg must have values '12' or '24'. \
+							Please set the corect value in the config.sh file"
+					fi		
+						
+					if ${configs_EPI_scrub}; then
 						nR="scrubbed_${nR}"
+					fi
+				#===========================================================================================
 			fi
 
 	########## PHYSIOLOGICAL REGRESSORS ###############
-	export flags_EPI_PhysiolReg=false;  
+	export flags_EPI_PhysiolReg=true;  
 	# Two options that the user can select from:
 	# 1) flags_PhysiolReg_aCompCorr=true - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
 	# 2) flags_PhysiolReg_aCompCorr=false - mean WM and CSF signal regression
@@ -421,19 +442,21 @@ if $fMRI_A; then
 		export flags_EPI_GS=true # global signal regression 
 			
 			export configs_EPI_numGS=4 # 1-orig; 2-orig+deriv; 4-orig+deriv+sq
-			nR="${nR}_Gs${configs_EPI_numGS}"
+			if ${flags_EPI_GS}; then
+				nR="${nR}_Gs${configs_EPI_numGS}"
+			fi 
 
 		export nR 
 
-	export flags_EPI_ApplyReg=false
+	export flags_EPI_ApplyReg=true
 
-	export flags_EPI_DemeanDetrend=false
+	export flags_EPI_DemeanDetrend=true
 
-	export flags_EPI_BandPass=false
+	export flags_EPI_BandPass=true
 		export configs_EPI_fMin=0.009
 		export configs_EPI_fMax=0.08	
 		
-	export flags_EPI_ROIs=false
+	export flags_EPI_ROIs=true
 
 fi
 
@@ -442,7 +465,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export DWI_A=true
+export DWI_A=false
 
 if $DWI_A; then
 
@@ -463,7 +486,7 @@ if $DWI_A; then
 		export scanner_param_PhaseEncodingDirection="phase_encode_direction"
 	fi
 
-	export flags_DWI_dcm2niix=true # dicom to nifti coversion
+	export flags_DWI_dcm2niix=false # dicom to nifti coversion
 								# not needed if json file(s) are provided/extracted
 		export configs_DWI_readout=[] # if empty get from dicom; else specify value
 	export flags_DWI_topup=true # FSL topup destortion field estimation
