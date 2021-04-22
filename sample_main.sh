@@ -45,7 +45,7 @@ export path2data="/N/project/Datadir"
 export EXEDIR=$(dirname "$(readlink -f "$0")")
 
 source ${EXEDIR}/src/func/bash_funcs.sh
-source ${EXEDIR}/config.sh
+source ${EXEDIR}/sample_config.sh
 
 
 #################################################################################
