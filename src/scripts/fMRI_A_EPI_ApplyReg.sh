@@ -22,6 +22,7 @@ import os
 import numpy as np
 import nibabel as nib
 from scipy import stats
+from scipy.io import savemat
 
 def apply_reg(data, mask, regressors,scrubbing):
 
@@ -286,6 +287,12 @@ for r in range(0,len(zRegressMat)):
 ## save data (for header info), regressors, and residuals
 fname = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output.npz'])
 np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol,zRegressMat=zRegressMat,resid=resid,postfix=postfix)
+
+print("savign MATLAB file ", fname)
+fname = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output.mat'])
+mdic = {"resting_vol" : resting_vol,"volBrain_vol" : volBrain_vol, "zRegressMat" : zRegressMat,"resid" : resid,"postfix" : postfix}
+savemat(fname, mdic)
+
 print("Saved aCompCor PCA regressors")
 
 fqc.close()

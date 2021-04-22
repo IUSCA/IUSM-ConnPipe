@@ -22,6 +22,8 @@ import os
 import nibabel as nib
 import numpy as np
 from scipy import signal
+from scipy.io import savemat
+
 
 fileIn=os.environ['fileIn']
 fileOut=os.environ['fileOut']
@@ -29,7 +31,7 @@ fileOut=os.environ['fileOut']
 data = np.load(fileIn) 
 
 resting_vol=data['resting_vol']
-print(resting_vol.shape)
+print("resting_vol.shape: ",resting_vol.shape)
 [sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
 
 resid=data['resid']
@@ -37,13 +39,18 @@ volBrain_vol=data['volBrain_vol']
 
 # demean and detrend
 
+print("len(resid): ",len(resid))
+print("resid.shape: ",resid.shape)
+
+
 for pc in range(0,len(resid)):
     for i in range(0,sizeX):
         for j in range(0,sizeY):
             for k in range(0,sizeZ):
                 if volBrain_vol[i,j,k] > 0:
                     TSvoxel = resid[pc][i,j,k,:].reshape(numTimePoints,1)
-                    TSvoxel_detrended = signal.detrend(TSvoxel-np.mean(TSvoxel),type='linear')
+                    #TSvoxel_detrended = signal.detrend(TSvoxel-np.mean(TSvoxel),type='linear')
+                    TSvoxel_detrended = signal.detrend(TSvoxel-np.mean(TSvoxel),axis=0,type='linear')
                     resid[pc][i,j,k,:] = TSvoxel_detrended.reshape(1,1,1,numTimePoints)
         if i % 25 == 0:
             print(i/sizeX)  ## change this to percentage progress 
@@ -52,6 +59,10 @@ for pc in range(0,len(resid)):
 ## save data 
 np.savez(fileOut,resid=resid)
 print("Saved demeaned and detrended residuals")
+
+print("savign MATLAB file ", fileOut)
+mdic = {"resid" : resid}
+savemat(fileOut, mdic)
 
 END
 }

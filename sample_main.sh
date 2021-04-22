@@ -1,8 +1,8 @@
 #!/bin/bash
 
-##########################################
-### RUN THIS FOR NANSTAN SUBJECTS 13 - 29
-##########################################
+
+
+
 
 # IU modules load
 module unload python/2.7.16; module load python/3.6.8 
@@ -27,7 +27,6 @@ fi
 # USER INSTRUCTIONS- PLEASE SET THIS PATH TO POINT TO YOUR DATA DIRECTORY
 export path2data="/N/project/Datadir"
 
-
     ## USER: if running all subjects in the path2data directory, set this flag to true; 
     ## set to false if you'd like to process a subset of subjects 
     export runAll=false 
@@ -45,7 +44,7 @@ export path2data="/N/project/Datadir"
 export EXEDIR=$(dirname "$(readlink -f "$0")")
 
 source ${EXEDIR}/src/func/bash_funcs.sh
-source ${EXEDIR}/config.sh
+source ${EXEDIR}/sample_config.sh
 
 
 #################################################################################
@@ -225,11 +224,6 @@ done
 # ## run it
 
 main "$@"
-
-
-
-
-
 
 
     # # get the whole call

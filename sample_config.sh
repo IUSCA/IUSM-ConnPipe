@@ -149,17 +149,6 @@ if $T1_PREPARE_A; then
 		export configs_T1_useCropped=false # use cropped field-of-view output of dcm2niix
 		
 	export flags_T1_denoiser=true # denoising
-		# Set denoising option
-		export flag_ANTS=true # other option available is FSL's SUSAN, set flag_ANTS=false to use SUSAN instead 
-		# =========================================================================================
-		# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
-		#===========================================================================================
-		if ${flag_ANTS}; then 
-			export configs_T1_denoised="T1_denoised_ANTS" 
-		else
-			export configs_T1_denoised="T1_denoised_SUSAN"
-		fi
-		#===========================================================================================
 
 	export flags_T1_anat=true # run FSL_anat
 		export configs_T1_bias=0 # 0 = no; 1 = weak; 2 = strong
@@ -176,6 +165,20 @@ if $T1_PREPARE_A; then
 	export flags_T1_re_extract=true; # brain extraction with mask
 
 fi 
+
+# Set denoising option
+export flag_ANTS=true # other option available is FSL's SUSAN, set flag_ANTS=false to use SUSAN instead 
+
+# =========================================================================================
+# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
+#===========================================================================================
+if ${flag_ANTS}; then 
+	export configs_T1_denoised="T1_denoised_ANTS" 
+else
+	export configs_T1_denoised="T1_denoised_SUSAN"
+fi
+#===========================================================================================
+
 
 ################################################################################
 ############################# T1_PREPARE_B #####################################
@@ -411,8 +414,10 @@ if $fMRI_A; then
 				fi 
 		else
 			export flags_PhysiolReg_WM_CSF=true  ### if using mean WM and CSF signal reg
-				nR="${nR}_mPhys${configs_EPI_numPhys}"
+				
 				export configs_EPI_numPhys=8; # 2-orig; 4-orig+deriv; 8-orig+deriv+sq
+					nR="${nR}_mPhys${configs_EPI_numPhys}"
+
 					if [[ "${configs_EPI_numPhys}" -ne "2" \
 					&& "${configs_EPI_numPhys}" -ne 4 \
 					&& "${configs_EPI_numPhys}" -ne 8 ]]; then
@@ -442,6 +447,7 @@ if $fMRI_A; then
 		export flags_EPI_GS=true # global signal regression 
 			
 			export configs_EPI_numGS=4 # 1-orig; 2-orig+deriv; 4-orig+deriv+sq
+			
 			if ${flags_EPI_GS}; then
 				nR="${nR}_Gs${configs_EPI_numGS}"
 			fi 
