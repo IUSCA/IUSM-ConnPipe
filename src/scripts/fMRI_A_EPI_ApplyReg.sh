@@ -259,18 +259,16 @@ resting_vol = resting.get_data()
 print("resting_vol.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 
 # load GS mask
-fname = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
-volGS = nib.load(fname)
-volGS_vol = volGS.get_data()
-
-for i in range(0,numTimePoints):
-    rv = resting_vol[:,:,:,i]
-    rv[volGS_vol==0]=0
-    resting_vol[:,:,:,i] = rv
-
 volBrain_file = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
 volBrain = nib.load(volBrain_file)
 volBrain_vol = volBrain.get_data()
+
+for i in range(0,numTimePoints):
+    rv = resting_vol[:,:,:,i]
+    rv[volBrain_vol==0]=0
+    resting_vol[:,:,:,i] = rv
+
+
 
 if scrub == 'true' and nuisanceReg == "HMPreg":
     fname=''.join([EPIpath,'/scrubbing_goodvols.npz'])
@@ -288,8 +286,8 @@ for r in range(0,len(zRegressMat)):
 fname = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output.npz'])
 np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol,zRegressMat=zRegressMat,resid=resid,postfix=postfix)
 
-print("savign MATLAB file ", fname)
 fname = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output.mat'])
+print("savign MATLAB file ", fname)
 mdic = {"resting_vol" : resting_vol,"volBrain_vol" : volBrain_vol, "zRegressMat" : zRegressMat,"resid" : resid,"postfix" : postfix}
 savemat(fname, mdic)
 

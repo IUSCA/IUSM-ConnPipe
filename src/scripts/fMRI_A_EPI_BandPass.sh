@@ -22,6 +22,8 @@ import os
 import numpy as np
 import nibabel as nib
 from scipy import signal
+from scipy.io import savemat
+
 
 EPIpath=os.environ['EPIpath']
 print("EPIpath ",EPIpath)
@@ -38,6 +40,10 @@ print("fmax ",fmax)
 resting_file=os.environ['resting_file']
 print("resting_file ",resting_file)
 
+# load resting vol image to use header for saving new image. 
+resting_file = ''.join([EPIpath,resting_file])
+resting = nib.load(resting_file)
+
 fname = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output.npz'])
 fname_dmdt = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output_dmdt.npz'])
 data = np.load(fname) 
@@ -49,10 +55,8 @@ print("resid shape ",resid[0].shape)
 volBrain_vol = data['volBrain_vol']
 print("volBrain_vol shape ",volBrain_vol.shape)
 
-# load resting vol
-resting_file = ''.join([EPIpath,resting_file])
-resting = nib.load(resting_file)
-resting_vol = resting.get_data()
+resting_vol=data['resting_vol']
+print("resting_vol.shape: ",resting_vol.shape)
 [sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
 print("resting_vol.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 
@@ -60,11 +64,8 @@ order = 1
 f1 = fmin*2*TR
 f2 = fmax*2*TR
 
-# load GS mask
-fname = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
-volGS = nib.load(fname)
-volGS_vol = volGS.get_data()
-GSmask = np.nonzero(volGS_vol != 0)
+# create mask-array with non-zero indices
+GSmask = np.nonzero(volBrain_vol != 0)
 
 numVoxels = np.count_nonzero(volBrain_vol);
 print("numVoxels - ",numVoxels)
@@ -73,6 +74,7 @@ for pc in range(0,len(resid)):
 
     rr = resid[pc]
     GSts_resid = np.zeros((numTimePoints,numVoxels))
+    print("GSts_resid shape is ",GSts_resid.shape)
     
     for ind in range(0,numTimePoints):
         rrvol = rr[:,:,:,ind]
@@ -80,7 +82,12 @@ for pc in range(0,len(resid)):
         GSts_resid[ind,:] = rvals
     
     b, a = signal.butter(order, [fmin, fmax], btype='band')
+
+    GSts_resid=GSts_resid.T
+
     tsf = signal.filtfilt(b, a, GSts_resid)
+
+    tsf=tsf.T
     
     for ind in range(0,numTimePoints):
         resting_vol[GSmask[0],GSmask[1],GSmask[2],ind] = tsf[ind,:]
@@ -93,11 +100,14 @@ for pc in range(0,len(resid)):
     fileOut = ''.join([PhReg_path,fileOut])
     print("Nifti file to be saved is: ",fileOut)
 
-
     # save new resting file
     resting_new = nib.Nifti1Image(resting_vol.astype(np.float32),resting.affine,resting.header)
     nib.save(resting_new,fileOut) 
 
+    fileOut = ''.join([PhReg_path,'7_epi.mat'])
+    print("savign MATLAB file ", fileOut)
+    mdic = {"resting_vol" : resting_vol,"volBrain_vol" : volBrain_vol, "GSts_resid" : GSts_resid,"tsf" : tsf}
+    savemat(fileOut, mdic)
 
 END
 }
