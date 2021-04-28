@@ -37,6 +37,7 @@ print("resting_vol.shape: ",resting_vol.shape)
 resid=data['resid']
 volBrain_vol=data['volBrain_vol']
 
+
 # demean and detrend
 
 print("len(resid): ",len(resid))
@@ -52,8 +53,16 @@ for pc in range(0,len(resid)):
                     #TSvoxel_detrended = signal.detrend(TSvoxel-np.mean(TSvoxel),type='linear')
                     TSvoxel_detrended = signal.detrend(TSvoxel-np.mean(TSvoxel),axis=0,type='linear')
                     resid[pc][i,j,k,:] = TSvoxel_detrended.reshape(1,1,1,numTimePoints)
+                # else:
+                #     resid[pc][i,j,k,:] = np.zeros((1,1,1,numTimePoints));
         if i % 25 == 0:
             print(i/sizeX)  ## change this to percentage progress 
+    
+    # zero-out voxels that are outside the GS mask
+    for t in range(0,numTimePoints):
+        rv = resid[pc][:,:,:,t]
+        rv[volBrain_vol==0]=0
+        resid[pc][:,:,:,i] = rv
 
 
 ## save data 
