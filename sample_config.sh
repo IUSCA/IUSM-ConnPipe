@@ -79,7 +79,7 @@ export pathFSLstandard="${FSLDIR}/data/standard"
 
 ## FOR IUSM USERS ONLY - DURING DEVELOPMENT PHASE, PLEASE USE THIS "pathSM" AS THE 
 ## SUPPLEMENTARY MATERIALS PATH. THIS WILL EVENTUALLY LIVE IN A REPOSITORY 
-export pathSM="/N/project/ConnPipelineSM"
+export pathSM="/N/project/YoderLab/ConnPipelineSM"
 export pathMNItmplates="${pathSM}/MNI_templates"
 export pathBrainmaskTemplates="${pathSM}/brainmask_templates"
 export pathParcellations="${pathSM}/Parcellations"
@@ -145,16 +145,17 @@ export T1_PREPARE_A=false
 
 if $T1_PREPARE_A; then
 
-	export flags_T1_dcm2niix=true  # dicom to nifti conversion 
+	export flags_T1_dcm2niix=false  # dicom to nifti conversion 
 		export configs_T1_useCropped=false # use cropped field-of-view output of dcm2niix
 		
-	export flags_T1_denoiser=true # denoising
+	## T1 DENOISING IS PERFORMED AFTER DICOM TO NIFTI CONVERSION. 
+	#### THE DENOISING FLAG IS ALSO USED IN T1_PREPARE_B SO IT IS SET AS A GLOBAL FALG, BELOW
 
-	export flags_T1_anat=true # run FSL_anat
+	export flags_T1_anat=false # run FSL_anat
 		export configs_T1_bias=0 # 0 = no; 1 = weak; 2 = strong
 		export configs_T1_crop=0 # 0 = no; 1 = yes (lots already done by dcm2niix)
 
-	export flags_T1_extract_and_mask=true # brain extraction and mask generation (only needed for double BET)
+	export flags_T1_extract_and_mask=false # brain extraction and mask generation (only needed for double BET)
 		export configs_antsTemplate="NKI"  # options are: ANTS (MICCAI, NKI, IXI) or bet
 		export configs_T1_A_betF="0.3" # this are brain extraction parameters with FSL bet
 		export configs_T1_A_betG="-0.1"  # see fsl bet help page for more details
@@ -162,22 +163,27 @@ if $T1_PREPARE_A; then
 		# USER if runnign ANTS, bet will be run anyway as a QC check for the brain maks.
 		# QC output will be printed out in the QC file for each subject. 
 	 
-	export flags_T1_re_extract=true; # brain extraction with mask
+	export flags_T1_re_extract=false; # brain extraction with mask
 
 fi 
 
-# Set denoising option
-export flag_ANTS=true # other option available is FSL's SUSAN, set flag_ANTS=false to use SUSAN instead 
 
-# =========================================================================================
-# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
-#===========================================================================================
-if ${flag_ANTS}; then 
-	export configs_T1_denoised="T1_denoised_ANTS" 
-else
-	export configs_T1_denoised="T1_denoised_SUSAN"
+# # Set denoising option
+configs_T1_denoised="NONE"  # OTHER OPTIONS ARE: "SUSAN" FSL'S SUSAN
+# # =========================================================================================
+# # USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
+# #===========================================================================================							#					 "NONE" FOR SKIPPING DENOISING
+if [[ "${configs_T1_denoised}" == "ANTS" ]]; then 
+	export configs_fslanat="T1_denoised_ANTS"
+	echo "USING ANTS FOR DENOISING"
+elif [[ "${configs_T1_denoised}" == "SUSAN" ]]; then
+	export configs_fslanat="T1_denoised_SUSAN"
+	echo "USING SUSAN FOR DENOISING"
+elif [[ "${configs_T1_denoised}" == "NONE" ]]; then
+	export configs_fslanat=${configs_T1}
+	echo "SKIPPING DENOISING"
 fi
-#===========================================================================================
+# #===========================================================================================
 
 
 ################################################################################
@@ -185,7 +191,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export T1_PREPARE_B=false
+export T1_PREPARE_B=true
 
 if $T1_PREPARE_B; then
 
@@ -225,11 +231,11 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export fMRI_A=true
+export fMRI_A=false
 
 if $fMRI_A; then
 
-	export scanner="GE" #  SIEMENS or GE
+	export scanner="SIEMENS" #  SIEMENS or GE
 	log "SCANNER ${scanner}"
 
 	# # set number of EPI sessions/scans
@@ -342,7 +348,7 @@ if $fMRI_A; then
 	export flags_EPI_IntNorm4D=false # Intensity normalization to global 4D mean of 1000
 
 	########## MOTION AND OUTLIER CORRECTION ###############
-	export flags_EPI_NuisanceReg=false
+	export flags_EPI_NuisanceReg=true
 	## Nuisance Regressors. There are two options that user can select from:
 	# 1) ICA-based denoising; WARNING: This will smooth your data.
 	# 2) Head Motion Parameter Regression.  
