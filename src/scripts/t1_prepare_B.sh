@@ -404,7 +404,7 @@ if ${flags_T1_seg}; then
     eval $cmd
 
     ## Subcortical masks
-    fileIn="${T1path}/${configs_T1_denoised}.anat/T1_subcort_seg.nii.gz"
+    fileIn="${T1path}/${configs_fslanat}.anat/T1_subcort_seg.nii.gz"
     fileOut="${T1path}/T1_subcort_seg.nii.gz"
     checkisfile ${fileIn}
 
