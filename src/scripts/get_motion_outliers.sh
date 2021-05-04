@@ -191,7 +191,7 @@ if [ -z ${configs_EPI_DVARScut+x} ]; then
 
 else
     
-    echo " configs_EPI_FDcut is set to ${configs_EPI_DVARScut}"
+    echo " configs_EPI_DVARScut is set to ${configs_EPI_DVARScut}"
 
    cmd="fsl_motion_outliers -i ${fIn} \
     -o ${fileOut} \
