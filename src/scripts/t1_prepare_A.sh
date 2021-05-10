@@ -17,7 +17,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 
 if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
-	if [[ "$(ls -A $T1path/${configs_dcmFolder})" ]]; then 
+	if [[ "$(ls -A ${T1path}/${configs_dcmFolder})" ]]; then 
 
         log "T1_PREPARE_A"
 
@@ -72,27 +72,28 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 			fi			
 		fi
 
+
 		##### T1 denoiser ######
-		if ${flags_T1_denoiser}; then
-			
-			log "********** Denoising ***********"
+		file4fslanat="$T1path/${configs_fslanat}"
+		fileIn="$T1path/${configs_T1}.nii.gz"
 
-			fileIn="$T1path/${configs_T1}.nii.gz"
-			file4fslanat="$T1path/${configs_T1_denoised}"
+		if [[ "${configs_fslanat}" == "T1_denoised_ANTS" ]]; then 
 
-			if ${flag_ANTS}; then 
-				log "Denoising T1 with ANTS"
-				cmd="DenoiseImage -v -d 3 -n Gaussian -p 1 -r 1 -i $fileIn -o ${file4fslanat}.nii.gz"
-			else
-				log "Denoising T1 with SUSAN"
-				cmd="susan $T1path/${configs_T1} 56.5007996 3 3 1 0 ${file4fslanat}"
-			fi			
+			log "-------- Denoising T1 WITH ANTS ---------"
+			cmd="DenoiseImage -v -d 3 -n Gaussian -p 1 -r 1 -i ${fileIn} -o ${file4fslanat}.nii.gz"
 			log $cmd
-			eval $cmd 
+			#eval $cmd
+		elif [[ "${configs_fslanat}" == "T1_denoised_SUSAN" ]]; then
+
+			file4fslanat="$T1path/${configs_fslanat}"
+			log "-------- Denoising T1 WITH SUSAN --------"
+			cmd="susan $T1path/${configs_T1} 56.5007996 3 3 1 0 ${file4fslanat}"
+			log $cmd
+			#eval $cmd
 		else
-			log "WARNING - Skipping T1 Denoising"
-			file4fslanat="$T1path/${configs_T1}"
-		fi 
+			log "-------- WARNING - Skipping T1 Denoising --------"
+			echo "file4fslanat is ${file4fslanat}"
+		fi
 
 		##### FSL ANAT ######
 		if ${flags_T1_anat}; then
