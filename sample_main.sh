@@ -25,8 +25,7 @@ fi
 ############################  PATH TO DATA  ###################################
 
 # USER INSTRUCTIONS- PLEASE SET THIS PATH TO POINT TO YOUR DATA DIRECTORY
-#export path2data="/N/project/YoderLab/NANCfN/Datadir"
-export path2data="/N/project/hasda/DataDir"
+export path2data="/N/project/DataDir"
 
     ## USER: if running all subjects in the path2data directory, set this flag to true; 
     ## set to false if you'd like to process a subset of subjects 
@@ -34,7 +33,7 @@ export path2data="/N/project/hasda/DataDir"
 
     ## USER -- if running a subset of subjects, a list of subject ID's can be read from 
     ## a text file located in path2data; user can name the file here:
-    export subj2run="subj2run_AAK.txt"
+    export subj2run="subj2run.txt"
 
 
 
@@ -45,7 +44,7 @@ export path2data="/N/project/hasda/DataDir"
 export EXEDIR=$(dirname "$(readlink -f "$0")")
 
 source ${EXEDIR}/src/func/bash_funcs.sh
-source ${EXEDIR}/config.sh
+source ${EXEDIR}/sample_config.sh
 
 
 #################################################################################
