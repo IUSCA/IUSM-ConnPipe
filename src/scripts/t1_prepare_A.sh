@@ -82,14 +82,14 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 			log "-------- Denoising T1 WITH ANTS ---------"
 			cmd="DenoiseImage -v -d 3 -n Gaussian -p 1 -r 1 -i ${fileIn} -o ${file4fslanat}.nii.gz"
 			log $cmd
-			#eval $cmd
+			eval $cmd
 		elif [[ "${configs_fslanat}" == "T1_denoised_SUSAN" ]]; then
 
 			file4fslanat="$T1path/${configs_fslanat}"
 			log "-------- Denoising T1 WITH SUSAN --------"
 			cmd="susan $T1path/${configs_T1} 56.5007996 3 3 1 0 ${file4fslanat}"
 			log $cmd
-			#eval $cmd
+			eval $cmd
 		else
 			log "-------- WARNING - Skipping T1 Denoising --------"
 			echo "file4fslanat is ${file4fslanat}"
