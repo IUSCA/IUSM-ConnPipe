@@ -16,8 +16,8 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 
 
-# if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
-# 	if [[ "$(ls -A ${T1path}/${configs_dcmFolder})" ]]; then 
+if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
+	if [[ "$(ls -A ${T1path}/${configs_dcmFolder})" ]]; then 
 
         log "T1_PREPARE_A"
 
@@ -327,13 +327,13 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 			fi
 		fi
 
-# 	else
-# 		msg="WARNING T1 directory is empty; skipping subject $SUBJ"
-# 		log $msg
-# 		exit 1
-# 	fi
-# else
-# 	msg="WARNING $T1path/${configs_dcmFolder} directory doesn't exist; skipping T1_prepare_A for subject $SUBJ"
-# 	log $msg
-# 	exit 1
-# fi 
+	else
+		msg="WARNING T1 directory is empty; skipping subject $SUBJ"
+		log $msg
+		exit 1
+	fi
+else
+	msg="WARNING $T1path/${configs_dcmFolder} directory doesn't exist; skipping T1_prepare_A for subject $SUBJ"
+	log $msg
+	exit 1
+fi 
