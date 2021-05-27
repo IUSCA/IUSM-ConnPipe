@@ -67,10 +67,10 @@ if [[ -d ${DWIpath} ]]; then
     log "DWI_B processing for subject ${SUBJ}"
 
     # if two DICOM directories exist 
-    if [[ ! -z "${configs_dcmFolder1}" ]] && [[ ! -z "${configs_dcmFolder2}" ]]; then
+    if [[ ! -z "${configs_DWI_dcmFolder1}" ]] && [[ ! -z "${configs_DWI_dcmFolder2}" ]]; then
 
-        DWIdir1="${DWIpath}/${configs_dcmFolder1}"
-        DWIdir2="${DWIpath}/${configs_dcmFolder2}"
+        DWIdir1="${DWIpath}/${configs_DWI_dcmFolder1}"
+        DWIdir2="${DWIpath}/${configs_DWI_dcmFolder2}"
 
         if [[ -d "${DWIdir1}" ]] && [[ -d "${DWIdir2}" ]]; then
             export nscanmax=2 # DWI acquired in two phase directions (e.g., AP and PA)
@@ -79,7 +79,7 @@ if [[ -d ${DWIpath} ]]; then
             exit 1
         fi 
     else
-        DWIdir1="${DWIpath}/${configs_dcmFolder}"
+        DWIdir1="${DWIpath}/${configs_DWI_dcmFolder}"
 
         if [[ -d "${DWIdir1}" ]]; then
             export nscanmax=1 

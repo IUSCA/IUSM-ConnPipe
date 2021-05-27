@@ -66,12 +66,14 @@ for pc in range(0,len(resid)):
 
 
 ## save data 
-np.savez(fileOut,resid=resid)
+ff = ''.join([fileOut,'.npz'])
+np.savez(ff,resid=resid)
 print("Saved demeaned and detrended residuals")
 
-print("savign MATLAB file ", fileOut)
+ff = ''.join([fileOut,'.mat'])
+print("savign MATLAB file ", ff)
 mdic = {"resid" : resid}
-savemat(fileOut, mdic)
+savemat(ff, mdic)
 
 END
 }
@@ -87,7 +89,7 @@ log "# =========================================================="
 
 PhReg_path="${EPIpath}/${regPath}"
 fileIn="${PhReg_path}/NuisanceRegression_${nR}_output.npz"
-fileOut="${PhReg_path}/NuisanceRegression_${nR}_output_dmdt.npz"
+fileOut="${PhReg_path}/NuisanceRegression_${nR}_output_dmdt"
 
 if [[ ! -e "${PhReg_path}/NuisanceRegression_${nR}_output.npz" ]]; then  
     log " WARNING No output found for batch defined nuisance regressed data for ${EPIpath}"

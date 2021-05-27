@@ -60,9 +60,12 @@ print("resting_vol.shape: ",resting_vol.shape)
 [sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
 print("resting_vol.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 
-order = 1
+order = 2  
 f1 = fmin*2*TR
 f2 = fmax*2*TR
+print("order is ",order)
+print("f1 is ",f1)
+print("f2 is ",f2)
 
 # create mask-array with non-zero indices
 GSmask = np.nonzero(volBrain_vol != 0)
@@ -81,11 +84,12 @@ for pc in range(0,len(resid)):
         rvals = rrvol[GSmask[0],GSmask[1],GSmask[2]]
         GSts_resid[ind,:] = rvals
     
-    b, a = signal.butter(order, [fmin, fmax], btype='band')
+    b, a = signal.butter(order, [fmin, fmax], btype='bandpass', analog=False)
 
     GSts_resid=GSts_resid.T
 
-    tsf = signal.filtfilt(b, a, GSts_resid)
+    tsf = signal.filtfilt(b, a, GSts_resid, padtype='even', padlen=100)  # 3 * (max(len(b), len(a))-1)
+    print(tsf)
 
     tsf=tsf.T
     
@@ -104,7 +108,7 @@ for pc in range(0,len(resid)):
     resting_new = nib.Nifti1Image(resting_vol.astype(np.float32),resting.affine,resting.header)
     nib.save(resting_new,fileOut) 
 
-    fileOut = ''.join([PhReg_path,'7_epi.mat'])
+    fileOut = ''.join([PhReg_path,'7_epi_padtype_even_padlen_100_order2.mat'])
     print("savign MATLAB file ", fileOut)
     mdic = {"resting_vol" : resting_vol,"volBrain_vol" : volBrain_vol, "GSts_resid" : GSts_resid,"tsf" : tsf}
     savemat(fileOut, mdic)
