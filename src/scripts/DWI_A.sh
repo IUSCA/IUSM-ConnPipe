@@ -78,12 +78,12 @@ if [[ -d ${DWIpath} ]]; then
     # Calculate readout time
     if [[ ! -z "${configs_DWI_readout}" ]]; then
         # if two DICOM directories exist 
-        if [[ ! -z "${configs_dcmFolder1}" ]] && [[ ! -z "${configs_dcmFolder2}" ]]; then
+        if [[ ! -z "${configs_DWI_dcmFolder1}" ]] && [[ ! -z "${configs_DWI_dcmFolder2}" ]]; then
 
-            DWIdir1="${DWIpath}/${configs_dcmFolder1}"
-            DWIdir2="${DWIpath}/${configs_dcmFolder2}"
+            DWIdir1="${DWIpath}/${configs_DWI_dcmFolder1}"
+            DWIdir2="${DWIpath}/${configs_DWI_dcmFolder2}"
 
-            log "${configs_dcmFolder1} and ${configs_dcmFolder2} have been defined by user"
+            log "${configs_DWI_dcmFolder1} and ${configs_DWI_dcmFolder2} have been defined by user"
 
             if [[ -d "${DWIdir1}" ]] && [[ -d "${DWIdir2}" ]]; then
 
@@ -118,7 +118,7 @@ if [[ -d ${DWIpath} ]]; then
 
         else
 
-            DWIdir1="${DWIpath}/${configs_dcmFolder}"
+            DWIdir1="${DWIpath}/${configs_DWI_dcmFolder}"
 
             log "${DWIdir1} has been defined by user"
 
