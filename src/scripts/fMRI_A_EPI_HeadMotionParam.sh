@@ -56,16 +56,16 @@ if numReg == 24:
     motion_deriv_sq = np.power(motion_deriv,2)
 
 
-# fname=''.join([EPIpath,'/HMPreg/motion_sq.txt'])
-# np.savetxt(fname, motion_sq,fmt='%2.7f')
-# fname=''.join([EPIpath,'/HMPreg/motion_deriv_sq.txt'])
-# np.savetxt(fname, motion_deriv_sq,fmt='%2.7f')
-fname=''.join([EPIpath,'/HMPreg/motion_sq_regressors.npz'])
-np.savez(fname,motion_sq=motion_sq,motion_deriv_sq=motion_deriv_sq)
-fname=''.join([EPIpath,'/HMPreg/motion_sq_regressors.mat'])
-print("savign MATLAB file ", fname)
-mdic = {"motion_sq": motion_sq, "motion_deriv_sq": motion_deriv_sq}
-savemat(fname, mdic)
+    # fname=''.join([EPIpath,'/HMPreg/motion_sq.txt'])
+    # np.savetxt(fname, motion_sq,fmt='%2.7f')
+    # fname=''.join([EPIpath,'/HMPreg/motion_deriv_sq.txt'])
+    # np.savetxt(fname, motion_deriv_sq,fmt='%2.7f')
+    fname=''.join([EPIpath,'/HMPreg/motion_sq_regressors.npz'])
+    np.savez(fname,motion_sq=motion_sq,motion_deriv_sq=motion_deriv_sq)
+    fname=''.join([EPIpath,'/HMPreg/motion_sq_regressors.mat'])
+    print("savign MATLAB file ", fname)
+    mdic = {"motion_sq": motion_sq, "motion_deriv_sq": motion_deriv_sq}
+    savemat(fname, mdic)
 
 END
 }
