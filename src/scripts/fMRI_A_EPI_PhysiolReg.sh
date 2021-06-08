@@ -41,7 +41,7 @@ nib.save(volBrain_new,fileOut)
 END
 }
 
-function time_series() {
+function physiological_regressors() {
 EPIpath="$1" fileIN="$2" aCompCorr="$3" \
     num_comp="$4" PhReg_path="$5" \
     numGS="$6" python - <<END
@@ -69,6 +69,9 @@ PhReg_path=os.environ['PhReg_path']
 flog.write("\n PhReg_path "+ PhReg_path)
 numGS=int(os.environ['numGS'])
 flog.write("\n numGS "+ str(numGS))
+numDCT=int(os.environ['configs_EPI_numDCT'])
+flog.write("\n numDCT "+ str(numDCT))
+
 
 def get_ts(vol,numTP,rest):
     numVoxels = np.count_nonzero(vol);
@@ -98,7 +101,7 @@ def get_pca(data, n_comp):
     print("explained variance: ",variance[0:n_comp])
     
     # return PCtop,latent[0:n_comp],variance[0:n_comp]
-    return PCtop,variance[0:n_comp]
+    return PCtop,variance[0:n_comp]  
 
 
 ### load data and masks
@@ -243,11 +246,31 @@ if 0 < numGS < 5:
     # save the data
     fname = ''.join([PhReg_path,'/dataGS.npz'])
     np.savez(fname,GSavg=GSavg,GSavg_sq=GSavg_sq,GSderiv=GSderiv,GSderiv_sq=GSderiv_sq)
-    print("savign MATLAB file ", fname)
     fname = ''.join([PhReg_path,'/dataGS.mat'])
+    print("savign MATLAB file ", fname)
     mdic = {"GSavg" : GSavg,"GSavg_sq" : GSavg_sq, "GSderiv" : GSderiv,"GSderiv_sq" : GSderiv_sq}
     savemat(fname, mdic)
     print("saved global signal regressors")    
+
+
+if 0 < numDCT:
+    print("numDCT is ",numDCT)
+    dct = np.zeros((numTimePoints,numDCT))
+    print("dct shape is ",dct.shape)
+    idx = np.arange(0,numTimePoints)/(numTimePoints - 1)
+
+    for n in range(0,numDCT):
+        dct[:,n] = np.cos(idx * np.pi * (n+1))
+
+
+    # save the data
+    fname = ''.join([PhReg_path,'/dataDCT.npz'])
+    np.savez(fname,dct=dct)
+    fname = ''.join([PhReg_path,'/dataDCT.mat'])
+    print("savign MATLAB file ", fname)
+    mdic = {"dct" : dct}
+    savemat(fname, mdic)
+    print("saved DCT bases") 
 
 
 fqc.close()
@@ -317,12 +340,13 @@ log $cmd
 eval $cmd
 
 if ${flags_EPI_GS}; then
-    log "============== GLOBAL SIGNAL REGRESSION =================="
+    log " Global signal regression is ON "
 else
+    log " Global signal regression is OFF "
     configs_EPI_numGS=0
 fi
 
-time_series ${EPIpath} \
+physiological_regressors ${EPIpath} \
     ${fileIN} ${flags_PhysiolReg_aCompCorr} \
     ${configs_EPI_numPC} ${PhReg_path} ${configs_EPI_numGS}
 

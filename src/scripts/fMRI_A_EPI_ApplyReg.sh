@@ -78,9 +78,11 @@ resting_file=os.environ['resting_file']
 flog.write("\n resting_file "+ resting_file)
 resting_file = ''.join([EPIpath,resting_file]) 
 flog.write("\n full resting file is "+ resting_file)
+numDCT=int(os.environ['configs_EPI_numDCT'])
+flog.write("\n numDCT "+ str(numDCT))
 
-flog.write("\n REGRESSORS -- Creating regressor matrix with the follwing:")
 
+flog.write("\n REGRESSORS -- Creating regressor matrix with the follwing:") 
 
 if nuisanceReg == "AROMA":
     print("1. Applying AROMA regressors")
@@ -148,7 +150,23 @@ if numGS > 0:
         print("   -- 4 global signal regressor ")   
         flog.write("\n  -- 4 global signal regressor ")
         print("regressors shape ",regressors.shape)  
-        flog.write("\n regressors shape " + str(regressors.shape))           
+        flog.write("\n regressors shape " + str(regressors.shape)) 
+
+
+# n DCT filtering
+if numDCT > 0:
+    fname = ''.join([PhReg_path,'/dataDCT.npz'])
+    dataDCT = np.load(fname) 
+    dctreg = dataDCT['dct'].T
+    print("dctreg shape is ", dctreg.shape)
+    if regressors.size:
+        regressors = np.vstack((regressors,dctreg))
+    else:
+        regressors = dctreg 
+    print("   -- ",numDCT, " Discrete Cosine Transform basis ")
+    flog.write("\n  -- " + str(numDCT) + "Discrete Cosine Transform basis ")
+    print("regressors shape ",regressors.shape)
+    flog.write("\n regressors shape " + str(regressors.shape))
 
 
 if physReg == "aCompCorr":
@@ -157,6 +175,7 @@ if physReg == "aCompCorr":
     print("-- aCompCor PC of WM & CSF regressors")
     flog.write("\n -- aCompCor PC of WM & CSF regressors" )
     zRegressMat = [];
+
     if config_param > 5:
         print("  -- Applying all levels of PCA removal")
         flog.write("\n -- Applying all levels of PCA removal" )
@@ -170,7 +189,6 @@ if physReg == "aCompCorr":
                 zRegressMat.append(stats.zscore(regMat,axis=1));
                 print("    -- PCA %d" % ic)
                 flog.write("\n    -- PCA " + str(ic))
-
 
     elif 0 < config_param < 6:
         print("-- Writing prespecified removal of %d components ----" % config_param)
@@ -321,7 +339,6 @@ fi
 if [[ ! ${flags_EPI_GS} ]]; then
     configs_EPI_numGS=0
 fi
-
 
 if ${flags_PhysiolReg_aCompCorr}; then  
     log "PhysiolReg - aCompCorr"
