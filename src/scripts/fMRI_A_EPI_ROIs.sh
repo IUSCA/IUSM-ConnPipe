@@ -196,9 +196,17 @@ log "# =========================================================="
 
 
 PhReg_path="${EPIpath}/${regPath}"
-fileIn="${PhReg_path}/NuisanceRegression_${nR}_output.npz"
-fileIn_dmdt="${PhReg_path}/NuisanceRegression_${nR}_output_dmdt.npz"
+
+# fileIn="${PhReg_path}/NuisanceRegression_${nR}_output.npz"
+# fileIn_dmdt="${PhReg_path}/NuisanceRegression_${nR}_output_dmdt.npz"
+
+if ${flags_EPI_BandPass}; then 
+    resting_file = 
+else
+    resting_file = 
+fi 
 
 
-ROI_TS ${PhReg_path}
+
+ROI_TS ${PhReg_path} ${resting_file}
 
