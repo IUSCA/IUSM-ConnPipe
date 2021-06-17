@@ -184,8 +184,8 @@ if physReg == "aCompCorr":
                 zRegressMat.append(stats.zscore(regressors,axis=1));                
             else:
                 regMat = np.vstack((regressors,\
-                                        numphys['CSFpca'][:,:ic].T,\
-                                        numphys['WMpca'][:,:ic].T))
+                                        numphys['CSFpca'][:ic,:],\
+                                        numphys['WMpca'][:ic,:]))
                 zRegressMat.append(stats.zscore(regMat,axis=1));
                 print("    -- PCA %d" % ic)
                 flog.write("\n    -- PCA " + str(ic))
@@ -199,25 +199,28 @@ if physReg == "aCompCorr":
         print("numphys['CSFpca'] shape ",numphys['CSFpca'].shape)
         flog.write("\n CSFpca shape " + str(numphys['CSFpca'].shape))
         if numphys['CSFpca'].ndim == 2:
-            csf = numphys['CSFpca'][:,:config_param].T
+            csf = numphys['CSFpca'][:config_param,:]
             print("--- Using CSF PC number %d" % config_param)
             flog.write("\n--- Using CSF PC number " + str(config_param))
         else:  # PCS failed and we used the mean signal and CSFpca is a singleton
-            csf = numphys['CSFpca'][None,:]
+            csf = numphys['CSFpca']
             print("--- Using CSF mean signal")
             flog.write("\n--- Using CSF mean signal")
+        print("csf shape ",csf.shape)
 
         # Ensure that we have all needed WM components
         print("numphys['WMpca'] shape ",numphys['WMpca'].shape)
         flog.write("\n WMpca shape " + str(numphys['WMpca'].shape))
         if numphys['WMpca'].ndim == 2:
-            wm = numphys['WMpca'][:,:config_param].T
+            wm = numphys['WMpca'][:config_param,:]
             print("--- Using WM PC number %d" % config_param)
             flog.write("\n--- Using WM PC number " + str(config_param))
         else:  # WM PCA failed and we used the mean signal
-            wm = numphys['WMpca'][None,:]
+            wm = numphys['WMpca']
             print("--- Using WM mean signal")
             flog.write("\n--- Using WM mean signal")
+
+        print("wm shape ",wm.shape)
 
         components = np.vstack((regressors,\
                                 csf,\
@@ -287,9 +290,8 @@ for i in range(0,numTimePoints):
     resting_vol[:,:,:,i] = rv
 
 
-
 if scrub == 'true' and nuisanceReg == "HMPreg":
-    fname=''.join([EPIpath,'/scrubbing_goodvols.npz'])
+    fname=''.join([EPIpath,'/scrubbing_goodvols.npz'])  
     scrubvar = np.load(fname) 
     scrubvar = scrubvar['scrub']
 else:

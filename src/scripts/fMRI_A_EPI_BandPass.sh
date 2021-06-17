@@ -31,14 +31,10 @@ PhReg_path=os.environ['PhReg_path']
 print("PhReg_path ",PhReg_path)
 postfix=os.environ['postfix']
 print("postfix ",postfix)
-TR= float(os.environ['TR'])
-print("TR ",TR)
-fmin= float(os.environ['fmin'])
-print("fmin ",fmin)
-fmax= float(os.environ['fmax'])
-print("fmax ",fmax)
 resting_file=os.environ['resting_file']
 print("resting_file ",resting_file)
+numDCT=int(os.environ['configs_EPI_numDCT'])
+print("numDCT ",numDCT)
 
 # load resting vol image to use header for saving new image. 
 resting_file = ''.join([EPIpath,resting_file])
@@ -55,63 +51,93 @@ print("resid shape ",resid[0].shape)
 volBrain_vol = data['volBrain_vol']
 print("volBrain_vol shape ",volBrain_vol.shape)
 
-resting_vol=data['resting_vol']
-print("resting_vol.shape: ",resting_vol.shape)
-[sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
-print("resting_vol.shape ", sizeX,sizeY,sizeZ,numTimePoints)
+if 0 < numDCT:
 
-order = 2  
-f1 = fmin*2*TR
-f2 = fmax*2*TR
-print("order is ",order)
-print("f1 is ",f1)
-print("f2 is ",f2)
+    print(numDCT," DCT regression performed. Skipping Butterworth filter ")
 
-# create mask-array with non-zero indices
-GSmask = np.nonzero(volBrain_vol != 0)
+    for pc in range(0,len(resid)):
+        
+        resting_vol = resid[pc]
 
-numVoxels = np.count_nonzero(volBrain_vol);
-print("numVoxels - ",numVoxels)
+        if len(resid)==1:
+            fileOut = "7_epi_%s.nii.gz" % postfix 
+        else:
+            fileOut = "7_epi_%s%d.nii.gz" % (postfix,pc)
 
-for pc in range(0,len(resid)):
+        fileOut = ''.join([PhReg_path,fileOut])
+        print("Nifti file to be saved is: ",fileOut)
 
-    rr = resid[pc]
-    GSts_resid = np.zeros((numTimePoints,numVoxels))
-    print("GSts_resid shape is ",GSts_resid.shape)
-    
-    for ind in range(0,numTimePoints):
-        rrvol = rr[:,:,:,ind]
-        rvals = rrvol[GSmask[0],GSmask[1],GSmask[2]]
-        GSts_resid[ind,:] = rvals
-    
-    b, a = signal.butter(order, [fmin, fmax], btype='bandpass', analog=False)
+        # save new resting file
+        resting_new = nib.Nifti1Image(resting_vol.astype(np.float32),resting.affine,resting.header)
+        nib.save(resting_new,fileOut) 
 
-    GSts_resid=GSts_resid.T
+else:
 
-    tsf = signal.filtfilt(b, a, GSts_resid, padtype='even', padlen=100)  # 3 * (max(len(b), len(a))-1)
-    print(tsf)
+    TR= float(os.environ['TR'])
+    print("TR ",TR)
+    fmin= float(os.environ['fmin'])
+    print("fmin ",fmin)
+    fmax= float(os.environ['fmax'])
+    print("fmax ",fmax)
 
-    tsf=tsf.T
-    
-    for ind in range(0,numTimePoints):
-        resting_vol[GSmask[0],GSmask[1],GSmask[2],ind] = tsf[ind,:]
+    resting_vol=data['resting_vol']
+    print("resting_vol.shape: ",resting_vol.shape)
+    [sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
+    print("resting_vol.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 
-    if len(resid)==1:
-        fileOut = "7_epi_%s.nii.gz" % postfix 
-    else:
-        fileOut = "7_epi_%s%d.nii.gz" % (postfix,pc)
+    order = 2  
+    f1 = fmin*2*TR
+    f2 = fmax*2*TR
+    print("order is ",order)
+    print("f1 is ",f1)
+    print("f2 is ",f2)
 
-    fileOut = ''.join([PhReg_path,fileOut])
-    print("Nifti file to be saved is: ",fileOut)
+    # create mask-array with non-zero indices
+    GSmask = np.nonzero(volBrain_vol != 0)
 
-    # save new resting file
-    resting_new = nib.Nifti1Image(resting_vol.astype(np.float32),resting.affine,resting.header)
-    nib.save(resting_new,fileOut) 
+    numVoxels = np.count_nonzero(volBrain_vol);
+    print("numVoxels - ",numVoxels)
 
-    fileOut = ''.join([PhReg_path,'7_epi_padtype_even_padlen_100_order2.mat'])
-    print("savign MATLAB file ", fileOut)
-    mdic = {"resting_vol" : resting_vol,"volBrain_vol" : volBrain_vol, "GSts_resid" : GSts_resid,"tsf" : tsf}
-    savemat(fileOut, mdic)
+    for pc in range(0,len(resid)):
+
+        rr = resid[pc]
+
+        GSts_resid = np.zeros((numTimePoints,numVoxels))
+        print("GSts_resid shape is ",GSts_resid.shape)
+        
+        for ind in range(0,numTimePoints):
+            rrvol = rr[:,:,:,ind]
+            rvals = rrvol[GSmask[0],GSmask[1],GSmask[2]]
+            GSts_resid[ind,:] = rvals
+        
+        b, a = signal.butter(order, [fmin, fmax], btype='bandpass', analog=False)
+
+        GSts_resid=GSts_resid.T
+
+        tsf = signal.filtfilt(b, a, GSts_resid, padtype='even', padlen=100)  # 3 * (max(len(b), len(a))-1)
+        print(tsf)
+
+        tsf=tsf.T
+        
+        for ind in range(0,numTimePoints):
+            resting_vol[GSmask[0],GSmask[1],GSmask[2],ind] = tsf[ind,:]
+
+        if len(resid)==1:
+            fileOut = "7_epi_%s.nii.gz" % postfix 
+        else:
+            fileOut = "7_epi_%s%d.nii.gz" % (postfix,pc)
+
+        fileOut = ''.join([PhReg_path,fileOut])
+        print("Nifti file to be saved is: ",fileOut)
+
+        # save new resting file
+        resting_new = nib.Nifti1Image(resting_vol.astype(np.float32),resting.affine,resting.header)
+        nib.save(resting_new,fileOut) 
+
+        # fileOut = ''.join([PhReg_path,'7_epi_padtype_even_padlen_100_order2.mat'])
+        # print("savign MATLAB file ", fileOut)
+        # mdic = {"resting_vol" : resting_vol,"volBrain_vol" : volBrain_vol, "GSts_resid" : GSts_resid,"tsf" : tsf}
+        # savemat(fileOut, mdic)
 
 END
 }

@@ -90,18 +90,17 @@ def get_pca(data, n_comp):
 
     print("data shape: ",data.shape)
 
-    pca = PCA()  #(n_components = n_comp) 
+    pca = PCA(n_components = n_comp)  
     pca.fit(data)
     PC = pca.components_
     print("PC shape ",PC.shape)
-    PCtop = PC[:,0:n_comp]
+    PCtop = PC
     latent = pca.explained_variance_
-    print("latent: ",latent[0:n_comp])
+    print("latent: ",latent) 
     variance = np.true_divide(np.cumsum(latent),np.sum(latent))
-    print("explained variance: ",variance[0:n_comp])
+    print("explained variance: ",variance) 
     
-    # return PCtop,latent[0:n_comp],variance[0:n_comp]
-    return PCtop,variance[0:n_comp]  
+    return PCtop,variance  
 
 
 ### load data and masks
@@ -113,52 +112,10 @@ print("resting_vol.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 fname = ''.join([EPIpath,'/rT1_CSFvent_mask_eroded.nii.gz'])
 volCSFvent_vol = nib.load(fname).get_data()
 numVoxels = np.count_nonzero(volCSFvent_vol);
-if numVoxels < numTimePoints:
-    fname = ''.join([EPIpath,'/rT1_CSFvent_mask.nii.gz'])
-    volCSFvent_vol = nib.load(fname).get_data()
-    numVoxels = np.count_nonzero(volCSFvent_vol);
-    if numVoxels < numTimePoints:
-        print("WARNING: number of voxels in non-eroded CSFvent mask is smaller than number of Time points; PCA will fail")
-        fqc.write("\n WARNING: number of voxels in non-eroded CSFvent mask is smaller than number of Time points; PCA will fail \n")
-        flag_PCA_CSF=False
-    else:
-        print("WARNING: using non-eroded CSFvent mask in PhysiolReg")
-        fqc.write("\n WARNING: using non-eroded CSFvent mask in PhysiolReg \n")
-        flag_PCA_CSF=True
-else:
-    print("Using eroded CSFvent mask in PhysiolReg")
-    fqc.write("\n ==> Using eroded CSFvent mask in PhysiolReg \n")
-    flag_PCA_CSF=True
-
-
 
 fname = ''.join([EPIpath,'/rT1_WM_mask_eroded.nii.gz'])
 volWM_vol = nib.load(fname).get_data()
 numVoxels = np.count_nonzero(volWM_vol);
-if numVoxels < numTimePoints:
-    fname = ''.join([EPIpath,'/rT1_WM_mask_eroded_2nd.nii.gz'])
-    volWM_vol = nib.load(fname).get_data()
-    numVoxels = np.count_nonzero(volWM_vol);
-    if numVoxels < numTimePoints:
-        fname = ''.join([EPIpath,'/rT1_WM_mask_eroded_1st.nii.gz'])
-        volWM_vol = nib.load(fname).get_data()
-        numVoxels = np.count_nonzero(volWM_vol);
-        if numVoxels < numTimePoints:
-            print("WARNING: number of voxels in 1st eroded WM mask is smaller than number of Time points; PCA will fail")
-            fqc.write("\n WARNING: number of voxels in 1st-eroded WM mask is smaller than number of Time points; PCA will fail \n")
-            flag_PCA_WM=False
-        else:
-            print("WARNING: using 1st-eroded WM mask")
-            fqc.write("\n WARNING: using 1st-eroded WM mask in PhysiolReg \n")
-            flag_PCA_WM=True
-    else:
-        print("WARNING: using 2nd-eroded WM mask")
-        fqc.write("\n WARNING: using 2nd-eroded WM mask in PhysiolReg \n")
-        flag_PCA_WM=True
-else:
-    print("Using 3rd eroded WM mask in PhysiolReg")
-    fqc.write("\n ==> Using 3rd eroded WM mask in PhysiolReg \n")
-    flag_PCA_WM=True
 
 fname = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
 volGS = nib.load(fname)
@@ -176,32 +133,16 @@ volGS_vol = volGS.get_data()
 # fname = ''.join([PhReg_path,'/GSmask.npz'])
 # np.savez(fname,GSmask=GSmask)
 
-if flag_PCA_CSF is False and flag_PCA_WM is False and aCompCorr.lower() in ['true','1']:
-    aCompCorr='false'
-    fqc.write("\n WARNING: PCA will fail for both CSF and WM.\n")
-    fqc.write("\n Using Head Motion Parameters for regression, instead of aCompCorr \n")
-
-
 if aCompCorr.lower() in ['true','1']:
     print("-------------aCompCorr--------------")
     flog.write("\n Physiological Reg: aCompCorr.\n")
     
-    if flag_PCA_CSF:
-        [CSFpca,CSFvar] = get_pca(CSFts.T,num_comp)
-        flog.write("\n Running PCA on CSF time-series.\n")
-    else:
-        CSFpca = np.mean(CSFts,axis=0)
-        CSFvar = 0
-        flog.write("\n WARNING Cannot Perform PCA on CSF time-series. Using mean signal instead.\n")
+    [CSFpca,CSFvar] = get_pca(CSFts,num_comp)
+    flog.write("\n Running PCA on CSF time-series.\n")
 
-    if flag_PCA_WM:
-        [WMpca,WMvar] = get_pca(WMts.T,num_comp)
-        flog.write("\n Running PCA on WM time-series.\n")
-    else:
-        WMpca = np.mean(WMts,axis=0)
-        WMvar = 0
-        flog.write("\n WARNING Cannot Perform PCA on WM time-series. Using mean signal instead.\n")
-
+    [WMpca,WMvar] = get_pca(WMts,num_comp)
+    flog.write("\n Running PCA on WM time-series.\n")
+    
     # save the data
     fname = ''.join([PhReg_path,'/dataPCA_WM-CSF.npz'])
     np.savez(fname,CSFpca=CSFpca,CSFvar=CSFvar,CSFmask=CSFmask,CSFts=CSFts,WMpca=WMpca,WMvar=WMvar,WMmask=WMmask,WMts=WMts)
@@ -237,9 +178,6 @@ else:
 if 0 < numGS < 5:
     GSavg = np.mean(GSts,axis=0)
     GSderiv = np.append(0,np.diff(GSavg));
-    # transpose vectors
-    # GSavg = GSavg[:,np.newaxis];
-    # GSderiv = GSderiv[:,np.newaxis];
     GSavg_sq = np.power(GSavg,2)
     GSderiv_sq = np.power(GSderiv,2)
 
