@@ -54,26 +54,6 @@ print("resid shape ",resid[0].shape)
 fname = ''.join([EPIpath,'/rT1_WM_mask_eroded.nii.gz'])
 volWM_vol = nib.load(fname).get_data()
 numVoxels = np.count_nonzero(volWM_vol);
-if numVoxels < numTimePoints:
-    fname = ''.join([EPIpath,'/rT1_WM_mask_eroded_2nd.nii.gz'])
-    volWM_vol = nib.load(fname).get_data()
-    numVoxels = np.count_nonzero(volWM_vol);
-    if numVoxels < numTimePoints:
-        fname = ''.join([EPIpath,'/rT1_WM_mask_eroded_1st.nii.gz'])
-        volWM_vol = nib.load(fname).get_data()
-        numVoxels = np.count_nonzero(volWM_vol);
-        if numVoxels < numTimePoints:
-            print("WARNING: number of voxels in 1st eroded WM mask is smaller than number of Time points")
-            fqc.write("\n WARNING: number of voxels in 1st-eroded WM mask is smaller than number of Time points \n")
-        else:
-            print("WARNING: using 1st-eroded WM mask")
-            fqc.write("\n WARNING: using 1st-eroded WM mask \n")
-    else:
-        print("WARNING: using 2nd-eroded WM mask")
-        fqc.write("\n WARNING: using 2nd-eroded WM mask \n")
-else:
-    print("Using 3rd eroded WM mask")
-    fqc.write("\n ==> Using 3rd eroded WM mask \n")
 
 volWM_mask = np.logical_not(volWM_vol).astype(np.int) ## negate array and make int
 
@@ -196,9 +176,17 @@ log "# =========================================================="
 
 
 PhReg_path="${EPIpath}/${regPath}"
-fileIn="${PhReg_path}/NuisanceRegression_${nR}_output.npz"
-fileIn_dmdt="${PhReg_path}/NuisanceRegression_${nR}_output_dmdt.npz"
+
+# fileIn="${PhReg_path}/NuisanceRegression_${nR}_output.npz"
+# fileIn_dmdt="${PhReg_path}/NuisanceRegression_${nR}_output_dmdt.npz"
+
+# if ${flags_EPI_BandPass}; then 
+#     resting_file = 
+# else
+#     resting_file = 
+# fi 
 
 
-ROI_TS ${PhReg_path}
+
+ROI_TS ${PhReg_path} #${resting_file}
 

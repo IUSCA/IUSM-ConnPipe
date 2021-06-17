@@ -85,39 +85,39 @@ qc "$cmd"
 out=`$cmd`
 qc "Number of voxels in ${fileOut} :  $out"
 
-# 1st Erotion WM mask
-fileIn="${T1path}/T1_WM_mask_eroded_1st.nii.gz"
-fileOut="${EPIpath}/rT1_WM_mask_eroded_1st"
-cmd="flirt -in ${fileIn} \
-    -ref ${fileRef} \
-    -out ${fileOut} \
-    -applyxfm -init ${fileInit} \
-    -interp nearestneighbour -nosearch"
-log $cmd
-eval $cmd 
+# # 1st Erotion WM mask
+# fileIn="${T1path}/T1_WM_mask_eroded_1st.nii.gz"
+# fileOut="${EPIpath}/rT1_WM_mask_eroded_1st"
+# cmd="flirt -in ${fileIn} \
+#     -ref ${fileRef} \
+#     -out ${fileOut} \
+#     -applyxfm -init ${fileInit} \
+#     -interp nearestneighbour -nosearch"
+# log $cmd
+# eval $cmd 
 
-# COmpute the volume 
-cmd="fslstats ${fileOut} -V"
-qc "$cmd"
-out=`$cmd`
-qc "Number of voxels in ${fileOut} :  $out"
+# # COmpute the volume 
+# cmd="fslstats ${fileOut} -V"
+# qc "$cmd"
+# out=`$cmd`
+# qc "Number of voxels in ${fileOut} :  $out"
 
-# 2nd Erotion WM mask
-fileIn="${T1path}/T1_WM_mask_eroded_2nd.nii.gz"
-fileOut="${EPIpath}/rT1_WM_mask_eroded_2nd"
-cmd="flirt -in ${fileIn} \
-    -ref ${fileRef} \
-    -out ${fileOut} \
-    -applyxfm -init ${fileInit} \
-    -interp nearestneighbour -nosearch"
-log $cmd
-eval $cmd 
+# # 2nd Erotion WM mask
+# fileIn="${T1path}/T1_WM_mask_eroded_2nd.nii.gz"
+# fileOut="${EPIpath}/rT1_WM_mask_eroded_2nd"
+# cmd="flirt -in ${fileIn} \
+#     -ref ${fileRef} \
+#     -out ${fileOut} \
+#     -applyxfm -init ${fileInit} \
+#     -interp nearestneighbour -nosearch"
+# log $cmd
+# eval $cmd 
 
-# COmpute the volume 
-cmd="fslstats ${fileOut} -V"
-qc "$cmd"
-out=`$cmd`
-qc "Number of voxels in ${fileOut} :  $out"
+# # COmpute the volume 
+# cmd="fslstats ${fileOut} -V"
+# qc "$cmd"
+# out=`$cmd`
+# qc "Number of voxels in ${fileOut} :  $out"
 
 # 3rd (final) Erotion WM mask
 fileIn="${T1path}/T1_WM_mask_eroded.nii.gz"
