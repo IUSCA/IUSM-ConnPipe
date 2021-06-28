@@ -22,6 +22,8 @@ import os
 import numpy as np
 import nibabel as nib
 from scipy.io import savemat
+import time
+
 
 ###### print to log files #######
 QCfile_name = ''.join([os.environ['QCfile_name'],'.log'])
@@ -99,7 +101,7 @@ for pc in range(0,len(resid)):
 
         if parc_nodal == "1" and parc_subcortonly == "0":
             print(" Processing nodes for %s parcellation" % parc_label)
-            fqc.write("\n Processing nodes for %s parcellation"+ parc_label)
+            flog.write("\n Processing nodes for %s parcellation"+ parc_label)
 
             parcGM_file = ''.join([EPIpath,'/rT1_GM_parc_',parc_label,'_clean.nii.gz'])
             parcGM = nib.load(parcGM_file).get_data()
@@ -109,35 +111,36 @@ for pc in range(0,len(resid)):
             print(" number of ROIs - ",numROIs)
             fqc.write("\n number of ROIs - " + str(numROIs))
             ROIs_numVoxels = np.empty((numROIs,1))
-
-            for i_roi in range(0,numROIs):
-                ROIs_numVoxels[i_roi] = np.count_nonzero((parcGM == (i_roi+1)))
-                print("ROI %d  - %d voxels" % (i_roi+1, ROIs_numVoxels[i_roi]))
-                flog.write("\n ROI " + str(i_roi+1) + " - "+ str(ROIs_numVoxels[i_roi]) + " voxels")
         
             restingROIs = np.empty((numROIs,numTimePoints))
             restingROIs[:] = np.NaN
             ROIs_numNans = np.empty((numROIs,numTimePoints))
             ROIs_numNans[:] = np.NaN
 
-            for tp in range(0,numTimePoints):
-                vol_tp = resting_vol[:,:,:,tp]
+            tic = time.clock()
+            for roi in range(0,numROIs): 
+                voxelsROI = (parcGM == (roi+1))
+                ROIs_numVoxels[roi] = np.count_nonzero(voxelsROI)
 
-                for roi in range(0,numROIs): 
-                    voxelsROI = (parcGM == (roi+1)) 
-                    if np.count_nonzero(voxelsROI) > 0:
-                        ## boolean true elements get ignored so we must negate the mask
-                        voxelsROI_mask = np.logical_not(voxelsROI) 
-                        vx = np.ma.array(vol_tp,mask=voxelsROI_mask)
+                print("ROI %d  - %d voxels" % (roi+1, ROIs_numVoxels[roi]))
+                flog.write("\n ROI " + str(roi+1) + " - "+ str(ROIs_numVoxels[roi]) + " voxels")
+
+                if ROIs_numVoxels[roi] > 0:
+                    
+                    for tp in range(0,numTimePoints):
+
+                        vol_tp = resting_vol[:,:,:,tp]
+                        vx = vol_tp[voxelsROI]
                         restingROIs[roi,tp] = np.nanmean(vx)
+                        
                         if np.isnan(restingROIs[roi,tp]):
                             fqc.write("\n WARNING ROI "+str(roi)+" T "+str(tp)+ " is NAN")
                         ROIs_numNans[roi,tp] = np.isnan(vx).sum()
-                    else:
-                        fqc.write("\n WARNING ROI "+str(roi)+" T "+str(tp)+ " has zero voxels")
-
-                if tp % 20 == 0:
-                    print("***********%d out of %d" % (tp, numTimePoints))
+                else:
+                    fqc.write("\n WARNING ROI "+str(roi)+" T "+str(tp)+ " has zero voxels")
+                    
+            toc = time.clock()
+            print(toc-tic)
 
 
             fileOut = "/8_epi_%s_ROIs.npz" % parc_label
