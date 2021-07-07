@@ -27,7 +27,6 @@ from scipy.io import savemat
 def apply_reg(data, mask, regressors,scrubbing):
 
     # remove identical regressors (rows) if present
-    #unique_regressors = np.vstack({tuple(row) for row in regressors})
     print("regressors shape before removing uniques ",regressors.shape)
     unique_regressors = [tuple(row) for row in regressors]
     unique_regressors = np.unique(unique_regressors, axis=0)
@@ -35,6 +34,9 @@ def apply_reg(data, mask, regressors,scrubbing):
 
     [sizeX,sizeY,sizeZ,numTimePoints] = data.shape
     resid = np.zeros(data.shape)
+
+    unique_regressors = np.vstack((np.ones((1, numTimePoints)), unique_regressors))
+    print("unique_regressors shape after adding intercept ",unique_regressors.shape)
 
     for i in range(0,sizeX):
         for j in range(0,sizeY):
@@ -266,7 +268,7 @@ elif physReg == "PhysReg":
         flog.write("\n regressors shape " + str(regressors.shape))
     
     zRegressMat = [];
-    zRegressMat.append(stats.zscore(regressors,axis=0));
+    zRegressMat.append(stats.zscore(regressors,axis=1));
 
 
 ## regress-out motion/physilogical regressors 
@@ -293,7 +295,7 @@ for i in range(0,numTimePoints):
 if scrub == 'true' and nuisanceReg == "HMPreg":
     fname=''.join([EPIpath,'/scrubbing_goodvols.npz'])  
     scrubvar = np.load(fname) 
-    scrubvar = scrubvar['scrub']
+    scrubvar = scrubvar['good_vols']  
 else:
     scrubvar = np.ones(numTimePoints, dtype=int)
 

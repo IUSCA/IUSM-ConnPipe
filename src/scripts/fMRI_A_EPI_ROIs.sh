@@ -40,14 +40,12 @@ EPIpath=os.environ['EPIpath']
 flog.write("\n EPIpath "+ EPIpath)
 postfix=os.environ['nR']
 flog.write("\n postfix "+ postfix)
-resting_file=os.environ['configs_EPI_resting_file']
-flog.write("\n resting_file "+ resting_file)
 numTimePoints = int(os.environ['nvols'])
 flog.write("\n numTimePoints "+ str(numTimePoints))
 
-fname_dmdt = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output_dmdt.npz'])
-data_dmdt = np.load(fname_dmdt) 
-resid = data_dmdt['resid']
+fname = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output.npz'])
+data = np.load(fname) 
+resid = data['resid']
 print("resid shape ",resid[0].shape)
 
 

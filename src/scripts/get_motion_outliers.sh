@@ -2,7 +2,7 @@
 
 ############################################################################### 
 
-function f_load_motion_reg() {
+function f_get_motion_outliers() {
 path="$1" numTimePoints="$2" python - <<END
 import os
 import numpy as np
@@ -11,7 +11,6 @@ from scipy.io import savemat
 EPIpath=os.environ['path']
 print(EPIpath)
 
-print("I AM HERE")
 numTimePoints=int(os.environ['numTimePoints'])
 print(numTimePoints)
 
@@ -83,20 +82,21 @@ if os.path.exists(file_dvar):
     f.write( "Max = %f \n" % dvar_max)
 
 scrub = np.add(fd_scrub,dvars_scrub)
-scrub = scrub == 0
-scrub = scrub.astype(bool).astype(int)
-#print(scrub)
-print("number of good vols: ",np.count_nonzero(scrub))
-f.write( "\n number of good vols: %d \n" % np.count_nonzero(scrub))
+good_vols = scrub == 0
+good_vols = good_vols.astype(bool).astype(int)
+print("number of good vols: ",np.count_nonzero(good_vols))
+f.write( "\n number of good vols: %d \n" % np.count_nonzero(good_vols))
+print("number of outliers to be scrubbed from dataset: ",np.count_nonzero(scrub))
+f.write( "\n number of outliers to be scrubbed from dataset: %d \n" % np.count_nonzero(scrub))
 
 f.close()
 
 fname=''.join([EPIpath,'/scrubbing_goodvols.npz'])
-np.savez(fname, scrub=scrub)
+np.savez(fname, good_vols=good_vols)
 
 fname=''.join([EPIpath,'/scrubbing_goodvols.mat'])
 print("savign MATLAB file ", fname)
-mdic = {"scrub": scrub}
+mdic = {"good_vols": good_vols}
 savemat(fname, mdic)
 
 END
@@ -211,7 +211,7 @@ if [[ ! $out -eq 0 ]]; then
 fi
 
 
-log "calling f_load_motion_reg:"
+log "calling f_get_motion_outliers:"
 cmd="f_load_motion_reg ${EPIpath} ${numTimePoints}"
 log $cmd
 eval $cmd

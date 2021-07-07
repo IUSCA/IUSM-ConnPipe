@@ -24,6 +24,8 @@ import nibabel as nib
 from scipy import signal
 from scipy.io import savemat
 
+logfile_name = ''.join([os.environ['logfile_name'],'.log'])
+flog=open(logfile_name, "a+")
 
 EPIpath=os.environ['EPIpath']
 print("EPIpath ",EPIpath)
@@ -35,17 +37,25 @@ resting_file=os.environ['resting_file']
 print("resting_file ",resting_file)
 numDCT=int(os.environ['configs_EPI_numDCT'])
 print("numDCT ",numDCT)
+flags_EPI_DemeanDetrend=os.environ['flags_EPI_DemeanDetrend']
+print("lags_EPI_DemeanDetrend ", flags_EPI_DemeanDetrend)
 
 # load resting vol image to use header for saving new image. 
 resting_file = ''.join([EPIpath,resting_file])
 resting = nib.load(resting_file)
 
 fname = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output.npz'])
-fname_dmdt = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output_dmdt.npz'])
 data = np.load(fname) 
-data_dmdt = np.load(fname_dmdt) 
 
-resid = data_dmdt['resid']
+if flags_EPI_DemeanDetrend.lower() in ['true','1']:
+    flog.write("\n Loading demeaned and detrended residuals")
+    fname_dmdt = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output_dmdt.npz'])
+    data_dmdt = np.load(fname_dmdt) 
+    resid = data_dmdt['resid']
+else:
+    flog.write("\n Loading residuals - skipping demean and detrend")
+    resid = data['resid']
+
 print("resid shape ",resid[0].shape)
 
 volBrain_vol = data['volBrain_vol']
@@ -134,10 +144,8 @@ else:
         resting_new = nib.Nifti1Image(resting_vol.astype(np.float32),resting.affine,resting.header)
         nib.save(resting_new,fileOut) 
 
-        # fileOut = ''.join([PhReg_path,'7_epi_padtype_even_padlen_100_order2.mat'])
-        # print("savign MATLAB file ", fileOut)
-        # mdic = {"resting_vol" : resting_vol,"volBrain_vol" : volBrain_vol, "GSts_resid" : GSts_resid,"tsf" : tsf}
-        # savemat(fileOut, mdic)
+flog.close()
+
 
 END
 }
@@ -153,10 +161,15 @@ log "# =========================================================="
 
 
 PhReg_path="${EPIpath}/${regPath}/"
-fileIn="${PhReg_path}/NuisanceRegression_${nR}_output.npz"
-fileIn_dmdt="${PhReg_path}/NuisanceRegression_${nR}_output_dmdt.npz"
+if ${flags_EPI_DemeanDetrend}; then 
+    fileIn="${PhReg_path}/NuisanceRegression_${nR}_output_dmdt.npz"
+else
+    fileIn="${PhReg_path}/NuisanceRegression_${nR}_output.npz"
+fi
 
-if [[ ! -e "${fileIn_dmdt}" ]]; then  
+log "Using ${fileIn}"
+
+if [[ ! -e "${fileIn}" ]]; then  
     log " WARNING Residual timeseries from Nuisance Regressors not found. Exiting..."
     exit 1    
 fi 
