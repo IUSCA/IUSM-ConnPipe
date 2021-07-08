@@ -61,7 +61,7 @@ This code has been developed to operate with the following software:
 
 Prerequisite software are loaded as environment modules. Provided you have prepared all of the prerequisite software, IUSM-ConnPipe comes ready to run with a Linux system. 
 
-A package with Supplementary Materials will be needed to run the pipeline. This package contains a variety of parcellations, templates and atlases, and visualization tools. The package can be downloaded HERE and it is a requirement for the pipeline.  
+A package with Supplementary Materials will be needed to run the pipeline. This package contains a variety of parcellations, templates and atlases, and visualization tools. The package can be downloaded [HERE](https://drive.google.com/drive/folders/1b7S9UcWDeDXVx3NUjuO8NJxxmChgNQ1G?usp=sharing) and it is a requirement for the pipeline.  
 
 ---
 ### Executing the Pipeline
