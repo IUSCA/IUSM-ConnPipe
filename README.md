@@ -50,29 +50,45 @@ For a more detailed overview of the different features, please visit our [wiki](
 ### Prerequisites
 
 This code has been developed to operate with the following software:
-  * [FSL version 5.0.10/11](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki)         
+  * [FSL version 6.0.1/3](https://fsl.fmrib.ox.ac.uk/fsl/fslwiki)         
   * [AFNI](https://afni.nimh.nih.gov/)                          
   * [dcm2niix (part of MRIcroGL)](https://github.com/rordenlab/dcm2niix)  
   * [ICA-AROMA](https://www.ncbi.nlm.nih.gov/pubmed/25770991)                       
-  * [MRtrix3](https://www.mrtrix.org/)                       
+  * [MRtrix3](https://www.mrtrix.org/) 
+  * Python 3 (see below for specific Python packages needed)                      
 
 ### Installing
 
 Prerequisite software are loaded as environment modules. Provided you have prepared all of the prerequisite software, IUSM-ConnPipe comes ready to run with a Linux system. 
 
 ---
+### Executing the Pipeline
 
-### Configuring the pipeline
-
-IUSM-ConnPipe comes with a pre-formatted configurations file titled **config.sh** which contains specifications for the desired pipeline processing workflow. In addition, this file contains specifications for paths to subject data 
+The Pipeline is run by executing the **sample_main.sh** file. We recommend making a copy of the **sample_main.sh** file and calling it **main.sh**. 
 
 #### Specifying subject data
 
-To specify data for preprocessing, change the **path2data** variable in **config.sh**.
+The data direcotry and the name of the configuration file (i.e. **sample_config.sh**, see below) are specified in the **sample_main.sh** file. 
+To specify data for preprocessing, change the **path2data** variable in **sample_main.sh**.
 
 ```
 export path2data="../example/subjects"
 ```
+The pipeline expects one directory per subject withint the **path2data** directory. To process all the subjects within the **path2data** directory, set the `runAll` flag (line 32 of the **sample_main.sh** file) to `true`. To run a subset of subjects, create a new text file and in it, make a list in column format (no commas needed) of the subject ID (or subject directory names) of the subjects to be processed. for example:
+```
+Subj1
+Subj2
+Subj8
+Subj22
+```
+Save the file (you can name it `subj2run.txt`) at the **path2data** directory, where the subject directories are located. In line 36 of **sample_main.sh** you will specify the name of the file with the subject ID's that will be processed. 
+
+Beyond line 53, the **sample_main.sh** file should not be modified. 
+
+### Configuring the pipeline
+
+IUSM-ConnPipe comes with a pre-formatted configurations file titled **sample_config.sh** which contains specifications for the desired pipeline processing workflow. We recommend making a copy of the **sample_config.sh** file and calling it **config.sh**. Note that the name of this configuration file should match the name specified in the **main.sh** file, in line 49.
+
 
 #### Enabling or disabling features
 
