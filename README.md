@@ -61,6 +61,8 @@ This code has been developed to operate with the following software:
 
 Prerequisite software are loaded as environment modules. Provided you have prepared all of the prerequisite software, IUSM-ConnPipe comes ready to run with a Linux system. 
 
+A package with Supplementary Materials will be needed to run the pipeline. This package contains a variety of parcellations, templates and atlases, and visualization tools. The package can be downloaded HERE and it is a requirement for the pipeline.  
+
 ---
 ### Executing the Pipeline
 
@@ -88,6 +90,8 @@ Beyond line 53, the **sample_main.sh** file should not be modified.
 ### Configuring the pipeline
 
 IUSM-ConnPipe comes with a pre-formatted configurations file titled **sample_config.sh** which contains specifications for the desired pipeline processing workflow. We recommend making a copy of the **sample_config.sh** file and calling it **config.sh**. Note that the name of this configuration file should match the name specified in the **main.sh** file, in line 49.
+
+The variable `pathSM` in line 82 should point to the location where the Supplementary Packages have been downloaded and/or saved. 
 
 
 #### Enabling or disabling features
@@ -129,10 +133,10 @@ And you should be able to see the packages listed now.
 
 ### Running the Pipeline
 
-After the desired configurations have been set, the pipeline can be run by executing the **main_conn_pipeline.sh** script. On a Linux terminal, after navigating to the directory containing corresponding pipeline, files run the following command:
+After the desired configurations have been set, the pipeline can be run by executing the **sample_main.sh** script, using the the following command:
 
 ```
-./main_conn_pipeline.sh
+./sample_main.sh
 ```
 
 Assuming all configurations have been set-up as needed, the pipeline should begin processing the specified subject data and saving corresponding outputs to the appropriate directories.
