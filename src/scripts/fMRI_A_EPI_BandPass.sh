@@ -17,7 +17,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 function apply_bandpass() {
-EPIpath="$1" PhReg_path="$2" postfix="$3" TR="$4" fmin="$5" fmax="$6" resting_file="$7" python - <<END
+EPIpath="$1" PhReg_path="$2" TR="$3" python - <<END
 import os
 import numpy as np
 import nibabel as nib
@@ -31,12 +31,14 @@ EPIpath=os.environ['EPIpath']
 print("EPIpath ",EPIpath)
 PhReg_path=os.environ['PhReg_path']
 print("PhReg_path ",PhReg_path)
-postfix=os.environ['postfix']
+postfix=os.environ['nR']
 print("postfix ",postfix)
-resting_file=os.environ['resting_file']
+resting_file=os.environ['configs_EPI_resting_file']
 print("resting_file ",resting_file)
-numDCT=int(os.environ['configs_EPI_numDCT'])
-print("numDCT ",numDCT)
+
+# numDCT=int(os.environ['configs_EPI_numDCT'])
+# print("numDCT ",numDCT)
+
 flags_EPI_DemeanDetrend=os.environ['flags_EPI_DemeanDetrend']
 print("lags_EPI_DemeanDetrend ", flags_EPI_DemeanDetrend)
 
@@ -61,88 +63,85 @@ print("resid shape ",resid[0].shape)
 volBrain_vol = data['volBrain_vol']
 print("volBrain_vol shape ",volBrain_vol.shape)
 
-if 0 < numDCT:
+# if 0 < numDCT:
+#     print(numDCT," DCT regression performed. Skipping Butterworth filter ")
 
-    print(numDCT," DCT regression performed. Skipping Butterworth filter ")
-
-    for pc in range(0,len(resid)):
+#     for pc in range(0,len(resid)):
         
-        resting_vol = resid[pc]
+#         resting_vol = resid[pc]
 
-        if len(resid)==1:
-            fileOut = "7_epi_%s.nii.gz" % postfix 
-        else:
-            fileOut = "7_epi_%s%d.nii.gz" % (postfix,pc)
+#         if len(resid)==1:
+#             fileOut = "7_epi_%s.nii.gz" % postfix 
+#         else:
+#             fileOut = "7_epi_%s%d.nii.gz" % (postfix,pc)
 
-        fileOut = ''.join([PhReg_path,fileOut])
-        print("Nifti file to be saved is: ",fileOut)
+#         fileOut = ''.join([PhReg_path,fileOut])
+#         print("Nifti file to be saved is: ",fileOut)
 
-        # save new resting file
-        resting_new = nib.Nifti1Image(resting_vol.astype(np.float32),resting.affine,resting.header)
-        nib.save(resting_new,fileOut) 
+#         # save new resting file
+#         resting_new = nib.Nifti1Image(resting_vol.astype(np.float32),resting.affine,resting.header)
+#         nib.save(resting_new,fileOut) 
+# else:
 
-else:
+TR= float(os.environ['TR'])
+print("TR ",TR)
+fmin= float(os.environ['configs_EPI_fMin'])
+print("fmin ",fmin)
+fmax= float(os.environ['configs_EPI_fMax'])
+print("fmax ",fmax)
 
-    TR= float(os.environ['TR'])
-    print("TR ",TR)
-    fmin= float(os.environ['fmin'])
-    print("fmin ",fmin)
-    fmax= float(os.environ['fmax'])
-    print("fmax ",fmax)
+resting_vol=data['resting_vol']
+print("resting_vol.shape: ",resting_vol.shape)
+[sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
+print("resting_vol.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 
-    resting_vol=data['resting_vol']
-    print("resting_vol.shape: ",resting_vol.shape)
-    [sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
-    print("resting_vol.shape ", sizeX,sizeY,sizeZ,numTimePoints)
+order = 2  
+f1 = fmin*2*TR
+f2 = fmax*2*TR
+print("order is ",order)
+print("f1 is ",f1)
+print("f2 is ",f2)
 
-    order = 2  
-    f1 = fmin*2*TR
-    f2 = fmax*2*TR
-    print("order is ",order)
-    print("f1 is ",f1)
-    print("f2 is ",f2)
+# create mask-array with non-zero indices
+GSmask = np.nonzero(volBrain_vol != 0)
 
-    # create mask-array with non-zero indices
-    GSmask = np.nonzero(volBrain_vol != 0)
+numVoxels = np.count_nonzero(volBrain_vol);
+print("numVoxels - ",numVoxels)
 
-    numVoxels = np.count_nonzero(volBrain_vol);
-    print("numVoxels - ",numVoxels)
+for pc in range(0,len(resid)):
 
-    for pc in range(0,len(resid)):
+    rr = resid[pc]
 
-        rr = resid[pc]
+    GSts_resid = np.zeros((numTimePoints,numVoxels))
+    print("GSts_resid shape is ",GSts_resid.shape)
+    
+    for ind in range(0,numTimePoints):
+        rrvol = rr[:,:,:,ind]
+        rvals = rrvol[GSmask[0],GSmask[1],GSmask[2]]
+        GSts_resid[ind,:] = rvals
+    
+    b, a = signal.butter(order, [fmin, fmax], btype='bandpass', analog=False)
 
-        GSts_resid = np.zeros((numTimePoints,numVoxels))
-        print("GSts_resid shape is ",GSts_resid.shape)
-        
-        for ind in range(0,numTimePoints):
-            rrvol = rr[:,:,:,ind]
-            rvals = rrvol[GSmask[0],GSmask[1],GSmask[2]]
-            GSts_resid[ind,:] = rvals
-        
-        b, a = signal.butter(order, [fmin, fmax], btype='bandpass', analog=False)
+    GSts_resid=GSts_resid.T
 
-        GSts_resid=GSts_resid.T
+    tsf = signal.filtfilt(b, a, GSts_resid, padtype='even', padlen=100)  # 3 * (max(len(b), len(a))-1)
 
-        tsf = signal.filtfilt(b, a, GSts_resid, padtype='even', padlen=100)  # 3 * (max(len(b), len(a))-1)
-        print(tsf)
+    tsf=tsf.T
+    
+    for ind in range(0,numTimePoints):
+        resting_vol[GSmask[0],GSmask[1],GSmask[2],ind] = tsf[ind,:]
 
-        tsf=tsf.T
-        
-        for ind in range(0,numTimePoints):
-            resting_vol[GSmask[0],GSmask[1],GSmask[2],ind] = tsf[ind,:]
+    if len(resid)==1:
+        fileOut = "7_epi_%s_Butter.nii.gz" % postfix 
+    else:
+        fileOut = "7_epi_%s%d_Butter.nii.gz" % (postfix,pc)
 
-        if len(resid)==1:
-            fileOut = "7_epi_%s.nii.gz" % postfix 
-        else:
-            fileOut = "7_epi_%s%d.nii.gz" % (postfix,pc)
+    fileOut = ''.join([PhReg_path,fileOut])
+    print("Nifti file to be saved is: ",fileOut)
 
-        fileOut = ''.join([PhReg_path,fileOut])
-        print("Nifti file to be saved is: ",fileOut)
-
-        # save new resting file
-        resting_new = nib.Nifti1Image(resting_vol.astype(np.float32),resting.affine,resting.header)
-        nib.save(resting_new,fileOut) 
+    # save new resting file
+    resting_new = nib.Nifti1Image(resting_vol.astype(np.float32),resting.affine,resting.header)
+    nib.save(resting_new,fileOut) 
 
 flog.close()
 
@@ -176,5 +175,5 @@ fi
 
 
 echo "apply_bandpass ${EPIpath} ${PhReg_path} ${nR} ${TR} ${configs_EPI_fMin} ${configs_EPI_fMax} ${configs_EPI_resting_file}"
-apply_bandpass ${EPIpath} ${PhReg_path} ${nR} ${TR} ${configs_EPI_fMin} ${configs_EPI_fMax} ${configs_EPI_resting_file}
+apply_bandpass ${EPIpath} ${PhReg_path} ${TR}
 

@@ -17,7 +17,9 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 function apply_reg() {
-EPIpath="$1" nuisanceReg="$2" config_param="$3" numReg="$4" numGS="$5" physReg="$6" scrub="$7" postfix="$8" resting_file="$9" python - <<END
+# EPIpath="$1" nuisanceReg="$2" config_param="$3" numReg="$4" numGS="$5" physReg="$6" scrub="$7" postfix="$8" resting_file="$9" python - <<END
+EPIpath="$1" nuisanceReg="$2" config_param="$3" physReg="$4" python - <<END
+
 import os
 import numpy as np
 import nibabel as nib
@@ -53,8 +55,8 @@ def apply_reg(data, mask, regressors,scrubbing):
     return resid
 
 ###### print to log files #######
-QCfile_name = ''.join([os.environ['QCfile_name'],'.log'])
-fqc=open(QCfile_name, "a+")
+# QCfile_name = ''.join([os.environ['QCfile_name'],'.log'])
+# fqc=open(QCfile_name, "a+")
 logfile_name = ''.join([os.environ['logfile_name'],'.log'])
 flog=open(logfile_name, "a+")
 
@@ -64,24 +66,24 @@ nuisanceReg=os.environ['nuisanceReg']
 flog.write("\n nuisanceReg "+ nuisanceReg)
 config_param=int(os.environ['config_param'])
 flog.write("\n config_param "+ str(config_param))
-numReg=int(os.environ['numReg'])
+numReg=int(os.environ['configs_EPI_numReg'])
 flog.write("\n numReg "+ str(numReg))
-numGS=int(os.environ['numGS'])
+numGS=int(os.environ['configs_EPI_numGS'])
 flog.write("\n numGS "+ str(numGS))
 physReg=os.environ['physReg']
 flog.write("\n physReg "+ physReg)
 PhReg_path = ''.join([EPIpath,'/',nuisanceReg,'/',physReg])
 flog.write("\n PhReg_path "+ PhReg_path )
-postfix=os.environ['postfix']
+postfix=os.environ['nR']
 flog.write("\n postfix "+ postfix)
-scrub=os.environ['scrub']
+scrub=os.environ['configs_EPI_scrub']
 flog.write("\n scrub "+ scrub)
-resting_file=os.environ['resting_file']
+resting_file=os.environ['configs_EPI_resting_file']
 flog.write("\n resting_file "+ resting_file)
 resting_file = ''.join([EPIpath,resting_file]) 
 flog.write("\n full resting file is "+ resting_file)
-numDCT=int(os.environ['configs_EPI_numDCT'])
-flog.write("\n numDCT "+ str(numDCT))
+dctfMin=float(os.environ['configs_EPI_dctfMin'])
+flog.write("\n dctfMin "+ str(dctfMin))
 
 
 flog.write("\n REGRESSORS -- Creating regressor matrix with the follwing:") 
@@ -155,18 +157,19 @@ if numGS > 0:
         flog.write("\n regressors shape " + str(regressors.shape)) 
 
 
-# n DCT filtering
-if numDCT > 0:
+# k DCT filtering
+if dctfMin > 0:
     fname = ''.join([PhReg_path,'/dataDCT.npz'])
     dataDCT = np.load(fname) 
     dctreg = dataDCT['dct'].T
+    numDCT = dataDCT['numDCT']
     print("dctreg shape is ", dctreg.shape)
     if regressors.size:
         regressors = np.vstack((regressors,dctreg))
     else:
         regressors = dctreg 
     print("   -- ",numDCT, " Discrete Cosine Transform basis ")
-    flog.write("\n  -- " + str(numDCT) + "Discrete Cosine Transform basis ")
+    flog.write("\n  -- " + str(numDCT) + " Discrete Cosine Transform basis ")
     print("regressors shape ",regressors.shape)
     flog.write("\n regressors shape " + str(regressors.shape))
 
@@ -301,21 +304,36 @@ else:
 
 resid = []
 for r in range(0,len(zRegressMat)):
+
     rr = apply_reg(resting_vol,volBrain_vol,zRegressMat[r],scrubvar)
+
     resid.append(rr)
+
+    # save nifti image
+    if len(zRegressMat)==1:
+        fileOut = "/7_epi_%s.nii.gz" % postfix 
+    else:
+        fileOut = "/7_epi_%s%d.nii.gz" % (postfix,pc)
+
+    fileOut = ''.join([PhReg_path,fileOut])
+    print("Nifti file to be saved is: ",fileOut)
+
+    # save new resting file
+    resting_new = nib.Nifti1Image(rr.astype(np.float32),resting.affine,resting.header)
+    nib.save(resting_new,fileOut) 
 
 ## save data (for header info), regressors, and residuals
 fname = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output.npz'])
 np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol,zRegressMat=zRegressMat,resid=resid,postfix=postfix)
 
-fname = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output.mat'])
-print("savign MATLAB file ", fname)
-mdic = {"resting_vol" : resting_vol,"volBrain_vol" : volBrain_vol, "zRegressMat" : zRegressMat,"resid" : resid,"postfix" : postfix}
-savemat(fname, mdic)
+# fname = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output.mat'])
+# print("savign MATLAB file ", fname)
+# mdic = {"resting_vol" : resting_vol,"volBrain_vol" : volBrain_vol, "zRegressMat" : zRegressMat,"resid" : resid,"postfix" : postfix}
+# savemat(fname, mdic)
 
 print("Saved aCompCor PCA regressors")
 
-fqc.close()
+# fqc.close()
 flog.close()
 
 END
@@ -332,16 +350,20 @@ echo "# =========================================================="
 if ${flags_NuisanceReg_AROMA}; then
     log "nuisanceReg AROMA"
     nuisanceReg="AROMA"
-    configs_EPI_numReg=0
-    configs_EPI_scrub=false
+    export configs_EPI_numReg=0
+    export configs_EPI_scrub=false
 elif ${flags_NuisanceReg_HeadParam}; then
     log "nuisanceReg HMParam"
     nuisanceReg="HMPreg"  
 fi
 
 
-if [[ ! ${flags_EPI_GS} ]]; then
-    configs_EPI_numGS=0
+if ! ${flags_EPI_GS}; then
+    export configs_EPI_numGS=0
+fi
+
+if ! ${configs_EPI_DCThighpass}; then
+    export configs_EPI_dctfMin=0
 fi
 
 if ${flags_PhysiolReg_aCompCorr}; then  
@@ -362,7 +384,10 @@ log "filename postfix for output image -- ${nR}"
 log "calling python script"
 cmd="apply_reg ${EPIpath} \
     ${nuisanceReg} ${config_param} \
-    ${configs_EPI_numReg} ${configs_EPI_numGS} \
-    ${physReg} ${configs_EPI_scrub} ${nR} ${configs_EPI_resting_file}"
+    ${physReg}"
+# cmd="apply_reg ${EPIpath} \
+#     ${nuisanceReg} ${config_param} \
+#     ${configs_EPI_numReg} ${configs_EPI_numGS} \
+#     ${physReg} ${configs_EPI_scrub} ${nR} ${configs_EPI_resting_file}"
 log $cmd
 eval $cmd      
