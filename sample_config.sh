@@ -79,7 +79,7 @@ export pathFSLstandard="${FSLDIR}/data/standard"
 
 ## FOR IUSM USERS ONLY - DURING DEVELOPMENT PHASE, PLEASE USE THIS "pathSM" AS THE 
 ## SUPPLEMENTARY MATERIALS PATH. THIS WILL EVENTUALLY LIVE IN A REPOSITORY 
-export pathSM="/N/project/project-space/ConnPipelineSM"
+export pathSM="/N/project/ConnPipelineSM"
 export pathMNItmplates="${pathSM}/MNI_templates"
 export pathBrainmaskTemplates="${pathSM}/brainmask_templates"
 export pathParcellations="${pathSM}/Parcellations"
@@ -235,7 +235,7 @@ export fMRI_A=true
 
 if $fMRI_A; then
 
-	export scanner="SIEMENS" #  SIEMENS or GE
+	export scanner="GE" #  SIEMENS or GE
 	log "SCANNER ${scanner}"
 
 	# # set number of EPI sessions/scans
@@ -355,7 +355,7 @@ if $fMRI_A; then
 	## If user sets flags_NuisanceReg_AROMA=true, then flags_NuisanceReg_HeadParam=false
 	## If user sets flags_NuisanceReg_AROMA=false, then flags_NuisanceReg_HeadParam=true
 
-		export flags_NuisanceReg_AROMA=false  
+		export flags_NuisanceReg_AROMA=true  
 
 			
 			if ${flags_NuisanceReg_AROMA}; then # if using ICA-AROMA
@@ -386,7 +386,6 @@ if $fMRI_A; then
 				export flags_NuisanceReg_HeadParam=true
 					
 					export configs_EPI_numReg=12  # 12 (orig and deriv) or 24 (+sq of 12)
-					export configs_EPI_scrub=false    # perform scrubbing based on FD and DVARS criteria
 				# =========================================================================================
 				# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
 				#===========================================================================================					
@@ -396,19 +395,17 @@ if $fMRI_A; then
 						log "WARNING the variable config_EPI_numReg must have values '12' or '24'. \
 							Please set the corect value in the config.sh file"
 					fi		
-						
-					if ${configs_EPI_scrub}; then
-						nR="scrubbed_${nR}"
-					fi
+
 				#===========================================================================================
 			fi
 
 	########## PHYSIOLOGICAL REGRESSORS ###############
-	export flags_EPI_PhysiolReg=true  
+	export flags_EPI_PhysiolReg=false  
 	# Two options that the user can select from:
 	# 1) flags_PhysiolReg_aCompCorr=true - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
 	# 2) flags_PhysiolReg_aCompCorr=false - mean WM and CSF signal regression
 		export flags_PhysiolReg_aCompCorr=true  
+
 		if ${flags_PhysiolReg_aCompCorr}; then  ### if using aCompCorr
 			export flags_PhysiolReg_WM_CSF=false
 			export configs_EPI_numPC=5; # 1-5; the maximum and recommended number is 5 
@@ -450,6 +447,9 @@ if $fMRI_A; then
 			fi          
 		fi
 
+	# Optional denoising
+	export flags_EPI_regressOthers=false
+
 		export flags_EPI_GS=true # global signal regression 
 			
 			export configs_EPI_numGS=4 # 1-orig; 2-orig+deriv; 4-orig+deriv+sq
@@ -458,30 +458,65 @@ if $fMRI_A; then
 				nR="${nR}_Gs${configs_EPI_numGS}"
 			fi 
 			
-		export configs_EPI_numDCT=0   # number of descrete cosine basis for high-pass filtering. 
-									  # we recommend 4 basis.
-									  # set to 0 to disable DCT. If set to >0 then bandpass will be disabled. 
+		export configs_EPI_DCThighpass=false  # Perform highpass filtering within regression. 
+			
+			export configs_EPI_dctfMin=0.009  # Specify level of high-pass filtering in Hz, 
+										      # i.e. the lowest frequency signals that will be retained 
+										      # The appropriate number (k) of DCT bases will be determined as follows:
+										      # k = fMin * 2 * TR * numTimePoints 
 									
-
-			if [[ "${configs_EPI_numDCT}" > 0 ]]; then
-				nR="${nR}_DCT${configs_EPI_numDCT}"
+			if ${configs_EPI_DCThighpass}; then
+				# if [[ "${configs_EPI_numDCT}" > 0 ]]; then
+				# nR="${nR}_DCT${configs_EPI_numDCT}"
+				nR="${nR}_DCT"
 			fi
 
-		export nR 
+		export flags_EPI_DVARS=false 
 
-	export flags_EPI_ApplyReg=true
+			if ${flags_EPI_DVARS}; then
+				nR="${nR}_DVARS"
+			fi
 
-	export flags_EPI_DemeanDetrend=true 
+	export flags_EPI_ApplyReg=false
 
-	export flags_EPI_BandPass=true
-		# if flags_EPI_BandPass = true and configs_EPI_numDCT > 0 the pipeline will 
-		# assume that bandpass is not needed as DCT have been regressed from time-series. 
-		# if flags_EPI_BandPass = true and configs_EPI_numDCT = 0 then a Butterworth filter 
-		# will be used to perform bandpass.
-		export configs_EPI_fMin=0.009
-		export configs_EPI_fMax=0.08	
-		
-	export flags_EPI_ROIs=true
+	export flags_EPI_postReg=false 
+
+		export flags_EPI_DemeanDetrend=true 	# Typically not needed since regressors have been z-scored and 
+												# and an intercept has been added to the regression matrix.
+												# DCT removes linear and quadratic trends so detrending is not needed either.  
+
+		export flags_EPI_BandPass=true  # Performs Butterworth filtering on residuals. Post regression filtering can potentially 
+										# reintroduce artifacts to the signal - see Lindquist et al. 2019 Hum Brain Mapp 
+										## WARNING BandPass cannot be applied if DCTs were included in regression. 
+
+			export configs_EPI_fMin=0.009
+			export configs_EPI_fMax=0.08
+
+
+		export configs_EPI_scrub=false     # remove outlier volumes based on joint FD and DVARS computed before nuissance regression
+
+			if ${configs_EPI_scrub}; then
+				nR="scrubbed_${nR}"
+			fi
+
+		# =========================================================================================
+		# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
+		#===========================================================================================
+		if ${configs_EPI_DCThighpass} && ${flags_EPI_BandPass}; then
+			log "ERROR 	Please select one option only: DCT high-pass or Butterworth filtering. Exiting... "
+			exit 1
+		fi
+
+		if ${flags_EPI_DVARS} && ${configs_EPI_scrub}; then
+			log "ERROR 	Please select one option only: regression with DVARS or post-regression scrubbing with pre-regression FD and DVARS. Exiting... "
+			exit 1
+		fi
+		#===========================================================================================
+
+
+	export nR 
+
+	export flags_EPI_ROIs=false
 
 fi
 
@@ -511,7 +546,7 @@ if $DWI_A; then
 		export scanner_param_PhaseEncodingDirection="phase_encode_direction"
 	fi
 
-	export flags_DWI_dcm2niix=false # dicom to nifti coversion
+	export flags_DWI_dcm2niix=true # dicom to nifti coversion
 								# not needed if json file(s) are provided/extracted
 		export configs_DWI_readout=[] # if empty get from dicom; else specify value
 	export flags_DWI_topup=true # FSL topup destortion field estimation

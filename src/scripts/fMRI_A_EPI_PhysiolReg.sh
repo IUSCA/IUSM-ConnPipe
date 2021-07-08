@@ -43,8 +43,7 @@ END
 
 function physiological_regressors() {
 EPIpath="$1" fileIN="$2" aCompCorr="$3" \
-    num_comp="$4" PhReg_path="$5" \
-    numGS="$6" python - <<END
+    num_comp="$4" PhReg_path="$5" python - <<END
 
 import os
 import numpy as np
@@ -67,10 +66,6 @@ num_comp=int(os.environ['num_comp'])
 flog.write("\n num_comp "+ str(num_comp))
 PhReg_path=os.environ['PhReg_path']
 flog.write("\n PhReg_path "+ PhReg_path)
-numGS=int(os.environ['numGS'])
-flog.write("\n numGS "+ str(numGS))
-numDCT=int(os.environ['configs_EPI_numDCT'])
-flog.write("\n numDCT "+ str(numDCT))
 
 
 def get_ts(vol,numTP,rest):
@@ -117,21 +112,12 @@ fname = ''.join([EPIpath,'/rT1_WM_mask_eroded.nii.gz'])
 volWM_vol = nib.load(fname).get_data()
 numVoxels = np.count_nonzero(volWM_vol);
 
-fname = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
-volGS = nib.load(fname)
-volGS_vol = volGS.get_data()
-
 ### CSFvent time-series
 [CSFts,CSFmask] = get_ts(volCSFvent_vol,numTimePoints,resting_vol);
 
 ### WM time-series
 [WMts,WMmask] = get_ts(volWM_vol,numTimePoints,resting_vol);
 
-### Global Signal time-series
-[GSts,GSmask] = get_ts(volGS_vol,numTimePoints,resting_vol);
-# # save mask for later
-# fname = ''.join([PhReg_path,'/GSmask.npz'])
-# np.savez(fname,GSmask=GSmask)
 
 if aCompCorr.lower() in ['true','1']:
     print("-------------aCompCorr--------------")
@@ -173,42 +159,6 @@ else:
     mdic = {"CSFavg" : CSFavg,"CSFavg_sq" : CSFavg_sq,"CSFderiv" : CSFderiv,"CSFderiv_sq" : CSFderiv_sq,"WMavg" : WMavg,"WMavg_sq" : WMavg_sq,"WMderiv" : WMderiv,"WMderiv_sq" : WMderiv_sq}
     savemat(fname, mdic)
     print("saved mean CSF WM signal, derivatives, and quadtatics")  
-      
-
-if 0 < numGS < 5:
-    GSavg = np.mean(GSts,axis=0)
-    GSderiv = np.append(0,np.diff(GSavg));
-    GSavg_sq = np.power(GSavg,2)
-    GSderiv_sq = np.power(GSderiv,2)
-
-    # save the data
-    fname = ''.join([PhReg_path,'/dataGS.npz'])
-    np.savez(fname,GSavg=GSavg,GSavg_sq=GSavg_sq,GSderiv=GSderiv,GSderiv_sq=GSderiv_sq)
-    fname = ''.join([PhReg_path,'/dataGS.mat'])
-    print("savign MATLAB file ", fname)
-    mdic = {"GSavg" : GSavg,"GSavg_sq" : GSavg_sq, "GSderiv" : GSderiv,"GSderiv_sq" : GSderiv_sq}
-    savemat(fname, mdic)
-    print("saved global signal regressors")    
-
-
-if 0 < numDCT:
-    print("numDCT is ",numDCT)
-    dct = np.zeros((numTimePoints,numDCT))
-    print("dct shape is ",dct.shape)
-    idx = np.arange(0,numTimePoints)/(numTimePoints - 1)
-
-    for n in range(0,numDCT):
-        dct[:,n] = np.cos(idx * np.pi * (n+1))
-
-
-    # save the data
-    fname = ''.join([PhReg_path,'/dataDCT.npz'])
-    np.savez(fname,dct=dct)
-    fname = ''.join([PhReg_path,'/dataDCT.mat'])
-    print("savign MATLAB file ", fname)
-    mdic = {"dct" : dct}
-    savemat(fname, mdic)
-    print("saved DCT bases") 
 
 
 fqc.close()
@@ -243,6 +193,7 @@ if ${flags_NuisanceReg_AROMA}; then
         fi          
     else
         log "ERROR ${fileIN} not found. Connot perform physiological regressors analysis"
+        exit 1
     fi 
 
 elif ${flags_NuisanceReg_HeadParam}; then 
@@ -257,6 +208,7 @@ elif ${flags_NuisanceReg_HeadParam}; then
         fi          
     else
         log "ERROR ${fileIN} and or ${EPIpath}/HMPreg not found. Connot perform physiological regressors analysis"
+        exit 1
     fi 
 fi
 
@@ -277,15 +229,9 @@ cmd="fslmaths ${fileOut} -fillh ${fileOut}"
 log $cmd
 eval $cmd
 
-if ${flags_EPI_GS}; then
-    log " Global signal regression is ON "
-else
-    log " Global signal regression is OFF "
-    configs_EPI_numGS=0
-fi
 
 physiological_regressors ${EPIpath} \
     ${fileIN} ${flags_PhysiolReg_aCompCorr} \
-    ${configs_EPI_numPC} ${PhReg_path} ${configs_EPI_numGS}
+    ${configs_EPI_numPC} ${PhReg_path}
 
 

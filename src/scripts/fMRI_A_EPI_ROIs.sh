@@ -17,7 +17,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 function ROI_TS() {
-PhReg_path="$1" python - <<END
+PhReg_path="$1" postfix="$2" python - <<END
 import os
 import numpy as np
 import nibabel as nib
@@ -38,16 +38,17 @@ PhReg_path = os.environ['PhReg_path']
 flog.write("\n PhReg_path "+ PhReg_path)
 EPIpath=os.environ['EPIpath']
 flog.write("\n EPIpath "+ EPIpath)
-postfix=os.environ['nR']
+nR=os.environ['nR']
+flog.write("\n nR "+ nR)
+postfix=os.environ['postfix']
 flog.write("\n postfix "+ postfix)
-resting_file=os.environ['configs_EPI_resting_file']
-flog.write("\n resting_file "+ resting_file)
 numTimePoints = int(os.environ['nvols'])
 flog.write("\n numTimePoints "+ str(numTimePoints))
 
-fname_dmdt = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output_dmdt.npz'])
-data_dmdt = np.load(fname_dmdt) 
-resid = data_dmdt['resid']
+fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'_output.npz'])
+print("loading regressors: ",fname)
+data = np.load(fname) 
+resid = data['resid']
 print("resid shape ",resid[0].shape)
 
 
@@ -180,16 +181,13 @@ log "# =========================================================="
 
 PhReg_path="${EPIpath}/${regPath}"
 
-# fileIn="${PhReg_path}/NuisanceRegression_${nR}_output.npz"
-# fileIn_dmdt="${PhReg_path}/NuisanceRegression_${nR}_output_dmdt.npz"
-
-# if ${flags_EPI_BandPass}; then 
-#     resting_file = 
-# else
-#     resting_file = 
-# fi 
+if ${flags_EPI_BandPass}; then 
+    postfix="${nR}_Butter"
+else
+    postfix="${nR}"
+fi 
 
 
 
-ROI_TS ${PhReg_path} #${resting_file}
+ROI_TS ${PhReg_path} ${postfix}
 

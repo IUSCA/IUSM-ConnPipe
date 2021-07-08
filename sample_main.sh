@@ -44,7 +44,9 @@ export path2data="/N/project/DataDir"
 export EXEDIR=$(dirname "$(readlink -f "$0")")
 
 source ${EXEDIR}/src/func/bash_funcs.sh
-source ${EXEDIR}/sample_config.sh
+
+## USER: make sure this path points to the right configuration file
+source ${EXEDIR}/sample_config.sh  
 
 
 #################################################################################
