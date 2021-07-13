@@ -17,7 +17,6 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 function apply_reg() {
-# EPIpath="$1" nuisanceReg="$2" config_param="$3" numReg="$4" numGS="$5" physReg="$6" scrub="$7" postfix="$8" resting_file="$9" python - <<END
 EPIpath="$1" nuisanceReg="$2" config_param="$3" physReg="$4" python - <<END
 
 import os
@@ -385,9 +384,5 @@ log "calling python script"
 cmd="apply_reg ${EPIpath} \
     ${nuisanceReg} ${config_param} \
     ${physReg}"
-# cmd="apply_reg ${EPIpath} \
-#     ${nuisanceReg} ${config_param} \
-#     ${configs_EPI_numReg} ${configs_EPI_numGS} \
-#     ${physReg} ${configs_EPI_scrub} ${nR} ${configs_EPI_resting_file}"
 log $cmd
 eval $cmd      
