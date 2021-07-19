@@ -28,14 +28,19 @@ from scipy.io import savemat
 fileIn=os.environ['fileIn']
 fileOut=os.environ['fileOut']
 
-data = np.load(fileIn) 
+dvars_scrub=os.environ['flags_EPI_DVARS']
+print("dvars_scrub ", dvars_scrub)
+
+# with load(fileIn) as data:
+data = np.load(fileIn)
+resid=data['resid']
+print("loading resid_DVARS for Demean and Detrend")
+
+volBrain_vol=data['volBrain_vol']
 
 resting_vol=data['resting_vol']
 print("resting_vol.shape: ",resting_vol.shape)
 [sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
-
-resid=data['resid']
-volBrain_vol=data['volBrain_vol']
 
 
 # demean and detrend
@@ -88,29 +93,18 @@ log "# =========================================================="
 
 
 PhReg_path="${EPIpath}/${regPath}"
-fileIn="${PhReg_path}/NuisanceRegression_${nR}_output.npz"
-fileOut="${PhReg_path}/NuisanceRegression_${nR}_output_dmdt"
+fileIn="${PhReg_path}/NuisanceRegression_${nR}.npz"
+fileOut="${PhReg_path}/NuisanceRegression_${nR}_dmdt"
 
-if [[ ! -e "${PhReg_path}/NuisanceRegression_${nR}_output.npz" ]]; then  
-    log " WARNING No output found for batch defined nuisance regressed data for ${EPIpath}"
+if [[ ! -e "${fileIn}" ]]; then  
+    log " WARNING ${fileIn} not found. Exiting..."
     exit 1    
 fi 
 
 # read data, demean and detrend
+log "demean_detrend ${fileIn} ${fileOut}"
 demean_detrend ${fileIn} ${fileOut}
 
-
-## OLD VERSION OF PIPELINE
-# # fill holes in the brain mask, without changing FOV
-# fileOut="${EPIpath}/rT1_brain_mask_FC.nii.gz"
-# cmd="fslmaths ${fileOut} -fillh ${fileOut}"
-# log $cmd
-# eval $cmd 
-
-# fileOut2="${EPIpath}/6_epi.nii.gz"
-# cmd="fslmaths ${fileOut2} -mas ${fileOut} ${fileOut2}"
-# log $cmd
-# eval $cmd 
 
 
 

@@ -308,7 +308,13 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                 echoerr "problem at fMRI_A_EPI_ApplyReg. exiting."
                 exit 1
             fi  
+
         fi  
+
+        # now we can update nR
+        if ${flags_EPI_DVARS}; then
+            export nR="${nR}_DVARS"
+        fi
 
 
         if ${flags_EPI_postReg}; then  
@@ -342,8 +348,21 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                 fi  
             fi  
 
-        fi   
-                    
+        fi      
+
+        # now we can create a post-reg nR
+        post_nR="${nR}"
+
+        if ${flags_EPI_DemeanDetrend}; then
+            post_nR="${post_nR}_dmdt"
+        fi
+
+        # now we can update post-reg nR
+        if ${flags_EPI_BandPass}; then
+            post_nR="${post_nR}_Butter"
+        fi    
+
+        export post_nR                
 
         if ${flags_EPI_ROIs}; then
 
