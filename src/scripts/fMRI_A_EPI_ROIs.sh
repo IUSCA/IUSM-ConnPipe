@@ -40,17 +40,25 @@ EPIpath=os.environ['EPIpath']
 flog.write("\n EPIpath "+ EPIpath)
 nR=os.environ['nR']
 flog.write("\n nR "+ nR)
-postfix=os.environ['postfix']
-flog.write("\n postfix "+ postfix)
+post_nR=os.environ['post_nR']
+flog.write("\n post_nR "+ post_nR)
 numTimePoints = int(os.environ['nvols'])
 flog.write("\n numTimePoints "+ str(numTimePoints))
 
-fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'_output.npz'])
-print("loading regressors: ",fname)
+fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.npz'])
+print("loading data from ",fname)
 data = np.load(fname) 
-resid = data['resid']
-print("resid shape ",resid[0].shape)
 
+# load appropriate residuals
+if nR == post_nR:
+    print("No post-regression denoising found. Loading residuals from ",fname)
+    resid=data['resid']
+else:
+    fname_post = ''.join([PhReg_path,'/NuisanceRegression_',post_nR,'.npz'])
+    print("Loading post-regression residuals from ",fname_post)
+    flog.write("\n Loading post-regression residuals "+fname_post)
+    data_postreg = np.load(fname_post) 
+    resid = data_postreg['resid'] 
 
 ### read nifti data
  # find the correct WM mask
@@ -71,11 +79,9 @@ volBrain_mask = (volBrain_vol != 0).astype(np.int)
 for pc in range(0,len(resid)):
 
     if len(resid)==1:
-        ff = "7_epi_%s.nii.gz" % postfix 
-        mtype = "/TimeSeries_%s" % postfix
+        mtype = "/TimeSeries_%s" % post_nR
     else:
-        ff = "7_epi_%s%d.nii.gz" % (postfix,pc)
-        mtype = "/TimeSeries_%s%d" % (postfix,pc)
+        mtype = "/TimeSeries_%s%d" % (post_nR,pc)
 
     path_EPI_Mats = ''.join([PhReg_path,mtype])
     CHECK_FOLDER = os.path.isdir(path_EPI_Mats)
@@ -87,13 +93,8 @@ for pc in range(0,len(resid)):
     else:
         print(path_EPI_Mats, "folder already exists.")
 
-    resting_file = ''.join([PhReg_path,'/',ff])
-    print("resting file to read is: ",resting_file)
-    flog.write("\n resting file to read is: " + resting_file)
-    resting = nib.load(resting_file)
-    resting_vol = resting.get_data()
-    [sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
-    print("resting_vol shape is ",sizeX,sizeY,sizeZ,numTimePoints)
+    [sizeX,sizeY,sizeZ,numTimePoints] = resid[pc].shape
+    print("resid shape is ",sizeX,sizeY,sizeZ,numTimePoints)
 
     for k in range(0,numParcs+1):
         parc_label=os.environ["PARC%d" % k]
@@ -130,7 +131,7 @@ for pc in range(0,len(resid)):
                     
                     for tp in range(0,numTimePoints):
 
-                        vol_tp = resting_vol[:,:,:,tp]
+                        vol_tp = resid[pc][:,:,:,tp]
                         vx = vol_tp[voxelsROI]
                         restingROIs[roi,tp] = np.nanmean(vx)
                         
@@ -177,17 +178,10 @@ log "# =========================================================="
 log "# 8. ROIs. "
 log "# =========================================================="
 
+PhReg_path="${EPIpath}/${regPath}"     
 
 
-PhReg_path="${EPIpath}/${regPath}"
+## To do: make sure needed files exist before entering python script
 
-if ${flags_EPI_BandPass}; then 
-    postfix="${nR}_Butter"
-else
-    postfix="${nR}"
-fi 
-
-
-
-ROI_TS ${PhReg_path} ${postfix}
+ROI_TS ${PhReg_path} 
 

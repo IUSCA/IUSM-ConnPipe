@@ -24,25 +24,40 @@ import numpy as np
 from scipy import signal
 from scipy.io import savemat
 
-
+EPIpath=os.environ['EPIpath']
+print("EPIpath ",EPIpath)
 fileIn=os.environ['fileIn']
 fileOut=os.environ['fileOut']
+regPath=os.environ['regPath']
+print("regPath ",regPath)
+dvars_scrub=os.environ['flags_EPI_DVARS']
+print("dvars_scrub ", dvars_scrub)
+nR=os.environ['nR']
+print("nR ",nR)
+resting_file=os.environ['configs_EPI_resting_file']
+print("resting_file ",resting_file)
 
-data = np.load(fileIn) 
+postfix = ''.join([nR,'_dmdt'])
+
+data = np.load(fileIn)
+resid=data['resid']
+print("loading resid_DVARS for Demean and Detrend")
+
+volBrain_vol=data['volBrain_vol']
 
 resting_vol=data['resting_vol']
 print("resting_vol.shape: ",resting_vol.shape)
 [sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
 
-resid=data['resid']
-volBrain_vol=data['volBrain_vol']
 
+# load resting vol image to use header for saving new image.    
+resting_file = ''.join([EPIpath,resting_file])   
+resting = nib.load(resting_file)
 
 # demean and detrend
 
 print("len(resid): ",len(resid))
 print("resid.shape: ",resid.shape)
-
 
 for pc in range(0,len(resid)):
     for i in range(0,sizeX):
@@ -63,6 +78,18 @@ for pc in range(0,len(resid)):
         rv = resid[pc][:,:,:,t]
         rv[volBrain_vol==0]=0
         resid[pc][:,:,:,i] = rv
+
+    if len(resid)==1:
+        fileNii = "/8_epi_%s.nii.gz" % postfix 
+    else:
+        fileNii = "/8_epi_%s%d.nii.gz" % (postfix,pc)
+
+    fileNii = ''.join([EPIpath,'/',regPath,fileNii])
+    print("Nifti file to be saved is: ",fileNii)
+
+    # save new resting file
+    resting_new = nib.Nifti1Image(resid[pc].astype(np.float32),resting.affine,resting.header)
+    nib.save(resting_new,fileNii) 
 
 
 ## save data 
@@ -88,29 +115,18 @@ log "# =========================================================="
 
 
 PhReg_path="${EPIpath}/${regPath}"
-fileIn="${PhReg_path}/NuisanceRegression_${nR}_output.npz"
-fileOut="${PhReg_path}/NuisanceRegression_${nR}_output_dmdt"
+fileIn="${PhReg_path}/NuisanceRegression_${nR}.npz"
+fileOut="${PhReg_path}/NuisanceRegression_${nR}_dmdt"
 
-if [[ ! -e "${PhReg_path}/NuisanceRegression_${nR}_output.npz" ]]; then  
-    log " WARNING No output found for batch defined nuisance regressed data for ${EPIpath}"
+if [[ ! -e "${fileIn}" ]]; then  
+    log " WARNING ${fileIn} not found. Exiting..."
     exit 1    
 fi 
 
 # read data, demean and detrend
-demean_detrend ${fileIn} ${fileOut}
+log "demean_detrend ${fileIn} ${fileOut}"
+#demean_detrend ${fileIn} ${fileOut}
 
-
-## OLD VERSION OF PIPELINE
-# # fill holes in the brain mask, without changing FOV
-# fileOut="${EPIpath}/rT1_brain_mask_FC.nii.gz"
-# cmd="fslmaths ${fileOut} -fillh ${fileOut}"
-# log $cmd
-# eval $cmd 
-
-# fileOut2="${EPIpath}/6_epi.nii.gz"
-# cmd="fslmaths ${fileOut2} -mas ${fileOut} ${fileOut2}"
-# log $cmd
-# eval $cmd 
 
 
 

@@ -17,7 +17,6 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 function apply_reg() {
-# EPIpath="$1" nuisanceReg="$2" config_param="$3" numReg="$4" numGS="$5" physReg="$6" scrub="$7" postfix="$8" resting_file="$9" python - <<END
 EPIpath="$1" nuisanceReg="$2" config_param="$3" physReg="$4" python - <<END
 
 import os
@@ -26,7 +25,7 @@ import nibabel as nib
 from scipy import stats
 from scipy.io import savemat
 
-def apply_reg(data, mask, regressors,scrubbing):
+def apply_reg(data, mask, regressors):
 
     # remove identical regressors (rows) if present
     print("regressors shape before removing uniques ",regressors.shape)
@@ -74,10 +73,10 @@ physReg=os.environ['physReg']
 flog.write("\n physReg "+ physReg)
 PhReg_path = ''.join([EPIpath,'/',nuisanceReg,'/',physReg])
 flog.write("\n PhReg_path "+ PhReg_path )
-postfix=os.environ['nR']
-flog.write("\n postfix "+ postfix)
-scrub=os.environ['configs_EPI_scrub']
-flog.write("\n scrub "+ scrub)
+nR=os.environ['nR']
+flog.write("\n nR "+ nR)
+dvars_scrub=os.environ['flags_EPI_DVARS']
+flog.write("\n dvars_scrub "+ dvars_scrub)
 resting_file=os.environ['configs_EPI_resting_file']
 flog.write("\n resting_file "+ resting_file)
 resting_file = ''.join([EPIpath,resting_file]) 
@@ -295,25 +294,21 @@ for i in range(0,numTimePoints):
     resting_vol[:,:,:,i] = rv
 
 
-if scrub == 'true' and nuisanceReg == "HMPreg":
-    fname=''.join([EPIpath,'/scrubbing_goodvols.npz'])  
-    scrubvar = np.load(fname) 
-    scrubvar = scrubvar['good_vols']  
-else:
-    scrubvar = np.ones(numTimePoints, dtype=int)
-
 resid = []
+if dvars_scrub == 'true':
+    resid_DVARS = []
+
 for r in range(0,len(zRegressMat)):
 
-    rr = apply_reg(resting_vol,volBrain_vol,zRegressMat[r],scrubvar)
+    rr = apply_reg(resting_vol,volBrain_vol,zRegressMat[r])
 
     resid.append(rr)
 
     # save nifti image
     if len(zRegressMat)==1:
-        fileOut = "/7_epi_%s.nii.gz" % postfix 
+        fileOut = "/7_epi_%s.nii.gz" % nR 
     else:
-        fileOut = "/7_epi_%s%d.nii.gz" % (postfix,pc)
+        fileOut = "/7_epi_%s%d.nii.gz" % (nR,pc)
 
     fileOut = ''.join([PhReg_path,fileOut])
     print("Nifti file to be saved is: ",fileOut)
@@ -322,18 +317,69 @@ for r in range(0,len(zRegressMat)):
     resting_new = nib.Nifti1Image(rr.astype(np.float32),resting.affine,resting.header)
     nib.save(resting_new,fileOut) 
 
-## save data (for header info), regressors, and residuals
-fname = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output.npz'])
-np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol,zRegressMat=zRegressMat,resid=resid,postfix=postfix)
+    ## Calculate DVARS after regression
 
-# fname = ''.join([PhReg_path,'/NuisanceRegression_',postfix,'_output.mat'])
-# print("savign MATLAB file ", fname)
-# mdic = {"resting_vol" : resting_vol,"volBrain_vol" : volBrain_vol, "zRegressMat" : zRegressMat,"resid" : resid,"postfix" : postfix}
-# savemat(fname, mdic)
+    if dvars_scrub == 'true':
+        print("=== Calculating DVARS from ressiduals ===")
+        configs_EPI_path2DVARS=os.environ['configs_EPI_path2DVARS']
+        flog.write("\n configs_EPI_path2DVARS "+ str(configs_EPI_path2DVARS))
+        print("configs_EPI_path2dvars ",configs_EPI_path2DVARS)
 
-print("Saved aCompCor PCA regressors")
+        import sys
+        sys.path.append(configs_EPI_path2DVARS)
+        from DSE import DSE_Calc, DVARS_Calc, CleanNIFTI
 
-# fqc.close()
+        DVARSout = DVARS_Calc(fileOut,dd=1,WhichExpVal='median',WhichVar='hIQRd',scl=0, \
+                        demean=True,DeltapDvarThr=5)
+
+        vols2scrub = DVARSout["Inference"]["H"]
+        print("vols to scrub: ",vols2scrub)
+        nvols2scrub = vols2scrub.shape[0]
+        print("num vols to be scrubbed: ",nvols2scrub)
+        scrubbing = np.zeros((nvols2scrub,numTimePoints), dtype=int)
+
+        for s in range(nvols2scrub):
+            scrubbing[s,vols2scrub[s]-1]=1
+
+        regressors_scrub = np.vstack((zRegressMat[r],scrubbing))
+
+        rr = apply_reg(resting_vol,volBrain_vol,regressors_scrub)
+        resid_DVARS.append(rr)
+
+        # save nifti image
+        if len(zRegressMat)==1:
+            fileOut = "/7_epi_%s_DVARS.nii.gz" % nR 
+        else:
+            fileOut = "/7_epi_%s%d_DVARS.nii.gz" % (nR,pc)
+
+        fileOut = ''.join([PhReg_path,fileOut])
+        print("Nifti file to be saved is: ",fileOut)
+
+        # save new resting file
+        resting_new = nib.Nifti1Image(rr.astype(np.float32),resting.affine,resting.header)
+        nib.save(resting_new,fileOut) 
+
+if dvars_scrub == 'true': 
+    resid_before_DVARS = resid
+    resid = resid_DVARS
+    ## save data (for header info), regressors, and residuals
+    fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'_DVARS.npz'])
+    np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol, \
+    zRegressMat=zRegressMat,resid_before_DVARS=resid_before_DVARS,nR=nR, \
+    resid=resid, DVARS_Inference_Hprac=DVARSout["Inference"]["H"])
+else:
+    ## save scrubbing data
+    fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.npz'])
+    np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol, \
+    zRegressMat=zRegressMat,resid=resid,nR=nR)
+
+fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.mat'])
+print("savign MATLAB file ", fname)
+mdic = {"resting_vol" : resting_vol,"resid" : resid[0]}
+savemat(fname, mdic)
+
+print("Saved residuals")
+
 flog.close()
 
 END
@@ -351,7 +397,6 @@ if ${flags_NuisanceReg_AROMA}; then
     log "nuisanceReg AROMA"
     nuisanceReg="AROMA"
     export configs_EPI_numReg=0
-    export configs_EPI_scrub=false
 elif ${flags_NuisanceReg_HeadParam}; then
     log "nuisanceReg HMParam"
     nuisanceReg="HMPreg"  
@@ -377,17 +422,17 @@ elif ${flags_PhysiolReg_WM_CSF}; then
     config_param=${configs_EPI_numPhys}    
 fi 
 
-
-log "filename postfix for output image -- ${nR}"
+if ${flags_EPI_DVARS}; then
+    log "filename postfix for output image -- ${nR}_DVARS"
+else
+    log "filename postfix for output image -- ${nR}"
+fi
 
 
 log "calling python script"
 cmd="apply_reg ${EPIpath} \
     ${nuisanceReg} ${config_param} \
     ${physReg}"
-# cmd="apply_reg ${EPIpath} \
-#     ${nuisanceReg} ${config_param} \
-#     ${configs_EPI_numReg} ${configs_EPI_numGS} \
-#     ${physReg} ${configs_EPI_scrub} ${nR} ${configs_EPI_resting_file}"
 log $cmd
 eval $cmd      
+
