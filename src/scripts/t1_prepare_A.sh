@@ -37,8 +37,8 @@ if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
 			niifiles=`find $T1path -maxdepth 1 -name "*.nii*" | wc -l`
 			if [[ $niifiles != 0 ]]; then 
 				# Remove existing nifti images.
-				log "rm $T1path/.${configs_niiFiles}"
-				rm $T1path/*.${configs_niiFiles}*			
+				log "rm -f $T1path/.${configs_niiFiles}"
+				rm -f $T1path/*.${configs_niiFiles}*			
 			fi
 			
 			# Converting DICOM to Nifti

@@ -294,13 +294,6 @@ for i in range(0,numTimePoints):
     resting_vol[:,:,:,i] = rv
 
 
-# if scrub == 'true' and nuisanceReg == "HMPreg":
-#     fname=''.join([EPIpath,'/scrubbing_goodvols.npz'])  
-#     scrubvar = np.load(fname) 
-#     scrubvar = scrubvar['good_vols']  
-# else:
-#     scrubvar = np.ones(numTimePoints, dtype=int)
-
 resid = []
 if dvars_scrub == 'true':
     resid_DVARS = []
@@ -366,8 +359,6 @@ for r in range(0,len(zRegressMat)):
         resting_new = nib.Nifti1Image(rr.astype(np.float32),resting.affine,resting.header)
         nib.save(resting_new,fileOut) 
 
-
-
 if dvars_scrub == 'true': 
     resid_before_DVARS = resid
     resid = resid_DVARS
@@ -382,10 +373,10 @@ else:
     np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol, \
     zRegressMat=zRegressMat,resid=resid,nR=nR)
 
-# fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.mat'])
-# print("savign MATLAB file ", fname)
-# mdic = {"resting_vol" : resting_vol,"volBrain_vol" : volBrain_vol, "zRegressMat" : zRegressMat,"resid" : resid,"nR" : nR}
-# savemat(fname, mdic)
+fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.mat'])
+print("savign MATLAB file ", fname)
+mdic = {"resting_vol" : resting_vol,"resid" : resid[0]}
+savemat(fname, mdic)
 
 print("Saved residuals")
 
@@ -406,7 +397,6 @@ if ${flags_NuisanceReg_AROMA}; then
     log "nuisanceReg AROMA"
     nuisanceReg="AROMA"
     export configs_EPI_numReg=0
-    export configs_EPI_scrub=false
 elif ${flags_NuisanceReg_HeadParam}; then
     log "nuisanceReg HMParam"
     nuisanceReg="HMPreg"  

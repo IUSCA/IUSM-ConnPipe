@@ -17,7 +17,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 function apply_bandpass() {
-EPIpath="$1" PhReg_path="$2" TR="$3" fileOut="$4" python - <<END
+PhReg_path="$1" TR="$2" fileOut="$3" python - <<END
 import os
 import numpy as np
 import nibabel as nib
@@ -112,16 +112,16 @@ for pc in range(0,len(resid)):
     resid[pc] = rr
 
     if len(resid)==1:
-        fileNii = "/7_epi_%s.nii.gz" % postfix 
+        fileNii = "/8_epi_%s.nii.gz" % postfix 
     else:
-        fileNii = "/7_epi_%s%d.nii.gz" % (postfix,pc)
+        fileNii = "/8_epi_%s%d.nii.gz" % (postfix,pc)
 
     fileNii = ''.join([PhReg_path,fileNii])
     print("Nifti file to be saved is: ",fileNii)
 
     # save new resting file
     resting_new = nib.Nifti1Image(resid[pc].astype(np.float32),resting.affine,resting.header)
-    nib.save(resting_new,fileOut) 
+    nib.save(resting_new,fileNii) 
 
 ## save data 
 ff = ''.join([fileOut,'.npz'])
@@ -154,10 +154,10 @@ PhReg_path="${EPIpath}/${regPath}"
 # Make sure files exist
 if ${flags_EPI_DemeanDetrend}; then 
     fileIn="${PhReg_path}/NuisanceRegression_${nR}_dmdt.npz"
-    fileOut="${PhReg_path}/NuisanceRegression_${nR}_dmdt_Butter"
+    fileOut="${PhReg_path}/NuisanceRegression_${nR}_dmdt_butter"
 else
     fileIn="${PhReg_path}/NuisanceRegression_${nR}.npz"
-    fileOut="${PhReg_path}/NuisanceRegression_${nR}_Butter"
+    fileOut="${PhReg_path}/NuisanceRegression_${nR}_butter"
 fi
 
 log "Using ${fileIn}"
@@ -169,6 +169,6 @@ fi
 
 log "Output file will be named ${fileOut}"
 
-log "apply_bandpass ${EPIpath} ${PhReg_path} ${TR} ${fileOut}"
-apply_bandpass ${EPIpath} ${PhReg_path} ${TR} ${fileOut}
+log "apply_bandpass ${PhReg_path} ${TR} ${fileOut}"
+apply_bandpass ${PhReg_path} ${TR} ${fileOut}
 

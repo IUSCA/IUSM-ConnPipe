@@ -24,14 +24,21 @@ import numpy as np
 from scipy import signal
 from scipy.io import savemat
 
-
+EPIpath=os.environ['EPIpath']
+print("EPIpath ",EPIpath)
 fileIn=os.environ['fileIn']
 fileOut=os.environ['fileOut']
-
+regPath=os.environ['regPath']
+print("regPath ",regPath)
 dvars_scrub=os.environ['flags_EPI_DVARS']
 print("dvars_scrub ", dvars_scrub)
+nR=os.environ['nR']
+print("nR ",nR)
+resting_file=os.environ['configs_EPI_resting_file']
+print("resting_file ",resting_file)
 
-# with load(fileIn) as data:
+postfix = ''.join([nR,'_dmdt'])
+
 data = np.load(fileIn)
 resid=data['resid']
 print("loading resid_DVARS for Demean and Detrend")
@@ -43,11 +50,14 @@ print("resting_vol.shape: ",resting_vol.shape)
 [sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
 
 
+# load resting vol image to use header for saving new image.    
+resting_file = ''.join([EPIpath,resting_file])   
+resting = nib.load(resting_file)
+
 # demean and detrend
 
 print("len(resid): ",len(resid))
 print("resid.shape: ",resid.shape)
-
 
 for pc in range(0,len(resid)):
     for i in range(0,sizeX):
@@ -68,6 +78,18 @@ for pc in range(0,len(resid)):
         rv = resid[pc][:,:,:,t]
         rv[volBrain_vol==0]=0
         resid[pc][:,:,:,i] = rv
+
+    if len(resid)==1:
+        fileNii = "/8_epi_%s.nii.gz" % postfix 
+    else:
+        fileNii = "/8_epi_%s%d.nii.gz" % (postfix,pc)
+
+    fileNii = ''.join([EPIpath,'/',regPath,fileNii])
+    print("Nifti file to be saved is: ",fileNii)
+
+    # save new resting file
+    resting_new = nib.Nifti1Image(resid[pc].astype(np.float32),resting.affine,resting.header)
+    nib.save(resting_new,fileNii) 
 
 
 ## save data 
@@ -103,7 +125,7 @@ fi
 
 # read data, demean and detrend
 log "demean_detrend ${fileIn} ${fileOut}"
-demean_detrend ${fileIn} ${fileOut}
+#demean_detrend ${fileIn} ${fileOut}
 
 
 

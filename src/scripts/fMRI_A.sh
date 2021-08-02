@@ -346,7 +346,20 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                     echoerr "problem at fMRI_A_EPI_BandPass. exiting."
                     exit 1
                 fi  
-            fi  
+            fi 
+
+            if ${configs_EPI_scrub}; then
+
+                cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_Scrub.sh"
+                echo $cmd
+                eval $cmd
+                exitcode=$?
+
+                if [[ ${exitcode} -ne 0 ]] ; then
+                    echoerr "problem at fMRI_A_EPI_Scrub. exiting."
+                    exit 1
+                fi  
+            fi              
 
         fi      
 
@@ -359,8 +372,13 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 
         # now we can update post-reg nR
         if ${flags_EPI_BandPass}; then
-            post_nR="${post_nR}_Butter"
-        fi    
+            post_nR="${post_nR}_butter"
+        fi   
+
+        # now we can update post-reg nR
+        if ${configs_EPI_scrub}; then
+            post_nR="${post_nR}_scrubbed"
+        fi  
 
         export post_nR                
 
