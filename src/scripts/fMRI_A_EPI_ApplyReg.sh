@@ -320,7 +320,7 @@ for r in range(0,len(zRegressMat)):
     ## Calculate DVARS after regression
 
     if dvars_scrub == 'true':
-        print("=== Calculating DVARS from ressiduals ===")
+        print("=== Calculating DVARS from residuals ===")
         configs_EPI_path2DVARS=os.environ['configs_EPI_path2DVARS']
         flog.write("\n configs_EPI_path2DVARS "+ str(configs_EPI_path2DVARS))
         print("configs_EPI_path2dvars ",configs_EPI_path2DVARS)
@@ -329,7 +329,7 @@ for r in range(0,len(zRegressMat)):
         sys.path.append(configs_EPI_path2DVARS)
         from DSE import DSE_Calc, DVARS_Calc, CleanNIFTI
 
-        DVARSout = DVARS_Calc(fileOut,dd=1,WhichExpVal='median',WhichVar='hIQRd',scl=0, \
+        DVARSout = DVARS_Calc(fileOut,dd=1,WhichExpVal='median',WhichVar='hIQRd',scl=0.001, \
                         demean=True,DeltapDvarThr=5)
 
         vols2scrub = DVARSout["Inference"]["H"]
@@ -359,6 +359,11 @@ for r in range(0,len(zRegressMat)):
         resting_new = nib.Nifti1Image(rr.astype(np.float32),resting.affine,resting.header)
         nib.save(resting_new,fileOut) 
 
+        fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'_DVARS.mat'])
+        print("savign MATLAB file ", fname)
+        mdic = {"resting_vol" : resting_vol,"resid" : rr}
+        savemat(fname, mdic)
+
 if dvars_scrub == 'true': 
     resid_before_DVARS = resid
     resid = resid_DVARS
@@ -373,10 +378,6 @@ else:
     np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol, \
     zRegressMat=zRegressMat,resid=resid,nR=nR)
 
-fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.mat'])
-print("savign MATLAB file ", fname)
-mdic = {"resting_vol" : resting_vol,"resid" : resid[0]}
-savemat(fname, mdic)
 
 print("Saved residuals")
 
