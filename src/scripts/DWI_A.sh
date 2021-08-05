@@ -31,12 +31,8 @@ fileBvec = os.environ['fileBvec']
 fileNifti = os.environ['fileNifti']
 # print("fileNifti is ",fileNifti)
 
-# pbval=''.join([p,'/0_DWI.bval'])
-# pbvec=''.join([p,'/0_DWI.bvec'])
 pbval = ''.join([p,'/',fileBval])
 pbvec = ''.join([p,'/',fileBvec])
-pbvec = ''.join([p,'/',fileBvec])
-
 
 bvals, bvecs = read_bvals_bvecs(pbval,pbvec)
 # print("bvals size", bvals.shape)
@@ -260,18 +256,44 @@ if [[ -d ${DWIpath} ]]; then
         echo "0.5. Bvec & Bval File Format"
         echo "=================================="
 
-        if [[ ! -e "${DWIpath}/${fileBval}" ]] && [[ ! -e "${DWIpath}/${fileBvec}" ]]; then
-            log "WARNIGN Bvec and/or Bval files do not exist. Skipping further analyses"
-            exit 1
-        else
-            out=$(read_bvals_bvecs ${DWIpath})
-            log "out is ${out}"
-            if [[ $out -eq 1 ]]; then
-                log "# Bvec and Bval files written in column format with tab delimiter"
-            else
-                log "#WARNING Bvec and/or Bval values do not match number of volumes. Exiting Analysis"
+        if [[ ${configs_DWI_DICOMS2_B0only} ]] && [[ "$nscan" -eq 2 ]]; then
+            # check that no bvec and bval files were generated for DICOMS2
+            if [[ ! -e "${DWIpath}/${fileBval}" ]] && [[ ! -e "${DWIpath}/${fileBvec}" ]]; then
+
+                log "Creating dummy Bvec and/or Bval files ${DWIpath}/${fileBval} and ${DWIpath}/${fileBvec}"
+                # find the number of B0's as the 4th dimension
+                numB0=$(fslinfo ${DWIpath}/${fileNifti}.gz | awk '/^dim4/' | awk '{split($0,a," "); {print a[2]}}')
+                log "There is/are ${numB0} B0 in ${DWIpath}/${fileNifti}.gz"
+
+                # create dummy B0 files
+                dummy_bvec=`echo -e '0 \t 0 \t  0 \t'` 
+                for ((k=0; k<${numB0}; k++)); do
+                    echo ${dummy_bvec} >> ${DWIpath}/${fileBvec}
+                    echo "0" >> ${DWIpath}/${fileBval}
+                done
+
+            else  
+                log "WARNING. Bvec and/or Bval files ${DWIpath}/${fileBval} and ${DWIpath}/${fileBvec} already exist."
+                log "WARNING. Please check whether thse files need to be delted, or if configs_DWI_DICOMS2_B0only should be set to 'false'. Exiting"   
+                exit 1      
             fi 
-        fi 
+
+        else  
+
+            if [[ ! -e "${DWIpath}/${fileBval}" ]] && [[ ! -e "${DWIpath}/${fileBvec}" ]]; then
+                log "WARNIGN Bvec and/or Bval files do not exist. Skipping further analyses"
+                exit 1
+            else
+                out=$(read_bvals_bvecs ${DWIpath})
+                log "out is ${out}"
+                if [[ $out -eq 1 ]]; then
+                    log "# Bvec and Bval files written in column format with tab delimiter"
+                else
+                    log "#WARNING Bvec and/or Bval values do not match number of volumes. Exiting Analysis"
+                fi 
+            fi 
+
+        fi
 
     done
 
@@ -310,7 +332,6 @@ if [[ -d ${DWIpath} ]]; then
         fi  
     fi
 
-
     #### FSL Eddy
     if ${flags_DWI_eddy}; then
 
@@ -324,7 +345,6 @@ if [[ -d ${DWIpath} ]]; then
             exit 1
         fi  
     fi
-
 
     #### DTIfit
     if ${flags_DWI_DTIfit}; then

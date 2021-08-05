@@ -545,16 +545,17 @@ if $DWI_A; then
 		export scanner_param_PhaseEncodingDirection="phase_encode_direction"
 	fi
 
-	export flags_DWI_dcm2niix=true # dicom to nifti coversion
+	export flags_DWI_dcm2niix=false # dicom to nifti coversion
 								# not needed if json file(s) are provided/extracted
 		export configs_DWI_readout=[] # if empty get from dicom; else specify value
-	export flags_DWI_topup=true # FSL topup destortion field estimation
+	export configs_DWI_DICOMS2_B0only=true # if DICOMS2 are B0's only set to true; if DICOMS2 contains scalars and B0's set to false 
+	export flags_DWI_topup=false # FSL topup destortion field estimation
 		export configs_DWI_b0cut=1 # maximum B-value to be considered B0
-	export flags_DWI_eddy=true # FSL EDDY distortion correction
+	export flags_DWI_eddy=false # FSL EDDY distortion correction
 		export configs_DWI_EDDYf='0.3' # fsl bet threshold for b0 brain mask used by EDDY
 		export configs_DWI_repolON=true # use eddy_repol to interpolate missing/outlier data
 		export configs_DWI_MBjson=true # read the slices/MB-groups info from the json file (--json option)
-	export flags_DWI_DTIfit=true  # Tensor estimation and generation of scalar maps
+	export flags_DWI_DTIfit=false  # Tensor estimation and generation of scalar maps
 		export configs_DWI_DTIfitf='0.4' # brain extraction (FSL bet -f) parameter 
 
 fi 
