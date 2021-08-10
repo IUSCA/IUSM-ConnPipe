@@ -212,6 +212,6 @@ fi
 
 
 log "calling f_get_motion_outliers:"
-cmd="f_load_motion_reg ${EPIpath} ${numTimePoints}"
+cmd="f_get_motion_outliers ${EPIpath} ${numTimePoints}"
 log $cmd
 eval $cmd
