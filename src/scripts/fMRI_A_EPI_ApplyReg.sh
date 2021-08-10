@@ -307,8 +307,10 @@ for r in range(0,len(zRegressMat)):
     # save nifti image
     if len(zRegressMat)==1:
         fileOut = "/7_epi_%s.nii.gz" % nR 
+        matlabfilename = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.mat'])
     else:
         fileOut = "/7_epi_%s%d.nii.gz" % (nR,pc)
+        matlabfilename = ''.join([PhReg_path,'/NuisanceRegression_',nR,pc,'.mat'])
 
     fileOut = ''.join([PhReg_path,fileOut])
     print("Nifti file to be saved is: ",fileOut)
@@ -316,6 +318,11 @@ for r in range(0,len(zRegressMat)):
     # save new resting file
     resting_new = nib.Nifti1Image(rr.astype(np.float32),resting.affine,resting.header)
     nib.save(resting_new,fileOut) 
+
+    
+    print("savign MATLAB file ", matlabfilename)
+    mdic = {"resid" : rr,"resting_vol" : resting_vol}
+    savemat(matlabfilename, mdic)
 
     ## Calculate DVARS after regression
 
@@ -338,19 +345,23 @@ for r in range(0,len(zRegressMat)):
         print("num vols to be scrubbed: ",nvols2scrub)
         scrubbing = np.zeros((nvols2scrub,numTimePoints), dtype=int)
 
-        for s in range(nvols2scrub):
-            scrubbing[s,vols2scrub[s]-1]=1
+        if nvols2scrub > 0:
+            for s in range(nvols2scrub):
+                scrubbing[s,vols2scrub[s]-1]=1
 
-        regressors_scrub = np.vstack((zRegressMat[r],scrubbing))
+            regressors_scrub = np.vstack((zRegressMat[r],scrubbing))
 
-        rr = apply_reg(resting_vol,volBrain_vol,regressors_scrub)
+            rr = apply_reg(resting_vol,volBrain_vol,regressors_scrub)
+            
         resid_DVARS.append(rr)
 
         # save nifti image
         if len(zRegressMat)==1:
             fileOut = "/7_epi_%s_DVARS.nii.gz" % nR 
+            matlabfilename = ''.join([PhReg_path,'/NuisanceRegression_',nR,'_DVARS.mat'])
         else:
             fileOut = "/7_epi_%s%d_DVARS.nii.gz" % (nR,pc)
+            matlabfilename = ''.join([PhReg_path,'/NuisanceRegression_',nR,pc,'_DVARS.mat'])
 
         fileOut = ''.join([PhReg_path,fileOut])
         print("Nifti file to be saved is: ",fileOut)
@@ -359,10 +370,10 @@ for r in range(0,len(zRegressMat)):
         resting_new = nib.Nifti1Image(rr.astype(np.float32),resting.affine,resting.header)
         nib.save(resting_new,fileOut) 
 
-        fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'_DVARS.mat'])
-        print("savign MATLAB file ", fname)
-        mdic = {"resting_vol" : resting_vol,"resid" : rr}
-        savemat(fname, mdic)
+        
+        print("savign MATLAB file ", matlabfilename)
+        mdic = {"resid" : rr}
+        savemat(matlabfilename, mdic)
 
 if dvars_scrub == 'true': 
     resid_before_DVARS = resid
