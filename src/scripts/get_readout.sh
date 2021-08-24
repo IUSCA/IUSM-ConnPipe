@@ -89,7 +89,7 @@ if [[ -f "${jsonfile}" ]]; then
         AccF=`cat ${jsonfile} | ${EXEDIR}/src/func/jq-linux64 '.ParallelReductionFactorInPlane'`
         log2file "ParallelReductionFactorInPlane (AccF) extracted from ${jsonfile} is - ${AccF}"
         if [ -z "${AccF}" ] || [[ "${AccF}" -eq "null" ]]; then
-            break
+            log2file "AccF is undefined"
         else 
             SEreadOutTime=$(bc <<< "scale=8 ; ${SEreadOutTime} / ${AccF}")
         fi
@@ -120,7 +120,7 @@ if [[ -f "${jsonfile}" ]]; then
         fi 
 
         if [ -z "${AccF}" ] || [[ "${AccF}" -eq "null" ]]; then
-            break
+            log2file "AccF is undefined"
         else 
             
             anofel=$(bc <<< "scale=8 ; ${dim1} / ${AccF}")
@@ -179,7 +179,7 @@ if [ -z ${SEreadOutTime} ]; then
                 AccF=`cat ${temp_dir}/${tempfile}.json | ${EXEDIR}/src/func/jq-linux64 '.ParallelReductionFactorInPlane'`
                 log2file "ParallelReductionFactorInPlane (AccF) extracted from ${temp_dir}/${tempfile}.json is - ${AccF}"
                 if [ -z "${AccF}" ] || [[ "${AccF}" -eq "null" ]]; then
-                    break
+                    log2file "AccF is undefined"
                 else 
                     SEreadOutTime=$(bc <<< "scale=8 ; ${SEreadOutTime} / ${AccF}")
                 fi

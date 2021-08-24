@@ -256,7 +256,7 @@ if [[ -d ${DWIpath} ]]; then
         echo "0.5. Bvec & Bval File Format"
         echo "=================================="
 
-        if [[ ${configs_DWI_DICOMS2_B0only} ]] && [[ "$nscan" -eq 2 ]]; then
+        if ${configs_DWI_DICOMS2_B0only} && [[ "$nscan" -eq 2 ]]; then
             # check that no bvec and bval files were generated for DICOMS2
             if [[ ! -e "${DWIpath}/${fileBval}" ]] && [[ ! -e "${DWIpath}/${fileBvec}" ]]; then
 

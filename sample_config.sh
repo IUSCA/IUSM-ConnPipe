@@ -148,8 +148,14 @@ if $T1_PREPARE_A; then
 	export flags_T1_dcm2niix=false  # dicom to nifti conversion 
 		export configs_T1_useCropped=false # use cropped field-of-view output of dcm2niix
 		
-	## T1 DENOISING IS PERFORMED AFTER DICOM TO NIFTI CONVERSION. 
-	#### THE DENOISING FLAG IS ALSO USED IN T1_PREPARE_B SO IT IS SET AS A GLOBAL FALG, BELOW
+	## T1 DENOISING IS PERFORMED AFTER DICOM TO NIFTI CONVERSION.
+	export flags_T1_applyDenoising=false
+	#### THE DENOISING FLAG IS ALSO USED IN T1_PREPARE_B SO IT IS SET AS A GLOBAL FALG
+	#### REGARDLESS OF WHETHER YOU ARE APPLYING DENOISING OR NOT, YOU MUST SET THE
+	#### DENOISING OPTION BELOW (LINE 178). 
+	#### SET flags_T1_applyDenoising=true AND configs_T1_denoised="NONE" IF NO DENOSING IS REQUIRED
+	#### SET flags_T1_applyDenoising=FALSE AND configs_T1_denoised="ANTS"/"SUSAN" 
+	#### IF DENOISING HAS ALREADY BEEN APPLYIED AND THUS THE PROCESS CAN BE SKIPPED. 
 
 	export flags_T1_anat=true # run FSL_anat
 		export configs_T1_bias=0 # 0 = no; 1 = weak; 2 = strong
