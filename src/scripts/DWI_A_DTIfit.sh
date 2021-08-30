@@ -87,7 +87,7 @@ log "Number of scans is ${nscanmax}"
 
 for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
 
-    if [[ ${configs_DWI_DICOMS2_B0only} ]] && [[ "$nscan" -eq 2 ]]; then
+    if ${configs_DWI_DICOMS2_B0only} && [[ "$nscan" -eq 2 ]]; then
         log "WARNING skipping DTIfit for DICOMS2"
     else
         

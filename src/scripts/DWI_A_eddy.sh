@@ -144,7 +144,7 @@ log "Number of scans is ${nscanmax}"
 for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
 
 
-    if [[ ${configs_DWI_DICOMS2_B0only} ]] && [[ "$nscan" -eq 2 ]]; then
+    if ${configs_DWI_DICOMS2_B0only} && [[ "$nscan" -eq 2 ]]; then
         log "WARNING skipping EDDY for DICOMS2"
     else
 
@@ -368,10 +368,14 @@ for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
 
         # For QC purpoces this created a difference (Delta image) between raw
         # and EDDY corrected diffusion data.
-        log "Computing Delta Eddy image"
-        delta_EDDY ${DWIpath} ${fileOut} ${dwifile}
-        log "Delta Eddy saved"
-
+        if [[ ! -e "${fileOut}" ]]; then
+            echo "WARNING  Eddy output not generated. Exiting..."
+            exit 1
+        else
+            log "Computing Delta Eddy image"
+            delta_EDDY ${DWIpath} ${fileOut} ${dwifile}
+            log "Delta Eddy saved"
+        fi 
     fi
     
 done 
