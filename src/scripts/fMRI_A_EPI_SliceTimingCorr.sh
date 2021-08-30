@@ -29,7 +29,8 @@ if (( $(echo "${TR} > $configs_EPI_minTR" |bc -l) )); then
         fileIn="${EPIpath}/0_epi.nii.gz"
         log "Processing: 0_epi.nii.gz"
     else
-        log "WARNIGN file 0_epi not found. Exiting..."    
+        log "WARNIGN file 0_epi not found. Exiting..."   
+        exit 1 
     fi 
 
 
