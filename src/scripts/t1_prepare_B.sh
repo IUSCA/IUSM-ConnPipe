@@ -103,7 +103,7 @@ if ${flags_T1_reg2MNI}; then
 ## Transform subject T1 into MNI space, then using inverse matrices
 ## transform yeo7, yeo17, shen parcellations and MNI vertricles mask into subject native space
 
-    log "Registration between Native t1 and MNI space"
+    log "==== Registration between Native t1 and MNI space ==== "
 
     if [[ $configs_T1_useExistingMats && -d ${T1reg} ]]; then  # check for existing transformation matrices
         
@@ -379,7 +379,7 @@ fi
 ##### Tissue-type segmentation; cleaning; and gray matter masking of parcellations ######
 
 if ${flags_T1_seg}; then
-    echo "Tissue-type Segmentation"
+    log "==== Tissue-type Segmentation ==== "
 
     # Check that T1_brain image exists
     fileIn="${T1path}/T1_brain.nii.gz"
@@ -597,7 +597,7 @@ fi
 
 if ${flags_T1_parc}; then
 
-    log "PARC->GM Gray matter masking of native space parcellations"
+    log "==== PARC->GM Gray matter masking of native space parcellations ==== "
 
     one_time=true
 

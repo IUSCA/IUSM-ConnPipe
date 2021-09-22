@@ -14,53 +14,6 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
-############################################################################### 
-
-function f_percent_variance() {
-fIn1="$1" fIn2="$2" python - <<END
-import os
-import numpy as np
-
-###### print to log files #######
-logfile_name = ''.join([os.environ['logfile_name'],'.log'])
-flog=open(logfile_name, "a+")
-
-fIn1=os.environ['fIn1']
-#print("fIn1: ", fIn1)
-
-fIn2=os.environ['fIn2']
-#print("fIn2: ", fIn2)
-
-ICstats = np.loadtxt(fIn1)
-#print(ICstats)
-#print(ICstats.shape)
-
-motionICs = np.loadtxt(fIn2, delimiter=",",dtype=np.int32)
-#print(motionICs)
-
-
-peVar = np.zeros(len(motionICs))
-ptVar = np.zeros(len(motionICs))
-
-for i in range(0,len(motionICs)):
-    ind = motionICs[i]
-    peVar[i] = ICstats[ind-1,0]
-    ptVar[i] = ICstats[ind-1,1]
-
-peVar = np.sum(peVar)
-ptVar = np.sum(ptVar)
-
-print("%.2f percent of explained variance in removed motion components" % peVar)
-flog.write("\n "+ str(peVar)+ " percent of explained variance in removed motion components")
-
-print("%.2f percent of total variance in removed motion components" % ptVar)
-flog.write("\n "+ str(ptVar)+ " percent of total variance in removed motion components")
-
-flog.close()
-
-END
-}
-
 ##############################################################################
 
 
@@ -205,4 +158,8 @@ fi
 # compute percent variance removed from the data
 ICstats="${AROMAout}/melodic.ica/melodic_ICstats"
 motionICs="${AROMAout}/classified_motion_ICs.txt"
-f_percent_variance ${ICstats} ${motionICs}
+
+cmd="python ${EXEDIR}/src/func/percent_variance.py \
+    ${ICstats} ${motionICs}"
+log $cmd
+eval $cmd

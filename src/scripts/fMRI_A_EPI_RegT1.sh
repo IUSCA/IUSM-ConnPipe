@@ -16,9 +16,9 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ############################################################################### 
 
-    echo "# ==========================================="
-    echo "# 3. BET fMRI and T1 Registration"
-    echo "# ==========================================="
+    msg2file " ==========================================="
+    msg2file "      3. BET fMRI and T1 Registration"
+    msg2file " ==========================================="
     
     if [[ ! -e "${EPIpath}/2_epi.nii.gz" ]]; then  
         log "WARNING File ${EPIpath}/2_epi.nii.gz does not exist. Skipping further analysis"
