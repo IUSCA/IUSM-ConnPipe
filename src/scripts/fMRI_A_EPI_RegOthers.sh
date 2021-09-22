@@ -18,9 +18,9 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 
-echo "# =========================================================="
-echo "# 3. Apply transformation to tissue and parcellation images."
-echo "# =========================================================="
+msg2file "=========================================================="
+msg2file "3. Apply transformation to tissue and parcellation images."
+msg2file "=========================================================="
 
 if [[ ! -e "${EPIpath}/T1_2_epi_dof6_bbr.mat" ]]; then  
     log "WARNING File ${EPIpath}/T1_2_epi_dof6_bbr.mat does not exist. Skipping further analysis"

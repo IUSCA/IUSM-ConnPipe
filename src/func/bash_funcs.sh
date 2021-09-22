@@ -107,12 +107,21 @@ qc() {
     echo "${msg[@]}" >> ${QCfile_name}.log
 }
 
+# print to log file only withouth printing to screen
 log2file() {
 
     local msg=($(echo "$@"))
     local dateTime=`date`
 
     echo "### $dateTime --->" >> ${logfile_name}.log
+    echo "${msg[@]}" >> ${logfile_name}.log
+}
+
+# print to log file and screen without a time-stamp (mostly used to separate sections of code in file)
+msg2file() {
+
+    local msg=($(echo "$@"))
+    echo "${msg[@]}"
     echo "${msg[@]}" >> ${logfile_name}.log
 }
 
@@ -129,6 +138,5 @@ echoerr() {
     echo -e ${NC_}
 
 }
-
 
 ###############################################################################

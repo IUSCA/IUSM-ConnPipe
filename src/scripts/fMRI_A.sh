@@ -38,8 +38,10 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 
     if [[ ! -d "${epiList[$i]}" ]]; then
         echo "${epiList[$i]} directory not found"
+        exit 1
     elif ! [[ $ind =~ $re ]] ; then  # check if ind is a number or not
         echo "EPI directory ${epiList[$i]} has no session number"
+        exit 1
     elif [ $((i+1)) -ge "${configs_EPI_epiMin}" ] && [ $((i+1)) -le "${configs_EPI_epiMax}" ]; then
         # Operating on the scans set in configs
         export EPIpath="${epiList[$i]}"
