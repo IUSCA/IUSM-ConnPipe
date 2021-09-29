@@ -61,12 +61,5 @@ cmd="python ${EXEDIR}/src/func/apply_reg.py \
      ${physReg}"
 log $cmd
 eval $cmd
-
-
-# log "calling python script"
-# cmd="apply_reg \
-#     ${nuisanceReg} ${config_param} \
-#     ${physReg}"
-# log $cmd
-# eval $cmd      
+ 
 

@@ -10,87 +10,12 @@
 #
 ###############################################################################
 
-############################################################################### 
-
-function add_subcort_parc() {
-path="$1" pnodal="$2" fileSubcort="$3" subcortUser="$4" python - <<END
-
-import os.path
-import numpy as np
-import nibabel as nib
-
-
-parcpath=os.environ['path']
-print("parcpath is: ",parcpath)
-
-pnodal=int(os.environ['pnodal'])
-print("pnodal is: ",pnodal)
-print(type(pnodal))
-
-file_Subcort=os.environ['fileSubcort']
-print("file_Subcort is: ",file_Subcort)
-
-subcortUser=os.environ['subcortUser']
-print("subcortUser is: ",subcortUser)
-print(type(subcortUser))
-
-# head_tail = os.path.split(parcpath)
-
-# print(head_tail[0])
-# print(head_tail[1])
-
-# fileSubcort = ''.join([head_tail[0],'/T1_subcort_seg.nii.gz'])
-# print(fileSubcort)
-
-parc = nib.load(parcpath)
-parc_vol = parc.get_data()
-#print(parc_vol.shape)
-MaxID = np.max(parc_vol)
-#print(MaxID)
-
-subcort = nib.load(file_Subcort)
-subcort_vol = subcort.get_data()
-#ind = np.argwhere(subcort_vol == 16)
-#print(ind)
-
-if subcortUser == "false":  # FSL-provided subcortical
-    subcort_vol[subcort_vol == 16] = 0
-    #ind = np.argwhere(subcort_vol == 16)
-    #print(ind)
-
-if pnodal == 1:
-    print("pnodal is 1")
-    ids = np.unique(subcort_vol)
-    print(ids)
-
-    for s in range(0,len(ids)):
-        #print(ids[s]) 
-        if ids[s] > 0:
-            subcort_vol[subcort_vol == ids[s]] = MaxID + s
-elif pnodal == 0:
-    print("pnodal is 0")
-    subcort_vol[subcort_vol > 0] = MaxID + 1
-
-
-parc_vol[subcort_vol > 0] = 0
-parc_vol = np.squeeze(parc_vol) + subcort_vol
-
-parc_vol_new = nib.Nifti1Image(parc_vol.astype(np.float32),parc.affine,parc.header)
-nib.save(parc_vol_new,parcpath)
-
-END
-}
-
-
-###################################################################################
-
-
-
 
 shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
+###################################################################################
 
 ##### Registration of subject to MNI######
 
@@ -828,7 +753,11 @@ if ${flags_T1_parc}; then
             
             log "ADD_SUBCORT_PARC using ${FileIn} and ${fileSubcort}"
             # call python script
-            add_subcort_parc ${FileIn} ${pnodal} ${fileSubcort} ${configs_T1_subcortUser}
+            cmd="python ${EXEDIR}/src/func/add_subcort_parc.py \
+                ${FileIn} ${pnodal} \
+                ${fileSubcort}"
+            log $cmd
+            eval $cmd
 
         fi 
 
