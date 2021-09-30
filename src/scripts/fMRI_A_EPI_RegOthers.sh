@@ -286,7 +286,8 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
             fileIn="/rT1_GM_parc_${parc}.nii.gz"                        
             fileOut="/rT1_GM_parc_${parc}_clean.nii.gz"   
 
-            cmd="${EXEDIR}/src/scripts/get_largest_clusters.sh ${EPIpath} ${fileIn} ${fileOut} ${configs_EPI_minVoxelsClust}"                     
+            cmd="python ${EXEDIR}/src/func/get_largest_clusters.py \
+                ${fileIn} ${fileOut} ${configs_EPI_minVoxelsClust}"                     
             log $cmd
             eval $cmd 
 

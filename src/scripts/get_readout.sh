@@ -37,16 +37,13 @@ SEreadOutTime=$(python - "$1"<<END
 import pydicom
 #import os
 import sys
-
 path2dicom=str(sys.argv[1])
 #path2dicom=str(os.environ['PYTHON_ARG'])
 # print(path2dicom)
-
 dicomHeader=pydicom.read_file(path2dicom)
 matrix=dicomHeader[0x0051100b].value
 dim1=matrix.split('*')
 dim1=int(dim1[1])
-
 # accelerator factor
 try: 
     AcqStr=dicomHeader[0x00511011].value
@@ -57,13 +54,10 @@ except:
     
 # bandwidth per pixel phase encoding (hz)
 bppe=int(dicomHeader[0x00191028].value)
-
 # Effective Echo Spacing (s)
 ees=1/(bppe*dim1)
-
 #actual number of phase encoding lines
 anofel=dim1/AccF
-
 # Total Readout Time (s)
 RT=(anofel-1)*ees
 print(RT)
@@ -220,8 +214,3 @@ if [ -z ${SEreadOutTime} ]; then
 fi 
   
 echo "${SEreadOutTime}"
-
-#         cmd="${EXEDIR}/src/scripts/get_readout.sh ${EPIpath}" 
-#         log $cmd
-#         EPI_SEreadOutTime=`$cmd`
-#         log "EPI_SEreadOutTime extracted from get_redout.sh is $EPI_SEreadOutTime"

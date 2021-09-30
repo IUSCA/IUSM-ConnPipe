@@ -14,57 +14,6 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
-############################################################################### 
-
-function f_load_motion_reg() {
-path="$1" numReg="$2" python - <<END
-import os
-import numpy as np
-from scipy.io import savemat
-
-EPIpath=os.environ['path']
-
-numReg=int(os.environ['numReg'])
-
-# load motion regressors
-fname=''.join([EPIpath,'/motion.txt'])
-motion = np.loadtxt(fname)
-[rows,columns] = motion.shape
-
-# derivatives of 6 motion regressors
-motion_deriv = np.zeros((rows,columns))
-
-for i in range(columns):
-    m = motion[:,i]
-    m_deriv = np.diff(m)
-    motion_deriv[1:,i] = m_deriv
-
-## save the data
-# fname=''.join([EPIpath,'/HMPreg/motion_deriv.txt'])
-# np.savetxt(fname, motion_deriv,fmt='%2.7f')
-# fname=''.join([EPIpath,'/HMPreg/motion.txt'])
-# np.savetxt(fname, motion,fmt='%2.7f')
-fname=''.join([EPIpath,'/HMPreg/motion12_regressors.npz'])
-np.savez(fname,motion_deriv=motion_deriv,motion=motion)
-fname=''.join([EPIpath,'/HMPreg/motion12_regressors.mat'])
-print("savign MATLAB file ", fname)
-mdic = {"motion_deriv": motion_deriv,"motion": motion}
-savemat(fname, mdic)
-
-if numReg == 24:
-    motion_sq = np.power(motion,2)
-    motion_deriv_sq = np.power(motion_deriv,2)
-
-    fname=''.join([EPIpath,'/HMPreg/motion_sq_regressors.npz'])
-    np.savez(fname,motion_sq=motion_sq,motion_deriv_sq=motion_deriv_sq)
-    fname=''.join([EPIpath,'/HMPreg/motion_sq_regressors.mat'])
-    print("savign MATLAB file ", fname)
-    mdic = {"motion_sq": motion_sq, "motion_deriv_sq": motion_deriv_sq}
-    savemat(fname, mdic)
-
-END
-}
-
 ##############################################################################
 
 echo "# =========================================================="
@@ -86,7 +35,9 @@ else
     fi
 
     # load 6 motion regressors and get derivatives
-    f_load_motion_reg ${EPIpath} ${configs_EPI_numReg}
+    cmd="python ${EXEDIR}/src/func/load_motion_reg.py ${configs_EPI_numReg}"
+    log $cmd
+    eval $cmd
     if [ $? -eq 0 ]; then
         log "Saved motion regressors and temporal derivatives"
         log "Saved quadratics of motion and its derivatives"

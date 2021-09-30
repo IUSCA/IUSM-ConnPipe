@@ -310,7 +310,7 @@ for r in range(0,len(zRegressMat)):
     
     print("savign MATLAB file ", matlabfilename)
     mdic = {"resid" : rr,"resting_vol" : resting_vol}
-    #savemat(matlabfilename, mdic)
+    savemat(matlabfilename, mdic)
 
     ## Calculate DVARS after regression
 
@@ -359,8 +359,8 @@ for r in range(0,len(zRegressMat)):
         nib.save(resting_new,fileOut) 
 
         print("savign MATLAB file ", matlabfilename)
-        mdic = {"resid" : rr}
-        #savemat(matlabfilename, mdic)
+        mdic = {"resid" : rr, "vols2scrub":vols2scrub}
+        savemat(matlabfilename, mdic)
 
 if dvars_scrub == 'true': 
     resid_before_DVARS = resid

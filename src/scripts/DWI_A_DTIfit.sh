@@ -46,35 +46,6 @@ else:
 END
 }
 
-function format_row_bval() {
-DTIfit="$1" dwifile="$2" python - <<END
-import os
-from dipy.io import read_bvals_bvecs
-import nibabel as nib
-import numpy as np
-
-DTIfit=os.environ['DTIfit']
-#print("DTIfit ",DTIfit)
-dwifile=os.environ['dwifile']
-#print("dwifile ",dwifile)
-DWIpath=os.environ['DWIpath']
-#print("DWIpath ",DWIpath)
-
-pbval=''.join([DWIpath,'/',dwifile,'.bval'])
-print('pbval',pbval)
-pbvec=''.join([DWIpath,'/',dwifile,'.bvec'])
-print('pbvec',pbvec)
-
-bvals, bvecs = read_bvals_bvecs(pbval,pbvec)
- 
-bvals = bvals.reshape((bvals.size,1))
-
-pbval_row=''.join([DTIfit,'/3_DWI.bval'])
-
-np.savetxt(pbval_row,bvals.T,delimiter='\t',fmt='%u')
-
-END
-}
 
 ############################################################################### 
 
@@ -124,7 +95,9 @@ for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
             #b0file=ph${nscan}_b0_
         fi 
         # Format Bval file (row format)
-        format_row_bval ${path_DWI_DTIfit} ${dwifile}
+        cmd="python ${EXEDIR}/src/func/format_row_bval.py ${path_DWI_DTIfit} ${dwifile}"
+        log $cmd
+        eval $cmd
         fileBval="${path_DWI_DTIfit}/3_DWI.bval"
 
         # Rotated Bvec from EDDY will be used here.

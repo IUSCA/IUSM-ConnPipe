@@ -306,6 +306,8 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             eval $cmd
             exitcode=$?
 
+            echo "$(free -h)"
+
             if [[ ${exitcode} -ne 0 ]] ; then
                 echoerr "problem at fMRI_A_EPI_ApplyReg. exiting."
                 exit 1

@@ -56,82 +56,6 @@ END
 }
 
 
-
-function get_B0_temporal_info() {
-path="$1" dwifile="$2" python - <<END
-import os
-import nibabel as nib
-import numpy as np
-
-DWIpath=os.environ['path']
-dwifile=os.environ['dwifile']
-path_DWI_EDDY=os.environ['path_DWI_EDDY']
-
-# read in DWI data and find number of volumes
-fname=''.join([DWIpath,'/',dwifile,'.nii.gz'])
-DWI=nib.load(fname)  
-ss=DWI.shape
-numVols=ss[3];
-
-b0file = ''.join([DWIpath,"/b0file.txt"])
-
-ff = open(b0file,"r")
-ffl = ff.readlines()
-
-Index=np.ones((numVols,1),dtype=np.int64)
-
-# Preserve temporal information about B0 location
-for i in range(0,len(ffl)):
-    ii = int(ffl[i]) 
-    if ii != 1:  
-        #  for every subsequent B0 the volume index increases. 
-        # This provides temporal information about location of B0 volumes
-        Index[ii:]=i+1
-
-
-# save to file
-fname=''.join([path_DWI_EDDY,'/index.txt'])
-np.savetxt(fname,Index, fmt='%s')
-
-ff.close()
-
-END
-}
-
-function delta_EDDY() {
-path="$1" fileOut="$2" dwifile="$3" python - <<END
-import os
-import nibabel as nib
-import numpy as np
-
-path_DWI_EDDY=os.environ['path_DWI_EDDY']
-print('path_DWI_EDDY',path_DWI_EDDY)
-DWIpath=os.environ['path']
-print('DWIpath',DWIpath)
-fileOut=os.environ['fileOut']
-print('fileOut',fileOut)
-dwifile=os.environ['dwifile']
-print('dwifile',dwifile)
-
-fname=''.join([DWIpath,'/',dwifile,'.nii.gz'])
-print('DWI file is:', fname)
-DWI=nib.load(fname)  
-DWI_vol = DWI.get_data()
-
-fname=''.join([fileOut,'.nii.gz'])
-print('corrDWI file is:', fname)
-corrDWI=nib.load(fname)
-corrDWI_vol = corrDWI.get_data()
-
-corrDWI_vol = corrDWI_vol - DWI_vol
-
-deltaEddy = ''.join([path_DWI_EDDY,'/delta_DWI.nii.gz'])
-corrDWI_new = nib.Nifti1Image(corrDWI_vol.astype(np.float32),corrDWI.affine,corrDWI.header)
-nib.save(corrDWI_new,deltaEddy)
-
-END
-}
-
 ############################################################################### 
 
 
@@ -272,7 +196,9 @@ for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
         done
 
         # Index file
-        get_B0_temporal_info ${DWIpath} ${dwifile}
+        cmd="python ${EXEDIR}/src/func/get_B0_temporal_info.py ${dwifile}"
+        log $cmd
+        eval $cmd
 
         # State EDDY inputs
         fileIn="${DWIpath}/${dwifile}.nii.gz"
@@ -373,7 +299,9 @@ for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
             exit 1
         else
             log "Computing Delta Eddy image"
-            delta_EDDY ${DWIpath} ${fileOut} ${dwifile}
+            cmd="python ${EXEDIR}/src/func/delta_EDDY.py ${fileOut} ${dwifile}"
+            log $cmd
+            eval $cmd
             log "Delta Eddy saved"
         fi 
     fi
