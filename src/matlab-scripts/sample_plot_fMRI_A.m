@@ -3,7 +3,7 @@ close all
 clc
 
 path2code = pwd;
-path2dvars = fullfile(pwd,'DVARS');
+path2dvars = '/basepath/ConnPipelineSM/DVARS';
 addpath(genpath(path2dvars));
 addpath('/basepath/ConnPipelineSM/toolbox_matlab_nifti')
 
@@ -687,11 +687,15 @@ for i=1:length(subjectList)
 
     [DVARS,DVARS_Stat]=DVARSCalc(Y,'scale',1/10,'TransPower',1/3,'RDVARS','verbose',1);
     [V,DSE_Stat]=DSEvars(Y,'scale',1/10);
-    MovPar=MovPartextImport(fullfile(path2EPI,'motionRegressor_fd.txt'));
-    [FDts,FD_Stat]=FDCalc(MovPar);
-
     figure8=figure('position',[226 40 896 832]);
-    fMRIDiag_plot(V,DVARS_Stat,'BOLD',Y,'FD',FDts,'AbsMov',[FD_Stat.AbsRot FD_Stat.AbsTrans],'figure',figure8)
+    
+    if exist(fullfile(path2EPI,'motionRegressor_fd.txt'),'file')
+        MovPar=MovPartextImport(fullfile(path2EPI,'motionRegressor_fd.txt'));
+        [FDts,FD_Stat]=FDCalc(MovPar);        
+        fMRIDiag_plot(V,DVARS_Stat,'BOLD',Y,'FD',FDts,'AbsMov',[FD_Stat.AbsRot FD_Stat.AbsTrans],'figure',figure8)
+    else 
+        fMRIDiag_plot(V,DVARS_Stat,'BOLD',Y,'FD',FDts,'figure',figure8)
+    end
 
     %figure8 = gcf
     saveas(figure8,fullfile(path2figures,'DVARS'), 'png')

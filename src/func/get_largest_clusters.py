@@ -1,25 +1,23 @@
 
-
 ############################################################################### 
 
-function largest_clusters() {
-path="$1" fIn="$2" fOut="$3" thr="$4"  python - <<END
 import os.path
+import sys
 import numpy as np
 import nibabel as nib
 from skimage import measure 
 
-EPIpath=os.environ['path']
-# print(EPIpath)
+EPIpath=os.environ['EPIpath']
+print("EPIpath is: ",EPIpath)
 
-fIn=os.environ['fIn']
-# print("fIN: ", fIn)
+fIn=sys.argv[1]
+print("fIN: ", fIn)
 
-fOut=os.environ['fOut']
-# print("fOut: ", fOut)
+fOut=sys.argv[2]
+print("fOut: ", fOut)
 
-thr=int(os.environ['thr'])
-# print("thr: ", thr)
+thr=int(sys.argv[3])
+print("thr: ", thr)
 
 
 fileIn=''.join([EPIpath,fIn])
@@ -51,25 +49,4 @@ for i in range(1,N+1):
 
 v_vol_new = nib.Nifti1Image(v_vol.astype(np.float32),v.affine,v.header)
 nib.save(v_vol_new,fileOut) 
-
-
-END
-}
-
-##############################################################################
-EPIpath=$1
-fileIn=$2
-fileOut=$3
-threshold=$4
-
-echo "EPIpath is -- ${EPIpath}"
-echo "FileIn is -- ${fileIn}"
-echo "fileOut is -- ${fileOut}"
-echo "threshold is -- ${threshold}"
-
-
-#echo "Calling Python script 
-echo "calling pyhon script largest_clusters"
-largest_clusters ${EPIpath} ${fileIn} ${fileOut} ${threshold}
-
-
+print("get_largest_clusters: saved ",fileOut)

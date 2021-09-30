@@ -3,17 +3,18 @@ close all
 clc
 
 path2code = pwd;
-path2dvars = fullfile(pwd,'DVARS');
+path2dvars = '/N/slate/aiavenak/ConnPipelineSM/DVARS';
 addpath(genpath(path2dvars));
-addpath('/basepath/ConnPipelineSM/toolbox_matlab_nifti')
+addpath('/N/slate/aiavenak/ConnPipelineSM/toolbox_matlab_nifti')
 
 % set path to data directory
-path2data = '/N/project/DataDir';
+path2data = '/N/project/MY_multilayer/Testing_data_Andrea/control';
+% path2data = '/N/project/hasda/DataDir';
 
 % Define Subjects to run
-subjectList = dir(fullfile(path2data,'Subj0*'));   % e.g. All subjects in path2data direcotry whose ID starts with Subj0
+% subjectList = dir(fullfile(path2data,'Subj0*'));   % e.g. All subjects in path2data direcotry whose ID starts with Subj0
 % Or a specific set of subjects:
-% subjectList(1).name = 'Subj02'; 
+subjectList(1).name = '19322_1'; 
 % subjectList(2).name = 'Subj09'; 
 
 
@@ -34,7 +35,7 @@ end
 if demean_detrend
     post_nR = strcat(nR,'_dmdt');
 else
-    post_nR = nR;
+    post_nR = '';
 end
 if bandpass
     post_nR = strcat(post_nR,'_butter');
@@ -103,8 +104,8 @@ for i=1:length(subjectList)
     path2EPI = fullfile(path2data,subjID,'EPI1');
     path2regressors = fullfile(path2EPI,path2reg);  % This needs to be expanded to all nuissance reg options
 
-    timeseriesDir = sprintf('TimeSeries_%s_%s',nR,post_nR);
-    nuisanceReg_all = sprintf('NuisanceRegression_%s_%s.mat',nR,post_nR);
+    timeseriesDir = sprintf('TimeSeries_%s%s',nR,post_nR);
+    nuisanceReg_all = sprintf('NuisanceRegression_%s%s.mat',nR,post_nR);
     nuisanceReg = sprintf('NuisanceRegression_%s.mat',nR);
     preReg = sprintf('NuisanceRegression_%s.mat',pre_nR);
 
@@ -687,12 +688,15 @@ for i=1:length(subjectList)
 
     [DVARS,DVARS_Stat]=DVARSCalc(Y,'scale',1/10,'TransPower',1/3,'RDVARS','verbose',1);
     [V,DSE_Stat]=DSEvars(Y,'scale',1/10);
-    MovPar=MovPartextImport(fullfile(path2EPI,'motionRegressor_fd.txt'));
-    [FDts,FD_Stat]=FDCalc(MovPar);
-
     figure8=figure('position',[226 40 896 832]);
-    fMRIDiag_plot(V,DVARS_Stat,'BOLD',Y,'FD',FDts,'AbsMov',[FD_Stat.AbsRot FD_Stat.AbsTrans],'figure',figure8)
-
+    if exist(fullfile(path2EPI,'motionRegressor_fd.txt'),'file')
+        MovPar=MovPartextImport(fullfile(path2EPI,'motionRegressor_fd.txt'));
+        [FDts,FD_Stat]=FDCalc(MovPar);        
+        fMRIDiag_plot(V,DVARS_Stat,'BOLD',Y,'FD',FDts,'AbsMov',[FD_Stat.AbsRot FD_Stat.AbsTrans],'figure',figure8)
+    else 
+        fMRIDiag_plot(V,DVARS_Stat,'BOLD',Y,'FD',FDts,'figure',figure8)
+    end
+    
     %figure8 = gcf
     saveas(figure8,fullfile(path2figures,'DVARS'), 'png')
     
