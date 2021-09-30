@@ -687,6 +687,7 @@ for i=1:length(subjectList)
 
     [DVARS,DVARS_Stat]=DVARSCalc(Y,'scale',1/10,'TransPower',1/3,'RDVARS','verbose',1);
     [V,DSE_Stat]=DSEvars(Y,'scale',1/10);
+   
     figure8=figure('position',[226 40 896 832]);
     
     if exist(fullfile(path2EPI,'motionRegressor_fd.txt'),'file')
@@ -694,7 +695,7 @@ for i=1:length(subjectList)
         [FDts,FD_Stat]=FDCalc(MovPar);        
         fMRIDiag_plot(V,DVARS_Stat,'BOLD',Y,'FD',FDts,'AbsMov',[FD_Stat.AbsRot FD_Stat.AbsTrans],'figure',figure8)
     else 
-        fMRIDiag_plot(V,DVARS_Stat,'BOLD',Y,'FD',FDts,'figure',figure8)
+        fMRIDiag_plot(V,DVARS_Stat,'BOLD',Y,'figure',figure8)
     end
 
     %figure8 = gcf
