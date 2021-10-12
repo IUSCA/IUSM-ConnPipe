@@ -34,7 +34,7 @@ end
 if demean_detrend
     post_nR = strcat(nR,'_dmdt');
 else
-    post_nR = nR;
+    post_nR = '';
 end
 if bandpass
     post_nR = strcat(post_nR,'_butter');
@@ -103,8 +103,8 @@ for i=1:length(subjectList)
     path2EPI = fullfile(path2data,subjID,'EPI1');
     path2regressors = fullfile(path2EPI,path2reg);  % This needs to be expanded to all nuissance reg options
 
-    timeseriesDir = sprintf('TimeSeries_%s_%s',nR,post_nR);
-    nuisanceReg_all = sprintf('NuisanceRegression_%s_%s.mat',nR,post_nR);
+    timeseriesDir = sprintf('TimeSeries_%s%s',nR,post_nR);
+    nuisanceReg_all = sprintf('NuisanceRegression_%s%s.mat',nR,post_nR);
     nuisanceReg = sprintf('NuisanceRegression_%s.mat',nR);
     preReg = sprintf('NuisanceRegression_%s.mat',pre_nR);
 
@@ -687,9 +687,7 @@ for i=1:length(subjectList)
 
     [DVARS,DVARS_Stat]=DVARSCalc(Y,'scale',1/10,'TransPower',1/3,'RDVARS','verbose',1);
     [V,DSE_Stat]=DSEvars(Y,'scale',1/10);
-   
     figure8=figure('position',[226 40 896 832]);
-    
     if exist(fullfile(path2EPI,'motionRegressor_fd.txt'),'file')
         MovPar=MovPartextImport(fullfile(path2EPI,'motionRegressor_fd.txt'));
         [FDts,FD_Stat]=FDCalc(MovPar);        
@@ -697,7 +695,7 @@ for i=1:length(subjectList)
     else 
         fMRIDiag_plot(V,DVARS_Stat,'BOLD',Y,'figure',figure8)
     end
-
+    
     %figure8 = gcf
     saveas(figure8,fullfile(path2figures,'DVARS'), 'png')
     
@@ -708,3 +706,4 @@ for i=1:length(subjectList)
 
 
 end
+

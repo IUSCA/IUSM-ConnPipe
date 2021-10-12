@@ -5,8 +5,9 @@
 
 
 # IU modules load
-module unload python/2.7.16; module load python/3.6.8 
-module load fsl/6.0.1; 
+module unload python 
+module load python/3.6.8 
+module load fsl/6.0.1
 module load mricrogl
 module load afni/18.3.03
 module load ants
