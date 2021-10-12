@@ -55,13 +55,14 @@ This code has been developed to operate with the following software:
   * [dcm2niix (part of MRIcroGL)](https://github.com/rordenlab/dcm2niix)  
   * [ICA-AROMA](https://www.ncbi.nlm.nih.gov/pubmed/25770991)                       
   * [MRtrix3](https://www.mrtrix.org/) 
+  * [DVARS](https://github.com/asoroosh/DVARS) 
   * Python 3 (see below for specific Python packages needed)                      
 
 ### Installing
 
 Prerequisite software are loaded as environment modules. Provided you have prepared all of the prerequisite software, IUSM-ConnPipe comes ready to run with a Linux system. 
 
-A package with Supplementary Materials will be needed to run the pipeline. This package contains a variety of parcellations, templates and atlases, and visualization tools. The package can be downloaded [HERE](https://drive.google.com/drive/folders/1b7S9UcWDeDXVx3NUjuO8NJxxmChgNQ1G?usp=sharing) and it is a requirement for the pipeline.  
+A package with Supplementary Materials will be needed to run the pipeline. This package contains a variety of parcellations, templates and atlases, and visualization tools. The package can be downloaded [HERE](https://drive.google.com/drive/folders/1b7S9UcWDeDXVx3NUjuO8NJxxmChgNQ1G) and it is a requirement for the pipeline.  
 
 ---
 ### Executing the Pipeline
@@ -150,7 +151,7 @@ We have provided a legacy [MATLAB version](https://github.com/IUSCA/IUSM-connect
 
 ## Authors
 
-* Andrea Avena Koenigsberger, Indiana University Scalable Compute Archives
+* Andrea Avena-Koenigsberger, Indiana University Scalable Compute Archives
 * Evgeny Chumin, Indiana University School of Medicine
 * John West, Indiana University School of Medicine
 * Zikai Lin, Indiana University School of Medicine
