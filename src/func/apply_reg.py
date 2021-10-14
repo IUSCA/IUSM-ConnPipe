@@ -161,7 +161,7 @@ if dctfMin > 0:
     flog.write("\n regressors shape " + str(regressors.shape))
 
 
-if physReg == "aCompCorr":
+if physReg == "aCompCor":
     fname = ''.join([PhReg_path,'/dataPCA_WM-CSF.npz'])
     numphys = np.load(fname) 
     print("-- aCompCor PC of WM & CSF regressors")
@@ -224,7 +224,7 @@ if physReg == "aCompCorr":
         print("    -- PCA 1 through %d" % config_param)
         flog.write("\n    -- PCA 1 through " + str(config_param))
 
-elif physReg == "PhysReg":
+elif physReg == "meanPhysReg":
     fname = ''.join([PhReg_path,'/dataMnRg_WM-CSF.npz'])
     numphys = np.load(fname) 
     flog.write("\n numphys[CSFavg].shape " + str(numphys['CSFavg'].shape))

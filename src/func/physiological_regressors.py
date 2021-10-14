@@ -15,8 +15,8 @@ flog.write("\n *** python time_series **** ")
 EPIpath=os.environ['EPIpath']
 fileIN=sys.argv[1]
 flog.write("\n"+"fileIN "+ fileIN)
-aCompCorr=sys.argv[2]
-flog.write("\n aCompCorr "+ aCompCorr)
+physReg=sys.argv[2]
+flog.write("\n physReg "+ physReg)
 num_comp=int(sys.argv[3])
 flog.write("\n num_comp "+ str(num_comp))
 PhReg_path=sys.argv[4]
@@ -74,7 +74,7 @@ numVoxels = np.count_nonzero(volWM_vol);
 [WMts,WMmask] = get_ts(volWM_vol,numTimePoints,resting_vol);
 
 
-if aCompCorr.lower() in ['true','1']:
+if physReg == 'aCompCor':
     print("-------------aCompCorr--------------")
     flog.write("\n Physiological Reg: aCompCorr.\n")
     
@@ -93,7 +93,7 @@ if aCompCorr.lower() in ['true','1']:
     savemat(fname, mdic)
     print("Saved aCompCor PCA regressors")
 
-else:
+elif physReg == 'meanPhysReg':
     print("-------------Mean CSF and WM Regression--------------")
     flog.write("\n Physiological Reg: Mean CSF and WM Regression.\n")
     CSFavg = np.mean(CSFts,axis=0)
@@ -114,7 +114,8 @@ else:
     mdic = {"CSFavg" : CSFavg,"CSFavg_sq" : CSFavg_sq,"CSFderiv" : CSFderiv,"CSFderiv_sq" : CSFderiv_sq,"WMavg" : WMavg,"WMavg_sq" : WMavg_sq,"WMderiv" : WMderiv,"WMderiv_sq" : WMderiv_sq}
     savemat(fname, mdic)
     print("saved mean CSF WM signal, derivatives, and quadtatics")  
-
+else:
+    print("ERROR physReg value not recognized!")
 
 fqc.close()
 flog.close()

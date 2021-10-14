@@ -34,9 +34,9 @@ source ${EXEDIR}/src/func/bash_funcs.sh
             
         log "EPI session number: ${EPInum}"
 
-        if [[ ${EPInum} -le ${configs_EPI_skipGREmap4EPI} ]]; then
+        if [[ -z "${EPInum}" ]] || [[ ${EPInum} -le ${configs_EPI_skipFMcalc4EPI} ]]; then
 
-            log "GREmap4EPI: ${EPInum} -le ${configs_EPI_skipGREmap4EPI}"
+            log "GREmap4EPI: ${EPInum} -le ${configs_EPI_skipFMcalc4EPI}"
 
             if ${configs_use_DICOMS} && [ -d "${path_GREmagdcm}" ] && [ -d "${path_GREphasedcm}" ]; then
 
@@ -216,9 +216,9 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                 exit 1
             fi 
 
-        elif [[ ${EPInum} -gt ${configs_EPI_skipGREmap4EPI} ]]; then
+        elif [[ ${EPInum} -gt ${configs_EPI_skipFMcalc4EPI} ]]; then
 
-            log "GREmap4EPI: ${EPInum} -gt ${configs_EPI_skipGREmap4EPI}"
+            log "GREmap4EPI: ${EPInum} -gt ${configs_EPI_skipFMcalc4EPI}"
 
                 if ${configs_EPI_GREdespike}; then
 

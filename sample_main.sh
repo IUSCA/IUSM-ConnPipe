@@ -1,9 +1,5 @@
 #!/bin/bash
 
-
-
-
-
 # IU modules load
 module unload python 
 module load python/3.6.8 
@@ -22,33 +18,176 @@ if [[ -z ${FSLDIR} ]] ; then
 	exit 1
 fi
 
-################################################################################
-############################  PATH TO DATA  ###################################
-
-# USER INSTRUCTIONS- PLEASE SET THIS PATH TO POINT TO YOUR DATA DIRECTORY
-export path2data="/N/project/DataDir"
-
-    ## USER: if running all subjects in the path2data directory, set this flag to true; 
-    ## set to false if you'd like to process a subset of subjects 
-    export runAll=false 
-
-    ## USER -- if running a subset of subjects, a list of subject ID's can be read from 
-    ## a text file located in path2data; user can name the file here:
-    export subj2run="subj2run.txt"
-
-
-
-################################################################################
-############################ Dependencies ######################################
-
 # where this package of scripts are
 export EXEDIR=$(dirname "$(readlink -f "$0")")
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
-## USER: make sure this path points to the right configuration file
-source ${EXEDIR}/sample_config.sh  
+################################################################################
+# USER INSTRUCTIONS- PLEASE SET THE NAME OF THE CONFIG FILE TO READ
+source ${EXEDIR}/config.sh
+################################################################################
 
+
+################################################################################
+############################ Dependencies ######################################
+
+export pathFSLstandard="${FSLDIR}/data/standard"
+
+if [[ -e "${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz" ]]; then
+    fileMNI2mm="${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz"
+else
+    fileMNI2mm="${pathMNItmplates}/MNI152_T1_2mm_brain.nii.gz"
+fi
+
+if ${configs_T1_useMNIbrain}; then
+    export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm_brain.nii.gz"
+else
+    export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm.nii.gz"
+fi
+
+export pathBrainmaskTemplates="${pathSM}/brainmask_templates"
+export pathParcellations="${pathSM}/Parcellations"
+export PYpck="${pathSM}/python-pkgs"
+
+# define header tags for f_MRI_A
+if ${fMRI_A}; then
+    if [[ ${scanner} == "SIEMENS" ]]; then
+        export scanner_param_TR="RepetitionTime"  # "RepetitionTime" for Siemens; "tr" for GE
+        export scanner_param_TE="EchoTime"  # "EchoTime" for Siemens; "te" for GE
+        export scanner_param_FlipAngle="FlipAngle"  # "FlipAngle" for Siemens; "flip_angle" for GE
+        export scanner_param_EffectiveEchoSpacing="EffectiveEchoSpacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
+        export scanner_param_BandwidthPerPixelPhaseEncode="BandwidthPerPixelPhaseEncode"  # "BandwidthPerPixelPhaseEncode" for Siemens; unknown for GE
+        export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
+        export scanner_param_TotalReadoutTime="TotalReadoutTime"
+        export scammer_param_AcquisitionMatrix="AcquisitionMatrixPE"
+        export scanner_param_PhaseEncodingDirection="PhaseEncodingDirection"
+    elif [[ ${scanner} == "GE" ]]; then
+        export scanner_param_TR="tr"  # "RepetitionTime" for Siemens; "tr" for GE
+        export scanner_param_TE="te"  # "EchoTime" for Siemens; "te" for GE
+        export scanner_param_FlipAngle="flip_angle"  # "FlipAngle" for Siemens; "flip_angle" for GE
+        export scanner_param_EffectiveEchoSpacing="effective_echo_spacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
+        export scanner_param_BandwidthPerPixelPhaseEncode="pixel_bandwidth"  # "BandwidthPerPixelPhaseEncode" for Siemens; unknown for GE
+        export scanner_param_slice_fractimes="slice_timing"  # "SliceTiming" for Siemens; "slice_timing" for GE
+        export scanner_param_TotalReadoutTime="TotalReadoutTime"
+        export scammer_param_AcquisitionMatrix="acquisition_matrix"
+        export scanner_param_PhaseEncodingDirection="phase_encode_direction"
+    fi
+fi
+
+# check that ony one UNWARP option is selected 
+if ${flags_EPI_SpinEchoUnwarp} && ${flags_EPI_GREFMUnwarp}; then
+    log "ERROR --	Please select one option only: Spin Echo Unwarp or Gradient Echo Unwarp. Exiting... "
+    exit 1
+fi
+
+# # Setting denoising option
+# #===========================================================================================					
+if [[ "${configs_T1_denoised}" == "ANTS" ]]; then 
+	export configs_fslanat="T1_denoised_ANTS"
+	echo "USING ANTS FOR DENOISING"
+elif [[ "${configs_T1_denoised}" == "SUSAN" ]]; then
+	export configs_fslanat="T1_denoised_SUSAN"
+	echo "USING SUSAN FOR DENOISING"
+elif [[ "${configs_T1_denoised}" == "NONE" ]]; then  # do not perform denoising 
+	export configs_fslanat=${configs_T1}
+	echo "T1 WILL NOT BE DENOISED"
+fi
+
+# Nuisance Regression
+# #===========================================================================================
+
+if [[ ${flags_NuisanceReg} == "AROMA" ]]; then # if using ICA-AROMA
+
+    nR="aroma" # set filename postfix for output image
+    #export flags_NuisanceReg_HeadParam=false
+    
+    # Use the ICA-AROMA package contained in the ConnPipe-SuppMaterials
+    ICA_AROMA_path="${PYpck}/ICA-AROMA" 
+    export run_ICA_AROMA="python ${ICA_AROMA_path}/ICA_AROMA.py"
+    ## UNCOMMENT FOLLOWING LINE **ONLY** IF USING HPC ica-aroma MODULE:
+    # export run_ICA_AROMA="ICA_AROMA.py"
+
+    export configs_EPI_resting_file='/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'
+
+elif [[ ${flags_NuisanceReg} == "HMPreg" ]]; then   # if using Head Motion Parameters
+					
+    nR="hmp${configs_EPI_numReg}"   # set filename postfix for output image
+    
+    if [[ "${configs_EPI_numReg}" -ne 12 && "${configs_EPI_numReg}" -ne 24 ]]; then
+        log "ERROR The variable config_EPI_numReg must have values '12' or '24'. \
+            Please set the corect value in the config.sh file"
+            exit 1
+    fi	
+
+    export configs_EPI_resting_file='/4_epi.nii.gz'    
+
+else
+    log "ERROR - flag_NuisanceReg must be either AROMA or HMPreg"
+    exit 1
+fi
+
+
+# Pyhsiological Regression
+# #===========================================================================================
+
+if [[ ${flags_PhysiolReg} == "aCompCor" ]]; then  ### if using aCompCorr
+
+    if [[ "${configs_EPI_numPhys}" -ge 0 && "${configs_EPI_numPhys}" -le 5 ]]; then
+        nR="${nR}_pca${configs_EPI_numPhys}"
+    elif [[ "${configs_EPI_numPhys}" -ge 5 ]]; then
+        nR="${nR}_pca"
+    fi
+
+elif [[ ${flags_PhysiolReg} == "meanPhysReg" ]]; then
+
+    nR="${nR}_mPhys${configs_EPI_numPhys}"
+
+    if [[ "${configs_EPI_numPhys}" -ne 2 \
+        && "${configs_EPI_numPhys}" -ne 4 \
+        && "${configs_EPI_numPhys}" -ne 8 ]]; then
+            log "ERROR the variable configs_EPI_numPhys must have values '2', '4' or '8'. \
+                Please set the corect value in the config.sh file"
+            exit 1
+    fi	
+fi
+
+export regPath=${flags_NuisanceReg}/${flags_PhysiolReg}
+
+# Other regressors and file name settings
+# #===========================================================================================
+
+if ${flags_EPI_GS}; then
+    nR="${nR}_Gs${configs_EPI_numGS}"
+fi 
+
+                        
+if ${configs_EPI_DCThighpass}; then
+    nR="${nR}_DCT"
+fi
+
+if ${flags_EPI_DVARS}; then
+    # nR=nR_DVARS -- this gets updated in fMRI_A
+    # after regression is applied. This allows us to save both
+    # sets of residuals with and without DVARS.
+    export configs_EPI_path2DVARS="${EXEDIR}/src/func/"
+fi
+
+if ${configs_EPI_DCThighpass} && ${flags_EPI_BandPass}; then
+    log "ERROR 	Please select one option only: DCT high-pass or Butterworth filtering. Exiting... "
+    exit 1
+fi
+
+export nR 
+
+
+#################################################################################
+####################### DEFINE SUBJECTS TO RUN  ###################################
+	
+if ${runAll}; then
+	find ${path2data} -maxdepth 1 -mindepth 1 -type d -printf '%f\n' \
+	| sort > ${path2data}/${subj2run}	
+fi 
 
 #################################################################################
 #################################################################################
@@ -64,7 +203,6 @@ log "subjects: ${SUBJECTS[@]}"
 
 echo "##################"
 
-# ######################################################################################################
 # #### START PROCESSING SUBJECTS ###############
 
 for SUBJdir in "${SUBJECTS[@]}"; do
@@ -77,11 +215,14 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
     export T1path="${path2data}/${SUBJ}/${configs_T1}"
     export DWIpath="${path2data}/${SUBJ}/${configs_DWI}"
+    #echo "============== T1path is ${T1path} =============="
+    #echo "============== DWIpath is ${DWIpath} =============="
 
-    # user may specify name of logfile written inside each subjects dir
+    # specify name of logfile written inside each subjects dir
     today=$(date +"%m_%d_%Y_%H_%M")
     export logfile_name="${path2data}/${SUBJ}/out_${today}"
     export QCfile_name="${path2data}/${SUBJ}/qc"
+    export ERRfile_name="${path2data}/error_report"
  
 
     log "# ############################ T1_PREPARE_A #####################################"
@@ -95,6 +236,10 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
             if [[ ${exitcode} -ne 0 ]] ; then
                 echoerr "problem at T1_PREPARE_A. exiting."
+                dateTime=`date`
+                echo "### $dateTime -" >> ${ERRfile_name}.log
+                echo "$SUBJ ERROR -- problem at T1_PREPARE_A.  - " >> ${ERRfile_name}.log
+                echo "###" >> ${ERRfile_name}.log 
                 continue
             fi
         else 
@@ -116,6 +261,10 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
                 if [[ ${exitcode} -ne 0 ]] ; then
                     echoerr "problem at T1_PREPARE_B. exiting."
+                    dateTime=`date`
+                    echo "### $dateTime -" >> ${ERRfile_name}.log
+                    echo "$SUBJ ERROR -- problem at T1_PREPARE_B.  - " >> ${ERRfile_name}.log
+                    echo "###" >> ${ERRfile_name}.log                   
                     continue
                 fi
                         
@@ -141,6 +290,10 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
                 if [[ ${exitcode} -ne 0 ]] ; then
                     echoerr "problem at fMRI_A. exiting."
+                    dateTime=`date`
+                    echo "### $dateTime -" >> ${ERRfile_name}.log
+                    echo "$SUBJ ERROR -- problem at fMRI_A.  - " >> ${ERRfile_name}.log
+                    echo "###" >> ${ERRfile_name}.log                    
                     continue
                 fi
                         
@@ -152,9 +305,9 @@ for SUBJdir in "${SUBJECTS[@]}"; do
         fi 
 
     ######################################################################################
-    log "# ############################ fMRI_B ##########################################"
+    # log "# ############################ fMRI_B ##########################################"
 
-    ## Generates all the figures. Can still be called from Matlab for now...?
+    ## Generates Figures... this is Matlab stand-alone script for now
 
 
     ######################################################################################
@@ -172,6 +325,10 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
                 if [[ ${exitcode} -ne 0 ]] ; then
                     echoerr "problem at DWI_A. exiting."
+                    dateTime=`date`
+                    echo "### $dateTime -" >> ${ERRfile_name}.log
+                    echo "$SUBJ ERROR -- problem at DWI_A.  - " >> ${ERRfile_name}.log
+                    echo "###" >> ${ERRfile_name}.log
                     continue
                 fi
                         
@@ -197,6 +354,10 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
                 if [[ ${exitcode} -ne 0 ]] ; then
                     echoerr "problem at DWI_B. exiting."
+                    dateTime=`date`
+                    echo "### $dateTime -" >> ${ERRfile_name}.log
+                    echo "$SUBJ ERROR -- problem at DWI_B.  - " >> ${ERRfile_name}.log
+                    echo "###" >> ${ERRfile_name}.log
                     continue
                 fi
                         
@@ -218,6 +379,11 @@ for SUBJdir in "${SUBJECTS[@]}"; do
     echo "#################################################################################"
     echo "#################################################################################"
     
+    dateTime=`date`
+    echo "### $dateTime -" >> ${ERRfile_name}.log
+    echo "$SUBJ COMPLETED -- runtime $runtime sec - " >> ${ERRfile_name}.log
+    echo "###" >> ${ERRfile_name}.log
+
 done    
 
 } # main
@@ -228,61 +394,3 @@ done
 
 main "$@"
 
-
-    # # get the whole call
-    # cmdLineCall=$(echo "$0 $@")
-
-    # # read in args
-    # while (( $# > 1 )) ; do
-    #     case "$1" in
-    # 		-d | --data) shift
-    # 			SUBJdir="${1}" 
-    # 			shift
-    # 			;;
-    # 		-p | --parc) shift
-    # 			PARCdir="${1}" 
-    # 			shift
-    # 			;;    
-    # 		-o | --out) shift
-    # 			OUTbasedir="${1}"
-    # 			shift
-    # 			;;
-    #         -*)
-    #             echo "ERROR: Unknown option '$1'"
-    #             exit 1
-    #             break
-    #             ;;
-    #         *)
-    #             break
-    #             ;;
-    #      esac
-    # done
-
-    # shift "$((OPTIND-1))" # Shift off the options and optional
-
-# ################################################################################
-# ################################################################################
-# ## check the arguments
-
-    # # basic files needed
-    # if [[ -d ${PARCdir} || -d ${SUBJdir} || -d ${OUTbasedir} ]] ; then
-    # 	echoerr "missing required directories"
-    # 	exit 1
-    # fi
-
-    # # get full path for out directroy
-    # OUTbasedir=$(readlink -f ${OUTbasedir})
-
-    # # cd into basedir
-    # mkdir -vp ${OUTbasedir} || \
-    # 	{ echoerr "could not make output dir. exitng" ; exit 1 ; }
-
-    # echo ${cmdLineCall} > ${OUTbasedir}/cmdlinecall.txt
-
-# ################################################################################
-# ################################################################################
-# ## run it
-
-######################################################################################
-
-    
