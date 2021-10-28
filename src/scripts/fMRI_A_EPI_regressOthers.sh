@@ -22,7 +22,7 @@ msg2file "                5.3 OTHER REGRESSORS "
 msg2file " =========================================================="
 
 
-if ${flags_NuisanceReg_AROMA}; then   
+if [[ ${flags_NuisanceReg} == "AROMA" ]]; then   
 
     fileIN="${EPIpath}/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz"
     if  [[ ! -e ${fileIN} ]]; then
@@ -30,7 +30,7 @@ if ${flags_NuisanceReg_AROMA}; then
         exit 1
     fi
 
-elif ${flags_NuisanceReg_HeadParam}; then 
+elif [[ ${flags_NuisanceReg} == "HMPreg" ]]; then 
 
     fileIN="${EPIpath}/4_epi.nii.gz"
     if  [[ ! -e ${fileIN} ]] || [[ ! -d "${EPIpath}/HMPreg" ]]; then

@@ -22,39 +22,33 @@ msg2file " =========================================================="
 msg2file "            5.2 PHYSIOLOGICAL REGRESSORS "
 msg2file "=========================================================="
 
-if ${flags_PhysiolReg_aCompCorr}; then  
-    log "- -----------------aCompCor---------------------"      
-elif ${flags_PhysiolReg_WM_CSF}; then
-    log "- -----------------Mean CSF and WM Regression-----------------"
-fi 
 
-if ${flags_NuisanceReg_AROMA}; then   
+fileIN="${EPIpath}/${configs_EPI_resting_file}"
 
-    fileIN="${EPIpath}/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz"
+
+if [[ ${flags_NuisanceReg} == "AROMA" ]]; then   
+
     if  [[ -e ${fileIN} ]]; then
-        if ${flags_PhysiolReg_aCompCorr}; then  
-            log "PhysiolReg - Combining aCompCorr with AROMA output data"
-        elif ${flags_PhysiolReg_WM_CSF}; then
-            log "PhysiolReg - Combining Mean CSF & WM signal with AROMA output data"
-            configs_EPI_numPC=0
+        if [[ ${flags_PhysiolReg} == "aCompCor" ]]; then  
+            log "----------------- PhysiolReg - Combining aCompCorr with AROMA output data -----------------"
+        elif [[ ${flags_PhysiolReg} == "meanPhysReg" ]]; then
+            log " ----------------- PhysiolReg - Combining Mean CSF & WM signal with AROMA output data -----------------"
         fi          
     else
         log "ERROR ${fileIN} not found. Connot perform physiological regressors analysis"
         exit 1
     fi 
 
-elif ${flags_NuisanceReg_HeadParam}; then 
+elif [[ ${flags_NuisanceReg} == "HMPreg" ]]; then 
 
-    fileIN="${EPIpath}/4_epi.nii.gz"
     if  [[ -e ${fileIN} ]] && [[ -d "${EPIpath}/HMPreg" ]]; then
-        if ${flags_PhysiolReg_aCompCorr}; then  
-            log "PhysiolReg - Combining aCompCorr with HMP regressors"
-        elif ${flags_PhysiolReg_WM_CSF}; then
-            log "PhysiolReg - Combining Mean CSF & WM signal with HMP regressors"
-            configs_EPI_numPC=0
+        if [[ ${flags_PhysiolReg} == "aCompCor" ]]; then   
+            log "----------------- PhysiolReg - Combining aCompCorr with HMP regressors -----------------"
+        elif [[ ${flags_PhysiolReg} == "meanPhysReg" ]]; then
+            log "----------------- PhysiolReg - Combining Mean CSF & WM signal with HMP regressors -----------------"
         fi          
     else
-        log "ERROR ${fileIN} and or ${EPIpath}/HMPreg not found. Connot perform physiological regressors analysis"
+        log "ERROR ${fileIN} and/or ${EPIpath}/HMPreg not found. Connot perform physiological regressors analysis"
         exit 1
     fi 
 fi
@@ -79,8 +73,8 @@ log $cmd
 eval $cmd
 
 cmd="python ${EXEDIR}/src/func/physiological_regressors.py \
-    ${fileIN} ${flags_PhysiolReg_aCompCorr} \
-    ${configs_EPI_numPC} ${PhReg_path}"
+    ${fileIN} ${flags_PhysiolReg} \
+    ${configs_EPI_numPhys} ${PhReg_path}"
 log $cmd
 eval $cmd
 

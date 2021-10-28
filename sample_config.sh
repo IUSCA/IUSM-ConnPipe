@@ -8,20 +8,29 @@
 # source bash funcs
 source ${EXEDIR}/src/func/bash_funcs.sh
 
-## pip install pydicom --user
+## Path to Supplementary Materials. Please download from: 
+# https://drive.google.com/drive/folders/1b7S9UcWDeDXVx3NUjuO8NJxxmChgNQ1G?usp=sharing 
+export pathSM="/N/project/ConnPipelineSM"
 
 ################################################################################
-####################### DEFINE SUBJECTS TO RUN  ###################################
+############################  PATH TO DATA  ###################################
 
-if ${runAll}; then
-	find ${path2data} -maxdepth 1 -mindepth 1 -type d -printf '%f\n' \
-	| sort > ${path2data}/${subj2run}	
-fi 
+# USER INSTRUCTIONS- PLEASE SET THIS PATH TO POINT TO YOUR DATA DIRECTORY
+export path2data='/N/project/DataDir'
+
+    ## USER: if running all subjects in the path2data directory, set this flag to true; 
+    ## set to false if you'd like to process a subset of subjects 
+    export runAll=false 
+
+    ## USER -- if running a subset of subjects, a list of subject ID's can be read from 
+    ## a text file located in path2data; user can name the file here:
+    # export subj2run="subj2run_AAK.txt"
+    export subj2run="subj2run.txt"
 
 ################################################################################
 #####################  SET UP DIRECTORY STRUCTURE  #############################
 
-# USER INSTRUCTIONS - The following diagrapm is a sample directory tree for a single subject.
+# USER INSTRUCTIONS - The following diagram is a sample directory tree for a single subject.
 # Following that are configs you can use to set your own names if different
 # from sample structure.
 
@@ -29,12 +38,12 @@ fi
 #          |
 #          -- EPI(#) -- DICOMS (May have multiple EPI scans)
 #          |         
-#          |                        (SPIN-ECHO)       (GRADIENT ECHO)
+#          |               (SPIN-ECHO)       (GRADIENT ECHO)
 #          -- UNWARP1 -- SEFM_AP_DICOMS (OR) GREFM_MAG_DICOMS
 #          |         
 #          |          -- SEFM_PA_DICOMS (OR) GREFM_PHASE_DICOMS
 #          |         
-#          |                       (SPIN-ECHO)       (GRADIENT ECHO)
+#          |               (SPIN-ECHO)       (GRADIENT ECHO)
 #          -- UNWARP2 -- SEFM_AP_DICOMS (OR) GREFM_MAG_DICOMS
 #          |          
 #          |          -- SEFM_PA_DICOMS (OR) GREFM_PHASE_DICOMS
@@ -45,18 +54,18 @@ fi
 
 export configs_T1="T1"
 export configs_epiFolder="EPI"
+	export configs_dcmFolder="DICOMS"
+	export configs_dcmFiles="IMA" #"dcm" # specify Dicom file extension
+	export configs_niiFiles="nii" # Nifti-1 file extension
 
-export configs_sefmFolder="UNWARP1" # Reserved for Field Mapping series
+export configs_sefmFolder="UNWARP" # Reserved for Spin Eco Field Mapping series
 	export configs_APdcm="SEFM_AP_DICOMS" # Spin Echo A-P
 	export configs_PAdcm="SEFM_PA_DICOMS" # Spin Echo P-A
 
-export configs_grefmFolder="GREFM"  # Reserved for Field Mapping series
+export configs_grefmFolder="GREFM"  # Reserved for Gradient Field Mapping series
 	export configs_GREmagdcm="MAG_DICOMS" # Gradient echo FM magnitude series
 	export configs_GREphasedcm="PHASE_DICOMS" # Gradient echo FM phase map series
 
-export configs_dcmFolder="DICOMS"
-export configs_dcmFiles="dcm" # specify Dicom file extension
-export configs_niiFiles="nii" # Nifti-1 file extension
 
 export configs_DWI="DWI"
     export configs_unwarpFolder="UNWARP"
@@ -69,29 +78,12 @@ export configs_DWI="DWI"
 	export configs_DWI_dcmFolder1="DICOMS1" # Specify first phase direction (e.g., AP)
 	export configs_DWI_dcmFolder2="DICOMS2" # Specify reverse phase data direction (e.g., PA)
 
-
-################################################################################
-################################ TEMPLATES #####################################
-
-export pathFSLstandard="${FSLDIR}/data/standard"
-
-## path to Supplementary Materials (SM)
-
-## FOR IUSM USERS ONLY - DURING DEVELOPMENT PHASE, PLEASE USE THIS "pathSM" AS THE 
-## SUPPLEMENTARY MATERIALS PATH. THIS WILL EVENTUALLY LIVE IN A REPOSITORY 
-export pathSM="/N/project/ConnPipelineSM"
-export pathMNItmplates="${pathSM}/MNI_templates"
-export pathBrainmaskTemplates="${pathSM}/brainmask_templates"
-export pathParcellations="${pathSM}/Parcellations"
-export PYpck="${pathSM}/python-pkgs"
-
-
 ################################################################################
 ################################ PARCELLATIONS #################################
 
 # required parc
 export PARC0="CSFvent"
-export PARC0dir="${pathMNItmplates}/MNI152_T1_1mm_VentricleMask.nii.gz"
+export PARC0dir="${pathSM}/MNI_templates/MNI152_T1_1mm_VentricleMask.nii.gz"
 export PARC0pcort=0;
 export PARC0pnodal=0;
 export PARC0psubcortonly=0;
@@ -136,26 +128,30 @@ export PARC4psubcortonly=1;
 export numParcs=4  # CSF doesn't count; numParcs cannot be less than 1. Schaefer is the defailt parc
 
 
+############################# T1 DENOISING #####################################
+
+#### THE DENOISING FLAG IS USED IN T1_PREAPARE_A AND T1_PREPARE_B SO IT IS SET AS A GLOBAL FALG
+#### REGARDLESS OF WHETHER YOU ARE APPLYING DENOISING OR NOT, YOU MUST SET THIS FLAG 
+# OPTIONS ARE: "ANTS", "SUSAN" FOR FSL'S SUSAN, OR "NONE" FOR NO DENOISING
+configs_T1_denoised="ANTS"
+
+
 ################################################################################
 ############################# T1_PREPARE_A #####################################
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
-## ALL FLAGS ARE SET TO DEFAULT SETTINGS
+## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
 export T1_PREPARE_A=false
 
 if $T1_PREPARE_A; then
 
-	export flags_T1_dcm2niix=false  # dicom to nifti conversion 
+	export flags_T1_dcm2niix=true  # dicom to nifti conversion 
 		export configs_T1_useCropped=false # use cropped field-of-view output of dcm2niix
 		
-	## T1 DENOISING IS PERFORMED AFTER DICOM TO NIFTI CONVERSION.
-	export flags_T1_applyDenoising=false
-	#### THE DENOISING FLAG IS ALSO USED IN T1_PREPARE_B SO IT IS SET AS A GLOBAL FALG
-	#### REGARDLESS OF WHETHER YOU ARE APPLYING DENOISING OR NOT, YOU MUST SET THE
-	#### DENOISING OPTION BELOW (LINE 178). 
 	#### SET flags_T1_applyDenoising=true AND configs_T1_denoised="NONE" IF NO DENOSING IS REQUIRED
 	#### SET flags_T1_applyDenoising=FALSE AND configs_T1_denoised="ANTS"/"SUSAN" 
 	#### IF DENOISING HAS ALREADY BEEN APPLYIED AND THUS THE PROCESS CAN BE SKIPPED. 
+	export flags_T1_applyDenoising=true
 
 	export flags_T1_anat=true # run FSL_anat
 		export configs_T1_bias=0 # 0 = no; 1 = weak; 2 = strong
@@ -173,30 +169,11 @@ if $T1_PREPARE_A; then
 
 fi 
 
-
-# # Set denoising option
-configs_T1_denoised="ANTS"  # OTHER OPTIONS ARE: "SUSAN" FOR FSL'S SUSAN, OR "NONE" FOR NO DENOISING
-# # =========================================================================================
-# # USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
-# #===========================================================================================							#					 "NONE" FOR SKIPPING DENOISING
-if [[ "${configs_T1_denoised}" == "ANTS" ]]; then 
-	export configs_fslanat="T1_denoised_ANTS"
-	echo "USING ANTS FOR DENOISING"
-elif [[ "${configs_T1_denoised}" == "SUSAN" ]]; then
-	export configs_fslanat="T1_denoised_SUSAN"
-	echo "USING SUSAN FOR DENOISING"
-elif [[ "${configs_T1_denoised}" == "NONE" ]]; then
-	export configs_fslanat=${configs_T1}
-	echo "SKIPPING DENOISING"
-fi
-# #===========================================================================================
-
-
 ################################################################################
 ############################# T1_PREPARE_B #####################################
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
-## ALL FLAGS ARE SET TO DEFAULT SETTINGS
+## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
 export T1_PREPARE_B=false 
 
 if $T1_PREPARE_B; then
@@ -214,21 +191,14 @@ if $T1_PREPARE_B; then
 	# parcellation flags
 	export flags_T1_parc=true
 		export configs_T1_numDilReMask=3
-		export configs_T1_addsubcort=true # add FSL subcortical to cortial parcellations 	
-										  # but ONLY to nodal parcellation as individual regions
-										  # To others add as a single subcortical network.
-		export configs_T1_subcortUser=true   # false = default FSL; true = user-provided
-											  # Name of user-provided subcortical parcellation (assumed to be found in ConnPipeSM folder)
-											  # should be set in the desired parcellation name for index "N" with "psubcortonly=1"
-	# =========================================================================================
-	# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
-	#===========================================================================================
-		if ${configs_T1_useMNIbrain}; then
-			export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm_brain.nii.gz"
-		else
-			export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm.nii.gz"
-		fi
-	#===========================================================================================
+		export configs_T1_addsubcort=true 
+		# add FSL subcortical to cortial parcellations 	
+		# but ONLY to nodal parcellation as individual regions
+		# To others add as a single subcortical network.
+		export configs_T1_subcortUser=true   
+		# false = default FSL; true = user-provided
+		# Name of user-provided subcortical parcellation (assumed to be found in ConnPipeSM folder)
+		# should be set in the desired parcellation name for index "N" with "psubcortonly=1"	
 fi 
 
 
@@ -236,8 +206,8 @@ fi
 ############################# fMRI_A #####################################
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
-## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export fMRI_A=false
+## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
+export fMRI_A=true 
 
 if $fMRI_A; then
 
@@ -245,53 +215,37 @@ if $fMRI_A; then
 	log "SCANNER ${scanner}"
 
 	# # set number of EPI sessions/scans
-	export configs_EPI_epiMin=1; # minimum scan index
-	export configs_EPI_epiMax=4; # maximum scan index
+	export configs_EPI_epiMin=1 # minimum scan index to be processed
+	export configs_EPI_epiMax=3 # maximum scan index to be processed
 
-	export flags_EPI_dcm2niix=true; # dicom import
+	# dicom import
+	export flags_EPI_dcm2niix=true
+	# obtain pertinent scan information
+	export flags_EPI_ReadHeaders=true 
+	
+		# obtain pertinent scan information through json files generated by dcm2niix
+		export flags_EPI_UseJson=true  # if set to false, information will be extracted from DICOM 
+									   # file header using dicom_hinfo and header tags. This is not recommeded.
 
-	export flags_EPI_ReadHeaders=true; # obtain pertinent scan information
-
-		export flags_EPI_UseJson=true; # obtain pertinent scan information through json files generated by dcm2niix
-
-		# =========================================================================================
-		# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
-		#===========================================================================================
-		if [[ ${scanner} == "SIEMENS" ]]; then
-			export scanner_param_TR="RepetitionTime"  # "RepetitionTime" for Siemens; "tr" for GE
-			export scanner_param_TE="EchoTime"  # "EchoTime" for Siemens; "te" for GE
-			export scanner_param_FlipAngle="FlipAngle"  # "FlipAngle" for Siemens; "flip_angle" for GE
-			export scanner_param_EffectiveEchoSpacing="EffectiveEchoSpacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
-			export scanner_param_BandwidthPerPixelPhaseEncode="BandwidthPerPixelPhaseEncode"  # "BandwidthPerPixelPhaseEncode" for Siemens; unknown for GE
-			export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
-			export scanner_param_TotalReadoutTime="TotalReadoutTime"
-			export scammer_param_AcquisitionMatrix="AcquisitionMatrixPE"
-			export scanner_param_PhaseEncodingDirection="PhaseEncodingDirection"
-		elif [[ ${scanner} == "GE" ]]; then
-			export scanner_param_TR="tr"  # "RepetitionTime" for Siemens; "tr" for GE
-			export scanner_param_TE="te"  # "EchoTime" for Siemens; "te" for GE
-			export scanner_param_FlipAngle="flip_angle"  # "FlipAngle" for Siemens; "flip_angle" for GE
-			export scanner_param_EffectiveEchoSpacing="effective_echo_spacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
-			export scanner_param_BandwidthPerPixelPhaseEncode="pixel_bandwidth"  # "BandwidthPerPixelPhaseEncode" for Siemens; unknown for GE
-			export scanner_param_slice_fractimes="slice_timing"  # "SliceTiming" for Siemens; "slice_timing" for GE
-			export scanner_param_TotalReadoutTime="TotalReadoutTime"
-			export scammer_param_AcquisitionMatrix="acquisition_matrix"
-			export scanner_param_PhaseEncodingDirection="phase_encode_direction"
-		fi
-		#===========================================================================================
-
-	##########################################################
-	## User must select either SpinEchoUnwarp or GREFMUnwarp. 
-	##########################################################
+	#==============================================================================#
+	#=================================   UNWARPING  ===============================#
+	#==============================================================================#
+    # User should select the appropriate BOLD image distortion protocol: 
+	# 1) Spin echo field maps -- uses FSL's topup and applytopup
+	# 2) Gradient echo field maps -- uses FUGE
+	 
+	# In the case of multiple EPI sessions, please select whether or not to use calculated distortion fields to be applied 
+	# for subsequent EPI scans (rather than redoing unwarping for each scan)	
+	export configs_EPI_skipFMcalc4EPI=1 # Skip SEmap/GREFM calculation for EPI scan index > configs_EPI_skipFMcalc4EPI
+		##  e.g.; 1 to skip redoing unwarping for EPIs 2-6; 5 to skip for EPI6
+	
+	#===============================  SPIN ECO UNWARP =============================#
 	export flags_EPI_SpinEchoUnwarp=true # Requires UNWARP directory and approporiate dicoms.
-    	# # Allow multiple UNWARP directories (0: UNWARP; 1: UNWARP1, 2: UNWARP2) 
-    	export configs_EPI_multiSEfieldmaps=true # false - single pair of SE fieldmaps within EPI folder
+
+    	export configs_EPI_multiSEfieldmaps=false # false - single pair of SE fieldmaps within EPI folder
 												  # true -  one or multiple UNWARP folders at the subject level (UNWARP1, UNWARP2,...)
-			# set only if configs_EPI_multiSEfieldmaps=true:
-			# specify number of UNWARP directories (0: UNWARP; 1: UNWARP1, 2: UNWARP2)
+			#if configs_EPI_multiSEfieldmaps=true, specify number of UNWARP directories (0: UNWARP; 1: UNWARP1, 2: UNWARP2)
 			export configs_EPI_SEindex=1
-    	export configs_EPI_skipSEmap4EPI=1 # Skip SEmap calculation for EPInum > configs_EPI_skipGREmap4EPI
-                ##  e.g.; 1 to skip redoing SEmap for EPIs 2-6; 5 to skip for EPI6
 
 	# # SPIN ECHO PAIRS (A-P, P-A) Acquistion on the Prisma
 		export configs_EPI_SEnumMaps=3; # Fallback Number of PAIRS of AP and PA field maps.
@@ -300,7 +254,7 @@ if $fMRI_A; then
 	# # topup (see www.mccauslanddenter.sc.edu/cml/tools/advanced-dti - Chris Rorden's description
 		export flags_EPI_RunTopup=true # 1=Run topup (1st pass), 0=Do not rerun if previously completed. 
 
-	# # Gradient recalled echo Field Map Acquisition
+	#==============================  GRADIENT FIELD MAP UNWARP ======================#
 	export flags_EPI_GREFMUnwarp=false # Requires GREfieldmap directory and appropriate dicoms
     	
 		export configs_use_DICOMS=false  # set to true if Extract TE1 and TE2 from the first image of Gradient Echo Magnitude Series
@@ -315,154 +269,73 @@ if $fMRI_A; then
 			
 		export configs_convert2radss=true   # if fieldmap_phasemap is in Hz, then it must be converted to rads/s 
 												# set to true for NANSTAN
-		export configs_fsl_prepare_fieldmap=false
-		
-		export configs_EPI_skipGREmap4EPI=1 # Skip GREmap calculation for EPInum => configs_EPI_skipGREmap4EPI
-                # 0 to ignore. 1 to skip redoing GREmap for EPIs 2-6
+		export configs_fsl_prepare_fieldmap=false		
 
 		export configs_EPI_GREbetf=0.5; # GRE-specific bet values. Do not change
 		export configs_EPI_GREbetg=0;   # GRE-specific bet input. Change if needed 
 		export configs_EPI_GREdespike=true # Perform FM despiking
 		export configs_EPI_GREsmooth=3; # GRE phase map smoothing (Gaussian sigma, mm)
-		# Do not use configs.EPI.EPIdwell. Use params.EPI.EffectiveEchoSpacing extracted from the json header
-     	# export configs_EPI_EPIdwell = 0.000308; # Dwell time (sec) for the EPI to be unwarped 
 
-	# =========================================================================================
-	# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
-	#===========================================================================================
-	if ${flags_EPI_SpinEchoUnwarp} && ${flags_EPI_GREFMUnwarp}; then
-		log "ERROR 	Please select one option only: Spin Echo Unwarp or Gradient Echo Unwarp. Exiting... "
-		exit 1
-	fi
 	#===========================================================================================	
 
-	export flags_EPI_SliceTimingCorr=true
-		#export flags_EPI_UseUnwarped=true # Use unwarped EPI if both warped and unwarped are available.
-		
-		export configs_EPI_minTR=1.6
-		export configs_EPI_UseTcustom=1;# 1: use header-extracted times (suggested)
+	export flags_EPI_SliceTimingCorr=true		
+		export configs_EPI_minTR=1.6   # perform Slice Timing correction only if TR > configs_EPI_minTR
+		export configs_EPI_UseTcustom=1   # 1: use header-extracted times (suggested)
 
-	export flags_EPI_MotionCorr=true
+	export flags_EPI_MotionCorr=true   # head motion estimation with FSL's mcflirt; generates 6 motion param for each BOLD image
 
 	export flags_EPI_RegT1=true
 		export configs_EPI_epibetF=0.3000;
 
 	export flags_EPI_RegOthers=true 
 		export configs_EPI_GMprobthr=0.2 # Threshold the GM probability image; change from 0.25 to 0.2 or 0.15										
-		export configs_EPI_minVoxelsClust=8 # originally hardwired to 8
+		export configs_EPI_minVoxelsClust=8 
 
 	export flags_EPI_IntNorm4D=true # Intensity normalization to global 4D mean of 1000
 
-	########## MOTION AND OUTLIER CORRECTION ###############
+	#============================== MOTION AND OUTLIER CORRECTION ============================#
 	export flags_EPI_NuisanceReg=true
 	## Nuisance Regressors. There are two options that user can select from:
-	# 1) ICA-based denoising; WARNING: This will smooth your data.
-	# 2) Head Motion Parameter Regression.  
-	## If user sets flags_NuisanceReg_AROMA=true, then flags_NuisanceReg_HeadParam=false
-	## If user sets flags_NuisanceReg_AROMA=false, then flags_NuisanceReg_HeadParam=true
+	# 1) flags_NuisanceReg="AROMA": ICA-based denoising; WARNING: This will smooth your data.
+	# 2) flags_NuisanceReg="HMPreg": Head Motion Parameter Regression.  
 
-		export flags_NuisanceReg_AROMA=false  
+		export flags_NuisanceReg="HMPreg"
 
-			
-			if ${flags_NuisanceReg_AROMA}; then # if using ICA-AROMA
+			if [[ ${flags_NuisanceReg} == "AROMA" ]]; then # if using ICA-AROMA
 				## USER: by default, ICA_AROMA will estimate the dimensionality (i.e. num of independent components) for you; however, for higher multiband
 				## factors with many time-points and high motion subjects, it may be useful for the user to set the dimensionality. THis can be done by
 				## setting the desired number of componenets in the following config flag. Leave undefined for automatic estimation 
 				export flag_AROMA_dim=
 
-				# =========================================================================================
-				# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
-				#===========================================================================================
-				nR="aroma" # set filename postfix for output image
-				export flags_NuisanceReg_HeadParam=false
-				
-				# Use the ICA-AROMA package contained in the ConnPipe-SuppMaterials
-				ICA_AROMA_path="${PYpck}/ICA-AROMA" 
-				export run_ICA_AROMA="python ${ICA_AROMA_path}/ICA_AROMA.py"
-				## UNCOMMENT FOLLOWING LINE **ONLY** IF USING HPC ica-aroma MODULE:
-				# export run_ICA_AROMA="ICA_AROMA.py"
-
-				if [[ -e "${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz" ]]; then
-					fileMNI2mm="${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz"
-				else
-					fileMNI2mm="${pathMNItmplates}/MNI152_T1_2mm_brain.nii.gz"
-				fi
-				#===========================================================================================
-			else   # if using Head Motion Parameters
-				export flags_NuisanceReg_HeadParam=true
+			elif [[ ${flags_NuisanceReg} == "HMPreg" ]]; then   # if using Head Motion Parameters
 					
-					export configs_EPI_numReg=12  # 12 (orig and deriv) or 24 (+sq of 12)
-				# =========================================================================================
-				# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
-				#===========================================================================================					
-					nR="hmp${configs_EPI_numReg}"   # set filename postfix for output image
-					
-					if [[ "${configs_EPI_numReg}" -ne 12 && "${configs_EPI_numReg}" -ne 24 ]]; then
-						log "WARNING the variable config_EPI_numReg must have values '12' or '24'. \
-							Please set the corect value in the config.sh file"
-					fi		
+				export configs_EPI_numReg=12  # 12 (6 orig + 6 deriv) or 24 (+sq of 12)
 
-				#===========================================================================================
 			fi
 
-	########## PHYSIOLOGICAL REGRESSORS ###############
+	#================================ PHYSIOLOGICAL REGRESSORS =================================#
 	export flags_EPI_PhysiolReg=true  
 	# Two options that the user can select from:
-	# 1) flags_PhysiolReg_aCompCorr=true - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
-	# 2) flags_PhysiolReg_aCompCorr=false - mean WM and CSF signal regression
-		export flags_PhysiolReg_aCompCorr=true  
+	# 1) flags_PhysiolReg="aCompCorr" - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
+	# 2) flags_PhysiolReg=meanPhysReg - mean WM and CSF signal regression
+		export flags_PhysiolReg="aCompCor"  
 
-		if ${flags_PhysiolReg_aCompCorr}; then  ### if using aCompCorr
-			export flags_PhysiolReg_WM_CSF=false
-			export configs_EPI_numPC=5; # 1-5; the maximum and recommended number is 5 
-										  # set to 6 to include all 
-				if [[ "${configs_EPI_numPC}" -ge 0 && "${configs_EPI_numPC}" -le 5 ]]; then
-					nR="${nR}_pca${configs_EPI_numPC}"
-				elif [[ "${configs_EPI_numPC}" -ge 5 ]]; then
-					nR="${nR}_pca"
-				fi 
-		else
-			export flags_PhysiolReg_WM_CSF=true  ### if using mean WM and CSF signal reg
-				
-				export configs_EPI_numPhys=8; # 2-orig; 4-orig+deriv; 8-orig+deriv+sq
-					nR="${nR}_mPhys${configs_EPI_numPhys}"
+			if [[ ${flags_PhysiolReg} == "aCompCor" ]]; then  ### if using aCompCorr
 
-					if [[ "${configs_EPI_numPhys}" -ne "2" \
-					&& "${configs_EPI_numPhys}" -ne 4 \
-					&& "${configs_EPI_numPhys}" -ne 8 ]]; then
-						log "WARNING the variable configs_EPI_numPhys must have values '2', '4' or '8'. \
-							Please set the corect value in the config.sh file"
-					fi	
-		fi
+				export configs_EPI_numPhys=5
 
-		if ${flags_NuisanceReg_AROMA}; then  
-			export configs_EPI_resting_file='/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz' 
-			if ${flags_PhysiolReg_aCompCorr}; then  
-				export regPath="AROMA/aCompCorr"    
-			elif ${flags_PhysiolReg_WM_CSF}; then
-				export regPath="AROMA/PhysReg"
-			fi          
-		elif ${flags_NuisanceReg_HeadParam}; then 
-			export configs_EPI_resting_file='/4_epi.nii.gz' 
-			if ${flags_PhysiolReg_aCompCorr}; then  
-				log "PhysiolReg - Combining aCompCorr with HMP regressors"
-				export regPath="HMPreg/aCompCorr"    
-			elif ${flags_PhysiolReg_WM_CSF}; then
-				log "PhysiolReg - Combining Mean CSF & WM signal with HMP regressors"
-				export regPath="HMPreg/PhysReg"
-			fi          
-		fi
+			elif [[ ${flags_PhysiolReg} == "meanPhysReg" ]]; then  ### if using WM and CSF mean signal regression
 
-	# Optional denoising
+				export configs_EPI_numPhys=8  # 2-orig; 4-orig+deriv; 8-orig+deriv+sq
+		
+			fi
+
+	#================================ OPTIONAL REGRESSORS =================================#
 	export flags_EPI_regressOthers=true
 
 		export flags_EPI_GS=true # global signal regression 
 			
 			export configs_EPI_numGS=4 # 1-orig; 2-orig+deriv; 4-orig+deriv+sq
-			
-			if ${flags_EPI_GS}; then
-				nR="${nR}_Gs${configs_EPI_numGS}"
-			fi 
 			
 		export configs_EPI_DCThighpass=true  # Perform highpass filtering within regression. 
 			
@@ -470,22 +343,13 @@ if $fMRI_A; then
 										      # i.e. the lowest frequency signals that will be retained 
 										      # The appropriate number (k) of DCT bases will be determined as follows:
 										      # k = fMin * 2 * TR * numTimePoints 
-									
-			if ${configs_EPI_DCThighpass}; then
-				nR="${nR}_DCT"
-			fi
 
 		export flags_EPI_DVARS=true 
-
-			if ${flags_EPI_DVARS}; then
-				# nR=nR_DVARS -- this gets updated in fMRI_A
-				# after regression is applied. This allows us to save both
-				# sets of residuals with and without DVARS.
-				export configs_EPI_path2DVARS="${EXEDIR}/src/func/"
-			fi
-
+    
+	## APLY REGRESSION USING PREVIOUSLY SPECIFIED REGRESSORS
 	export flags_EPI_ApplyReg=true
 
+	#================================ POST REGRESSION TWEAKS =================================#
 	export flags_EPI_postReg=true 
 
 		export flags_EPI_DemeanDetrend=false 	# Typically not needed since regressors have been z-scored and 
@@ -504,22 +368,7 @@ if $fMRI_A; then
 										  # if flags_EPI_DVARS=true then scrubbing is based on computed DVARS
 										  # if flag_EPI_DVARS=false then scrubbing is based on FSL's FD & DVARS 
 
-		# =========================================================================================
-		# USER INSTRUCTIONS - DON'T MODIFY THE FOLLOWING SECTION
-		#===========================================================================================
-		if ${configs_EPI_DCThighpass} && ${flags_EPI_BandPass}; then
-			log "ERROR 	Please select one option only: DCT high-pass or Butterworth filtering. Exiting... "
-			exit 1
-		fi
-
-		# if ${flags_EPI_DVARS} && ${configs_EPI_scrub}; then
-		# 	log "ERROR 	Please select one option only: regression with DVARS or post-regression scrubbing with pre-regression FD and DVARS. Exiting... "
-		# 	exit 1
-		# fi
-		#===========================================================================================
-
-
-	export nR 
+	#================ COMPUTE ROI TIME-SERIES FOR EACH NODAL PARCELLATION ===================#
 
 	export flags_EPI_ROIs=true
 
@@ -534,7 +383,7 @@ export DWI_A=false
 
 if $DWI_A; then
 
-	export scanner="SIEMENS" #  SIEMENS or GE
+	export scanner="GE" #  SIEMENS or GE
 	log "SCANNER ${scanner}"
 
 	if [[ ${scanner} == "SIEMENS" ]]; then
@@ -554,14 +403,14 @@ if $DWI_A; then
 	export flags_DWI_dcm2niix=false # dicom to nifti coversion
 								# not needed if json file(s) are provided/extracted
 		export configs_DWI_readout=[] # if empty get from dicom; else specify value
-	export configs_DWI_DICOMS2_B0only=true # if DICOMS2 are B0's only set to true; if DICOMS2 contains scalars and B0's set to false 
+	export configs_DWI_DICOMS2_B0only=false # if DICOMS2 are B0's only set to true; if DICOMS2 contains scalars and B0's set to false 
 	export flags_DWI_topup=false # FSL topup destortion field estimation
 		export configs_DWI_b0cut=1 # maximum B-value to be considered B0
-	export flags_DWI_eddy=false # FSL EDDY distortion correction
+	export flags_DWI_eddy=true # FSL EDDY distortion correction
 		export configs_DWI_EDDYf='0.3' # fsl bet threshold for b0 brain mask used by EDDY
 		export configs_DWI_repolON=true # use eddy_repol to interpolate missing/outlier data
 		export configs_DWI_MBjson=true # read the slices/MB-groups info from the json file (--json option)
-	export flags_DWI_DTIfit=false  # Tensor estimation and generation of scalar maps
+	export flags_DWI_DTIfit=true  # Tensor estimation and generation of scalar maps
 		export configs_DWI_DTIfitf='0.4' # brain extraction (FSL bet -f) parameter 
 
 fi 
@@ -577,4 +426,5 @@ if $DWI_B; then
 	export flags_DWI_connMatrix=true # generate connectivity matrices
 
 fi 
+
 
