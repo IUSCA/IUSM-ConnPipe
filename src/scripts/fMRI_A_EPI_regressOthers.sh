@@ -22,22 +22,14 @@ msg2file "                5.3 OTHER REGRESSORS "
 msg2file " =========================================================="
 
 
-if [[ ${flags_NuisanceReg} == "AROMA" ]]; then   
 
-    fileIN="${EPIpath}/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz"
-    if  [[ ! -e ${fileIN} ]]; then
-        log "ERROR ${fileIN} not found. Connot perform regresso analysis"
-        exit 1
-    fi
+fileIN="${EPIpath}${configs_EPI_resting_file}"
 
-elif [[ ${flags_NuisanceReg} == "HMPreg" ]]; then 
+if  [[ ! -e ${fileIN} ]] || [[ ! -d "${EPIpath}/${flags_NuisanceReg}" ]]; then
+    log "ERROR - ${fileIN} and or ${EPIpath}/${flags_NuisanceReg} not found. Connot perform physiological regressors analysis"
+    exit 1
+fi 
 
-    fileIN="${EPIpath}/4_epi.nii.gz"
-    if  [[ ! -e ${fileIN} ]] || [[ ! -d "${EPIpath}/HMPreg" ]]; then
-        log "ERROR ${fileIN} and or ${EPIpath}/HMPreg not found. Connot perform physiological regressors analysis"
-        exit 1
-    fi 
-fi
 
 PhReg_path="${EPIpath}/${regPath}"
 
@@ -61,8 +53,6 @@ else
     log " DCT bases will NOT be included in regression "
     export configs_EPI_dctfMin=0
 fi
-
-#other_regressors ${EPIpath} ${fileIN} ${PhReg_path}
 
 cmd="python ${EXEDIR}/src/func/other_regressors.py \
      ${fileIN} ${PhReg_path}"

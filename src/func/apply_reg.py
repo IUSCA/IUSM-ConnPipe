@@ -42,10 +42,16 @@ flog=open(logfile_name, "a+")
 
 flog.write("\n *** python apply_reg **** ")
 EPIpath=os.environ['EPIpath']
-nuisanceReg=sys.argv[1]  #os.environ['nuisanceReg']
+nuisanceReg=sys.argv[1]  
 print("nuisanceReg is ",nuisanceReg)
 flog.write("\n nuisanceReg "+ nuisanceReg)
-config_param=int(sys.argv[2]) #int(os.environ['config_param'])
+physReg=sys.argv[2] 
+print("physReg is ",physReg)
+flog.write("\n physReg "+ physReg)
+PhReg_path = ''.join([EPIpath,'/',nuisanceReg,'/',physReg])
+print("PhReg_path is ",PhReg_path)
+flog.write("\n PhReg_path "+ PhReg_path )
+config_param=int(os.environ['configs_EPI_numPhys'])
 print("config_param is ",config_param)
 flog.write("\n config_param "+ str(config_param))
 numReg=int(os.environ['configs_EPI_numReg'])
@@ -54,12 +60,6 @@ print("numReg is ",numReg)
 numGS=int(os.environ['configs_EPI_numGS'])
 flog.write("\n numGS "+ str(numGS))
 print("numGS is ",numGS)
-physReg=sys.argv[3] #os.environ['physReg']
-print("physReg is ",physReg)
-flog.write("\n physReg "+ physReg)
-PhReg_path = ''.join([EPIpath,'/',nuisanceReg,'/',physReg])
-print("PhReg_path is ",PhReg_path)
-flog.write("\n PhReg_path "+ PhReg_path )
 nR=os.environ['nR']
 flog.write("\n nR "+ nR)
 print("nR is ",nR)
@@ -80,24 +80,24 @@ if nuisanceReg == "AROMA":
     flog.write("\n 1. Applying AROMA regressors")
     regressors = np.array([])
 
-elif nuisanceReg == "HMPreg":
+elif nuisanceReg == "HMPreg" or nuisanceReg == "AROMA_HMP":
     print("1. Applying Head Motion Param regressors") 
     flog.write("\n 1. Applying Head Motion Param regressors")
 
     if numReg == 24:
         print(" -- 24 Head motion regressors")
         flog.write("\n  -- 24 Head motion regressors")
-        fname=''.join([EPIpath,'/HMPreg/motion12_regressors.npz'])
+        fname=''.join([EPIpath,'/',nuisanceReg,'/motion12_regressors.npz'])
         m12reg = np.load(fname)
         print(sorted(m12reg.files))
-        fname=''.join([EPIpath,'/HMPreg/motion_sq_regressors.npz'])
+        fname=''.join([EPIpath,'/',nuisanceReg,'/motion_sq_regressors.npz'])
         m_sq_reg = np.load(fname)  
         print(sorted(m_sq_reg.files))
         regressors = np.vstack((m12reg['motion'].T,m12reg['motion_deriv'].T,m_sq_reg['motion_sq'].T,m_sq_reg['motion_deriv_sq'].T))
     elif numReg == 12:
         print(" -- 12 Head motion regressors")
         flog.write("\n -- 12 Head motion regressors")
-        fname=''.join([EPIpath,'/HMPreg/motion12_regressors.npz'])
+        fname=''.join([EPIpath,'/',nuisanceReg,'/motion12_regressors.npz'])
         m12reg = np.load(fname)
         print(sorted(m12reg.files))
         regressors = np.vstack((m12reg['motion'].T,m12reg['motion_deriv'].T))
@@ -257,8 +257,8 @@ elif physReg == "meanPhysReg":
         print("regressors shape ",regressors.shape) 
         flog.write("\n regressors shape " + str(regressors.shape))
     
-    zRegressMat = [];
-    zRegressMat.append(stats.zscore(regressors,axis=1));
+    zRegressMat = []
+    zRegressMat.append(stats.zscore(regressors,axis=1))
 
 
 ## regress-out motion/physilogical regressors 

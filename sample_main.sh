@@ -100,7 +100,6 @@ fi
 if [[ ${flags_NuisanceReg} == "AROMA" ]]; then # if using ICA-AROMA
 
     nR="aroma" # set filename postfix for output image
-    #export flags_NuisanceReg_HeadParam=false
     
     # Use the ICA-AROMA package contained in the ConnPipe-SuppMaterials
     ICA_AROMA_path="${PYpck}/ICA-AROMA" 
@@ -109,6 +108,8 @@ if [[ ${flags_NuisanceReg} == "AROMA" ]]; then # if using ICA-AROMA
     # export run_ICA_AROMA="ICA_AROMA.py"
 
     export configs_EPI_resting_file='/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'
+
+    export configs_EPI_numReg=0   # make sure numReg variable is set to 0
 
 elif [[ ${flags_NuisanceReg} == "HMPreg" ]]; then   # if using Head Motion Parameters
 					
@@ -122,8 +123,26 @@ elif [[ ${flags_NuisanceReg} == "HMPreg" ]]; then   # if using Head Motion Param
 
     export configs_EPI_resting_file='/4_epi.nii.gz'    
 
+elif [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then   # if using AROMA + Head Motion Parameters
+
+    nR="aroma_hmp${configs_EPI_numReg}" # set filename postfix for output image
+    
+    # Use the ICA-AROMA package contained in the ConnPipe-SuppMaterials
+    ICA_AROMA_path="${PYpck}/ICA-AROMA" 
+    export run_ICA_AROMA="python ${ICA_AROMA_path}/ICA_AROMA.py"
+    ## UNCOMMENT FOLLOWING LINE **ONLY** IF USING HPC ica-aroma MODULE:
+    # export run_ICA_AROMA="ICA_AROMA.py"
+
+    export configs_EPI_resting_file='/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'
+    
+    if [[ "${configs_EPI_numReg}" -ne 12 && "${configs_EPI_numReg}" -ne 24 ]]; then
+        log "ERROR The variable config_EPI_numReg must have values '12' or '24'. \
+            Please set the corect value in the config.sh file"
+            exit 1
+    fi	
+
 else
-    log "ERROR - flag_NuisanceReg must be either AROMA or HMPreg"
+    log "ERROR - flag_NuisanceReg must be either AROMA or HMPreg or AROMA_HMP"
     exit 1
 fi
 
@@ -159,11 +178,15 @@ export regPath=${flags_NuisanceReg}/${flags_PhysiolReg}
 
 if ${flags_EPI_GS}; then
     nR="${nR}_Gs${configs_EPI_numGS}"
+else 
+    export configs_EPI_numGS=0
 fi 
 
                         
 if ${configs_EPI_DCThighpass}; then
     nR="${nR}_DCT"
+else 
+    export configs_EPI_dctfMin=0
 fi
 
 if ${flags_EPI_DVARS}; then

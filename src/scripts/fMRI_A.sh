@@ -240,22 +240,27 @@ for ((i=0; i<${#epiList[@]}; i++)); do
         echo "# 5  Nuisance Regression. "
         echo "# =========================================================="
 
-        if [[ ${flags_NuisanceReg} == "AROMA" ]]; then
+        if [[ ${flags_NuisanceReg} == "AROMA" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then
 
-            #source activate ${path2env}
+            if ${AROMA_exists}; then
 
-            cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_AROMA.sh"
-            echo $cmd
-            eval $cmd
-            exitcode=$?
+                log "WARNING -- Skipping AROMA. User has indicated that AROMA output already exists"
 
-            if [[ ${exitcode} -ne 0 ]] ; then
-                echoerr "problem at fMRI_A_EPI_AROMA. exiting."
-                exit 1
-            fi                
-            #source deactivate
+            else
+
+                cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_AROMA.sh"
+                echo $cmd
+                eval $cmd
+                exitcode=$?
+
+                if [[ ${exitcode} -ne 0 ]] ; then
+                    echoerr "problem at fMRI_A_EPI_AROMA. exiting."
+                    exit 1
+                fi                
+            fi
+        fi
             
-        elif [[ ${flags_NuisanceReg} == "HMPreg" ]]; then
+        if [[ ${flags_NuisanceReg} == "HMPreg" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then
 
             cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_HeadMotionParam.sh"
             echo $cmd
@@ -267,6 +272,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                 exit 1
             fi  
         fi 
+
     else
         log "WARNING Skipping NuisanceReg. Please set flags_EPI_NuisanceReg=true to run Nuisance Regression"
     fi

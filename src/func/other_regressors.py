@@ -13,7 +13,7 @@ flog=open(logfile_name, "a+")
 
 
 def get_ts(vol,numTP,rest):
-    numVoxels = np.count_nonzero(vol);
+    numVoxels = np.count_nonzero(vol)
     print("numVoxels - ",numVoxels)
     mask = np.nonzero(vol != 0)
     ts = np.zeros((numVoxels,numTP))
@@ -46,9 +46,9 @@ if 0 < configs_EPI_numGS < 5:
     fname = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
     volGS = nib.load(fname)
     volGS_vol = volGS.get_data()
-    [GSts,GSmask] = get_ts(volGS_vol,numTimePoints,resting_vol);
+    [GSts,GSmask] = get_ts(volGS_vol,numTimePoints,resting_vol)
     GSavg = np.mean(GSts,axis=0)
-    GSderiv = np.append(0,np.diff(GSavg));
+    GSderiv = np.append(0,np.diff(GSavg))
     GSavg_sq = np.power(GSavg,2)
     GSderiv_sq = np.power(GSderiv,2)
 
