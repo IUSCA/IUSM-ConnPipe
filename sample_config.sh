@@ -10,13 +10,13 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ## Path to Supplementary Materials. Please download from: 
 # https://drive.google.com/drive/folders/1b7S9UcWDeDXVx3NUjuO8NJxxmChgNQ1G?usp=sharing 
-export pathSM="/N/project/ConnPipelineSM"
+export pathSM="/set_your_path/ConnPipelineSM"
 
 ################################################################################
 ############################  PATH TO DATA  ###################################
 
 # USER INSTRUCTIONS- PLEASE SET THIS PATH TO POINT TO YOUR DATA DIRECTORY
-export path2data='/N/project/DataDir'
+export path2data="/set_your_path/Datadir"
 
     ## USER: if running all subjects in the path2data directory, set this flag to true; 
     ## set to false if you'd like to process a subset of subjects 
@@ -53,7 +53,7 @@ export path2data='/N/project/DataDir'
 #                 -- UNWARP -- B0_PA_DCM
 
 export configs_T1="T1"
-export configs_epiFolder="EPI"
+export configs_epiFolder="EPI1"
 	export configs_dcmFolder="DICOMS"
 	export configs_dcmFiles="IMA" #"dcm" # specify Dicom file extension
 	export configs_niiFiles="nii" # Nifti-1 file extension
@@ -207,7 +207,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export fMRI_A=true 
+export fMRI_A=false 
 
 if $fMRI_A; then
 
@@ -298,16 +298,21 @@ if $fMRI_A; then
 	## Nuisance Regressors. There are two options that user can select from:
 	# 1) flags_NuisanceReg="AROMA": ICA-based denoising; WARNING: This will smooth your data.
 	# 2) flags_NuisanceReg="HMPreg": Head Motion Parameter Regression.  
+	# 3) flags_NuisanceReg="AROMA_HMP": apply ICA-AROMA followed by HMPreg. 
 
-		export flags_NuisanceReg="HMPreg"
+		export flags_NuisanceReg="AROMA_HMP"
 
-			if [[ ${flags_NuisanceReg} == "AROMA" ]]; then # if using ICA-AROMA
+			if [[ ${flags_NuisanceReg} == "AROMA" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then # if using ICA-AROMA
 				## USER: by default, ICA_AROMA will estimate the dimensionality (i.e. num of independent components) for you; however, for higher multiband
 				## factors with many time-points and high motion subjects, it may be useful for the user to set the dimensionality. THis can be done by
 				## setting the desired number of componenets in the following config flag. Leave undefined for automatic estimation 
 				export flag_AROMA_dim=
 
-			elif [[ ${flags_NuisanceReg} == "HMPreg" ]]; then   # if using Head Motion Parameters
+				# If AROMA has already been run, save computation time by skipping that step. 
+				export AROMA_exists=false
+			fi
+
+			if [[ ${flags_NuisanceReg} == "HMPreg" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then   # if using Head Motion Parameters
 					
 				export configs_EPI_numReg=12  # 12 (6 orig + 6 deriv) or 24 (+sq of 12)
 
@@ -426,5 +431,4 @@ if $DWI_B; then
 	export flags_DWI_connMatrix=true # generate connectivity matrices
 
 fi 
-
 

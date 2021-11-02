@@ -10,7 +10,7 @@ flog=open(logfile_name, "a+")
 
 fIn1=sys.argv[1]
 
-fIn2=sys.argv[1]
+fIn2=sys.argv[2]
 
 ICstats = np.loadtxt(fIn1)
 #print(ICstats)

@@ -6,7 +6,9 @@ from scipy.io import savemat
 
 EPIpath=os.environ['EPIpath']
 
-numReg=int(sys.argv[1])
+HMPpath=sys.argv[1]
+numReg=int(sys.argv[2])
+
 
 # load motion regressors
 fname=''.join([EPIpath,'/motion.txt'])
@@ -22,9 +24,9 @@ for i in range(columns):
     motion_deriv[1:,i] = m_deriv
 
 
-fname=''.join([EPIpath,'/HMPreg/motion12_regressors.npz'])
+fname=''.join([HMPpath,'/motion12_regressors.npz'])
 np.savez(fname,motion_deriv=motion_deriv,motion=motion)
-fname=''.join([EPIpath,'/HMPreg/motion12_regressors.mat'])
+fname=''.join([HMPpath,'/motion12_regressors.mat'])
 print("savign MATLAB file ", fname)
 mdic = {"motion_deriv": motion_deriv,"motion": motion}
 savemat(fname, mdic)
@@ -33,9 +35,9 @@ if numReg == 24:
     motion_sq = np.power(motion,2)
     motion_deriv_sq = np.power(motion_deriv,2)
 
-    fname=''.join([EPIpath,'/HMPreg/motion_sq_regressors.npz'])
+    fname=''.join([HMPpath,'/motion_sq_regressors.npz'])
     np.savez(fname,motion_sq=motion_sq,motion_deriv_sq=motion_deriv_sq)
-    fname=''.join([EPIpath,'/HMPreg/motion_sq_regressors.mat'])
+    fname=''.join([HMPpath,'/motion_sq_regressors.mat'])
     print("savign MATLAB file ", fname)
     mdic = {"motion_sq": motion_sq, "motion_deriv_sq": motion_deriv_sq}
     savemat(fname, mdic)

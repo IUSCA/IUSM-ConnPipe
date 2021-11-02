@@ -25,24 +25,24 @@ if [[ ! -e "${EPIpath}/4_epi.nii.gz" ]]; then
     log "WARNING -  ${EPIpath}/4_epi.nii.gz does not exist. Skipping further analysis..."
     exit 1        
 
-else
+fi
 
-    HMPpath="${EPIpath}/HMPreg"
-    if [[ ! -d ${HMPpath} ]]; then
-        cmd="mkdir ${HMPpath}"
-        log $cmd
-        eval $cmd 
-    fi
 
-    # load 6 motion regressors and get derivatives
-    cmd="python ${EXEDIR}/src/func/load_motion_reg.py ${configs_EPI_numReg}"
+HMPpath="${EPIpath}/${flags_NuisanceReg}"
+if [[ ! -d ${HMPpath} ]]; then
+    cmd="mkdir ${HMPpath}"
     log $cmd
-    eval $cmd
-    if [ $? -eq 0 ]; then
-        log "Saved motion regressors and temporal derivatives"
-        log "Saved quadratics of motion and its derivatives"
-    else
-        log "WARNING motion regressors and derivatives not saved. Exiting."
-    fi
+    eval $cmd 
+fi
 
-fi 
+
+# load 6 motion regressors and get derivatives
+cmd="python ${EXEDIR}/src/func/load_motion_reg.py ${HMPpath} ${configs_EPI_numReg}"
+log $cmd
+eval $cmd
+if [ $? -eq 0 ]; then
+    log "Saved motion regressors and temporal derivatives"
+    log "Saved quadratics of motion and its derivatives"
+else
+    log "WARNING motion regressors and derivatives not saved. Exiting."
+fi

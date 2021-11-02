@@ -23,7 +23,8 @@ msg2file "            5.2 PHYSIOLOGICAL REGRESSORS "
 msg2file "=========================================================="
 
 
-fileIN="${EPIpath}/${configs_EPI_resting_file}"
+fileIN="${EPIpath}${configs_EPI_resting_file}"
+echo "======== ${fileIN}"
 
 
 if [[ ${flags_NuisanceReg} == "AROMA" ]]; then   
@@ -49,6 +50,19 @@ elif [[ ${flags_NuisanceReg} == "HMPreg" ]]; then
         fi          
     else
         log "ERROR ${fileIN} and/or ${EPIpath}/HMPreg not found. Connot perform physiological regressors analysis"
+        exit 1
+    fi 
+
+elif [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then 
+
+    if  [[ -e ${fileIN} ]] && [[ -d "${EPIpath}/AROMA_HMP" ]]; then
+        if [[ ${flags_PhysiolReg} == "aCompCor" ]]; then   
+            log "----------------- PhysiolReg - Combining aCompCorr with AROMA+HMP regressors -----------------"
+        elif [[ ${flags_PhysiolReg} == "meanPhysReg" ]]; then
+            log "----------------- PhysiolReg - Combining Mean CSF & WM signal with AROMA+HMP regressors -----------------"
+        fi          
+    else
+        log "ERROR ${fileIN} and/or ${EPIpath}/AROMA_HMP not found. Connot perform physiological regressors analysis"
         exit 1
     fi 
 fi
