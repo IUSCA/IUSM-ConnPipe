@@ -21,7 +21,7 @@ subjectList = dir(fullfile(path2data,'Subj0*'));   % e.g. All subjects in path2d
 EPIdir_name = 'EPI1'
 path2reg = 'AROMA_HMP/aCompCor'; %other options may be: 'AROMA/aCompCorr', HMPreg/PhysReg, AROMA/PhysReg;
 pre_nR = 'aroma_hmp12_pca5_Gs4_DCT'; % This should match the regression parameters of your 8_epi_*.nii.gz image; 
-       
+                                    % other options may be: 'aroma_pca3_Gs2_DCT' if only running AROMA, or 'hmp12_pca5_Gs4_DCT' if only running HMP;     
 DVARS = true; 
 % postregression parameters
 demean_detrend = false;
