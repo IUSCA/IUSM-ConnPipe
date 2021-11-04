@@ -18,8 +18,10 @@ subjectList = dir(fullfile(path2data,'Subj0*'));   % e.g. All subjects in path2d
 
 
 % These variables should be set up to match the config.sh settings
-path2reg = 'HMPreg/aCompCorr'; %other options may be: 'AROMA/aCompCorr', HMPreg/PhysReg, AROMA/PhysReg;
-pre_nR = 'hmp12_pca5_Gs4_DCT'; % This should match the regression parameters of your 8_epi_*.nii.gz image; other options may be: 'aroma_pca3_Gs2_DCT';
+EPIdir_name = 'EPI1'
+path2reg = 'AROMA_HMP/aCompCor'; %other options may be: 'AROMA/aCompCorr', HMPreg/PhysReg, AROMA/PhysReg;
+pre_nR = 'aroma_hmp12_pca5_Gs4_DCT'; % This should match the regression parameters of your 8_epi_*.nii.gz image; 
+       
 DVARS = true; 
 % postregression parameters
 demean_detrend = false;
@@ -100,7 +102,7 @@ for i=1:length(subjectList)
     subjID = subjectList(i).name;
     disp(['======== PROCESING SUBJECT ',subjID,' ========='])
 
-    path2EPI = fullfile(path2data,subjID,'EPI1');
+    path2EPI = fullfile(path2data,subjID,EPIdir_name);
     path2regressors = fullfile(path2EPI,path2reg);  % This needs to be expanded to all nuissance reg options
 
     timeseriesDir = sprintf('TimeSeries_%s%s',nR,post_nR);
