@@ -50,6 +50,20 @@ export pathBrainmaskTemplates="${pathSM}/brainmask_templates"
 export pathParcellations="${pathSM}/Parcellations"
 export PYpck="${pathSM}/python-pkgs"
 
+
+# # Setting denoising option
+# #===========================================================================================					
+if [[ "${configs_T1_denoised}" == "ANTS" ]]; then 
+	export configs_fslanat="T1_denoised_ANTS"
+	echo "USING ANTS FOR DENOISING"
+elif [[ "${configs_T1_denoised}" == "SUSAN" ]]; then
+	export configs_fslanat="T1_denoised_SUSAN"
+	echo "USING SUSAN FOR DENOISING"
+elif [[ "${configs_T1_denoised}" == "NONE" ]]; then  # do not perform denoising 
+	export configs_fslanat=${configs_T1}
+	echo "T1 WILL NOT BE DENOISED"
+fi
+
 # define header tags for f_MRI_A
 if ${fMRI_A}; then
     if [[ ${scanner} == "SIEMENS" ]]; then
@@ -73,135 +87,124 @@ if ${fMRI_A}; then
         export scammer_param_AcquisitionMatrix="acquisition_matrix"
         export scanner_param_PhaseEncodingDirection="phase_encode_direction"
     fi
-fi
 
-# check that ony one UNWARP option is selected 
-if ${flags_EPI_SpinEchoUnwarp} && ${flags_EPI_GREFMUnwarp}; then
-    log "ERROR --	Please select one option only: Spin Echo Unwarp or Gradient Echo Unwarp. Exiting... "
-    exit 1
-fi
-
-# # Setting denoising option
-# #===========================================================================================					
-if [[ "${configs_T1_denoised}" == "ANTS" ]]; then 
-	export configs_fslanat="T1_denoised_ANTS"
-	echo "USING ANTS FOR DENOISING"
-elif [[ "${configs_T1_denoised}" == "SUSAN" ]]; then
-	export configs_fslanat="T1_denoised_SUSAN"
-	echo "USING SUSAN FOR DENOISING"
-elif [[ "${configs_T1_denoised}" == "NONE" ]]; then  # do not perform denoising 
-	export configs_fslanat=${configs_T1}
-	echo "T1 WILL NOT BE DENOISED"
-fi
-
-# Nuisance Regression
-# #===========================================================================================
-
-if [[ ${flags_NuisanceReg} == "AROMA" ]]; then # if using ICA-AROMA
-
-    nR="aroma" # set filename postfix for output image
-    
-    # Use the ICA-AROMA package contained in the ConnPipe-SuppMaterials
-    ICA_AROMA_path="${PYpck}/ICA-AROMA" 
-    export run_ICA_AROMA="python ${ICA_AROMA_path}/ICA_AROMA.py"
-    ## UNCOMMENT FOLLOWING LINE **ONLY** IF USING HPC ica-aroma MODULE:
-    # export run_ICA_AROMA="ICA_AROMA.py"
-
-    export configs_EPI_resting_file='/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'
-
-    export configs_EPI_numReg=0   # make sure numReg variable is set to 0
-
-elif [[ ${flags_NuisanceReg} == "HMPreg" ]]; then   # if using Head Motion Parameters
-					
-    nR="hmp${configs_EPI_numReg}"   # set filename postfix for output image
-    
-    if [[ "${configs_EPI_numReg}" -ne 12 && "${configs_EPI_numReg}" -ne 24 ]]; then
-        log "ERROR The variable config_EPI_numReg must have values '12' or '24'. \
-            Please set the corect value in the config.sh file"
-            exit 1
-    fi	
-
-    export configs_EPI_resting_file='/4_epi.nii.gz'    
-
-elif [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then   # if using AROMA + Head Motion Parameters
-
-    nR="aroma_hmp${configs_EPI_numReg}" # set filename postfix for output image
-    
-    # Use the ICA-AROMA package contained in the ConnPipe-SuppMaterials
-    ICA_AROMA_path="${PYpck}/ICA-AROMA" 
-    export run_ICA_AROMA="python ${ICA_AROMA_path}/ICA_AROMA.py"
-    ## UNCOMMENT FOLLOWING LINE **ONLY** IF USING HPC ica-aroma MODULE:
-    # export run_ICA_AROMA="ICA_AROMA.py"
-
-    export configs_EPI_resting_file='/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'
-    
-    if [[ "${configs_EPI_numReg}" -ne 12 && "${configs_EPI_numReg}" -ne 24 ]]; then
-        log "ERROR The variable config_EPI_numReg must have values '12' or '24'. \
-            Please set the corect value in the config.sh file"
-            exit 1
-    fi	
-
-else
-    log "ERROR - flag_NuisanceReg must be either AROMA or HMPreg or AROMA_HMP"
-    exit 1
-fi
-
-
-# Pyhsiological Regression
-# #===========================================================================================
-
-if [[ ${flags_PhysiolReg} == "aCompCor" ]]; then  ### if using aCompCorr
-
-    if [[ "${configs_EPI_numPhys}" -ge 0 && "${configs_EPI_numPhys}" -le 5 ]]; then
-        nR="${nR}_pca${configs_EPI_numPhys}"
-    elif [[ "${configs_EPI_numPhys}" -ge 5 ]]; then
-        nR="${nR}_pca"
+    # check that ony one UNWARP option is selected 
+    if ${flags_EPI_SpinEchoUnwarp} && ${flags_EPI_GREFMUnwarp}; then
+        log "ERROR --	Please select one option only: Spin Echo Unwarp or Gradient Echo Unwarp. Exiting... "
+        exit 1
     fi
 
-elif [[ ${flags_PhysiolReg} == "meanPhysReg" ]]; then
+    # Nuisance Regression
+    # #===========================================================================================
 
-    nR="${nR}_mPhys${configs_EPI_numPhys}"
+    if [[ ${flags_NuisanceReg} == "AROMA" ]]; then # if using ICA-AROMA
 
-    if [[ "${configs_EPI_numPhys}" -ne 2 \
-        && "${configs_EPI_numPhys}" -ne 4 \
-        && "${configs_EPI_numPhys}" -ne 8 ]]; then
-            log "ERROR the variable configs_EPI_numPhys must have values '2', '4' or '8'. \
-                Please set the corect value in the config.sh file"
-            exit 1
-    fi	
-fi
+        nR="aroma" # set filename postfix for output image
+        
+        # Use the ICA-AROMA package contained in the ConnPipe-SuppMaterials
+        ICA_AROMA_path="${PYpck}/ICA-AROMA" 
+        export run_ICA_AROMA="python ${ICA_AROMA_path}/ICA_AROMA.py"
+        ## UNCOMMENT FOLLOWING LINE **ONLY** IF USING HPC ica-aroma MODULE:
+        # export run_ICA_AROMA="ICA_AROMA.py"
 
-export regPath=${flags_NuisanceReg}/${flags_PhysiolReg}
+        export configs_EPI_resting_file='/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'
 
-# Other regressors and file name settings
-# #===========================================================================================
+        export configs_EPI_numReg=0   # make sure numReg variable is set to 0
 
-if ${flags_EPI_GS}; then
-    nR="${nR}_Gs${configs_EPI_numGS}"
-else 
-    export configs_EPI_numGS=0
-fi 
-
+    elif [[ ${flags_NuisanceReg} == "HMPreg" ]]; then   # if using Head Motion Parameters
                         
-if ${configs_EPI_DCThighpass}; then
-    nR="${nR}_DCT"
-else 
-    export configs_EPI_dctfMin=0
+        nR="hmp${configs_EPI_numReg}"   # set filename postfix for output image
+        
+        if [[ "${configs_EPI_numReg}" -ne 12 && "${configs_EPI_numReg}" -ne 24 ]]; then
+            log "ERROR The variable config_EPI_numReg must have values '12' or '24'. \
+                Please set the corect value in the config.sh file"
+                exit 1
+        fi	
+
+        export configs_EPI_resting_file='/4_epi.nii.gz'    
+
+    elif [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then   # if using AROMA + Head Motion Parameters
+
+        nR="aroma_hmp${configs_EPI_numReg}" # set filename postfix for output image
+        
+        # Use the ICA-AROMA package contained in the ConnPipe-SuppMaterials
+        ICA_AROMA_path="${PYpck}/ICA-AROMA" 
+        export run_ICA_AROMA="python ${ICA_AROMA_path}/ICA_AROMA.py"
+        ## UNCOMMENT FOLLOWING LINE **ONLY** IF USING HPC ica-aroma MODULE:
+        # export run_ICA_AROMA="ICA_AROMA.py"
+
+        export configs_EPI_resting_file='/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'
+        
+        if [[ "${configs_EPI_numReg}" -ne 12 && "${configs_EPI_numReg}" -ne 24 ]]; then
+            log "ERROR The variable config_EPI_numReg must have values '12' or '24'. \
+                Please set the corect value in the config.sh file"
+                exit 1
+        fi	
+
+    else
+        log "ERROR - flag_NuisanceReg must be either AROMA or HMPreg or AROMA_HMP"
+        exit 1
+    fi
+
+
+    # Pyhsiological Regression
+    # #===========================================================================================
+
+    if [[ ${flags_PhysiolReg} == "aCompCor" ]]; then  ### if using aCompCorr
+
+        if [[ "${configs_EPI_numPhys}" -ge 0 && "${configs_EPI_numPhys}" -le 5 ]]; then
+            nR="${nR}_pca${configs_EPI_numPhys}"
+        elif [[ "${configs_EPI_numPhys}" -ge 5 ]]; then
+            nR="${nR}_pca"
+        fi
+
+    elif [[ ${flags_PhysiolReg} == "meanPhysReg" ]]; then
+
+        nR="${nR}_mPhys${configs_EPI_numPhys}"
+
+        if [[ "${configs_EPI_numPhys}" -ne 2 \
+            && "${configs_EPI_numPhys}" -ne 4 \
+            && "${configs_EPI_numPhys}" -ne 8 ]]; then
+                log "ERROR the variable configs_EPI_numPhys must have values '2', '4' or '8'. \
+                    Please set the corect value in the config.sh file"
+                exit 1
+        fi	
+    fi
+
+    export regPath=${flags_NuisanceReg}/${flags_PhysiolReg}
+
+    # Other regressors and file name settings
+    # #===========================================================================================
+
+    if ${flags_EPI_GS}; then
+        nR="${nR}_Gs${configs_EPI_numGS}"
+    else 
+        export configs_EPI_numGS=0
+    fi 
+
+                            
+    if ${configs_EPI_DCThighpass}; then
+        nR="${nR}_DCT"
+    else 
+        export configs_EPI_dctfMin=0
+    fi
+
+    if ${flags_EPI_DVARS}; then
+        # nR=nR_DVARS -- this gets updated in fMRI_A
+        # after regression is applied. This allows us to save both
+        # sets of residuals with and without DVARS.
+        export configs_EPI_path2DVARS="${EXEDIR}/src/func/"
+    fi
+
+    if ${configs_EPI_DCThighpass} && ${flags_EPI_BandPass}; then
+        log "ERROR 	Please select one option only: DCT high-pass or Butterworth filtering. Exiting... "
+        exit 1
+    fi
+
+    export nR 
+
 fi
 
-if ${flags_EPI_DVARS}; then
-    # nR=nR_DVARS -- this gets updated in fMRI_A
-    # after regression is applied. This allows us to save both
-    # sets of residuals with and without DVARS.
-    export configs_EPI_path2DVARS="${EXEDIR}/src/func/"
-fi
-
-if ${configs_EPI_DCThighpass} && ${flags_EPI_BandPass}; then
-    log "ERROR 	Please select one option only: DCT high-pass or Butterworth filtering. Exiting... "
-    exit 1
-fi
-
-export nR 
 
 
 #################################################################################
