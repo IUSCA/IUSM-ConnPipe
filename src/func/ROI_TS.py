@@ -25,8 +25,6 @@ nR=os.environ['nR']
 flog.write("\n nR "+ nR)
 post_nR=os.environ['post_nR']
 flog.write("\n post_nR "+ post_nR)
-numTimePoints = int(os.environ['nvols'])
-flog.write("\n numTimePoints "+ str(numTimePoints))
 
 fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.npz'])
 print("loading data from ",fname)

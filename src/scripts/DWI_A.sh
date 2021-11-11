@@ -257,8 +257,8 @@ if [[ -d ${DWIpath} ]]; then
         echo "=================================="
 
         if ${configs_DWI_DICOMS2_B0only} && [[ "$nscan" -eq 2 ]]; then
-            # check that no bvec and bval files were generated for DICOMS2
-            if [[ ! -e "${DWIpath}/${fileBval}" ]] && [[ ! -e "${DWIpath}/${fileBvec}" ]]; then
+            # # check that no bvec and bval files were generated for DICOMS2
+            # if [[ ! -e "${DWIpath}/${fileBval}" ]] && [[ ! -e "${DWIpath}/${fileBvec}" ]]; then
 
                 log "Creating dummy Bvec and/or Bval files ${DWIpath}/${fileBval} and ${DWIpath}/${fileBvec}"
                 # find the number of B0's as the 4th dimension
@@ -272,11 +272,11 @@ if [[ -d ${DWIpath} ]]; then
                     echo "0" >> ${DWIpath}/${fileBval}
                 done
 
-            else  
-                log "WARNING. Bvec and/or Bval files ${DWIpath}/${fileBval} and ${DWIpath}/${fileBvec} already exist."
-                log "WARNING. Please check whether thse files need to be delted, or if configs_DWI_DICOMS2_B0only should be set to 'false'. Exiting"   
-                exit 1      
-            fi 
+            # else  
+            #     log "WARNING. Bvec and/or Bval files ${DWIpath}/${fileBval} and ${DWIpath}/${fileBvec} already exist."
+            #     log "WARNING. Please check whether thse files need to be delted, or if configs_DWI_DICOMS2_B0only should be set to 'false'. Exiting"   
+            #     exit 1      
+            # fi 
 
         else  
 

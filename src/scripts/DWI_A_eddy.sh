@@ -294,7 +294,10 @@ for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
 
         # For QC purpoces this created a difference (Delta image) between raw
         # and EDDY corrected diffusion data.
-        if [[ ! -e "${fileOut}" ]]; then
+        
+        echo " ---- ${fileOut}"
+
+        if [[ ! -e "${fileOut}.nii.gz" ]]; then
             echo "WARNING  Eddy output not generated. Exiting..."
             exit 1
         else
