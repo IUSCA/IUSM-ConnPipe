@@ -59,17 +59,17 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                     echo "There are ${#dicom_files[@]} dicom files in ${path_GREmagdcm} "
                     
                     dcm_file=${dicom_files[0]}
-                    cmd="dicom_hinfo -tag 0018,0081 ${path_GREmagdcm}/${dcm_file}"
+                    cmd="dicom_hinfo -tag 0018,0081 ${dcm_file}"
                     log $cmd
                     out=`$cmd`
                     TE1=`echo $out | awk -F' ' '{ print $2}'`
                     echo "Header extracted TE1 is: ${TE1}" 
 
                     dcm_file=${dicom_files[1]}
-                    cmd="dicom_hinfo -tag 0018,0081 ${path_GREmagdcm}/${dcm_file}"
+                    cmd="dicom_hinfo -tag 0018,0081 ${dcm_file}"
                     log $cmd
                     out=`$cmd`
-                    TE1=`echo $out | awk -F' ' '{ print $2}'`
+                    TE2=`echo $out | awk -F' ' '{ print $2}'`
                     echo "Header extracted TE2 is: ${TE2}"
 
                     DeltaTE=$(bc <<< "scale=0 ; ${TE2} - ${TE1}")
@@ -136,6 +136,9 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                 exit 1
 
             fi
+
+            echo "FINDING ${fileMag1}"
+            echo "FINDING ${fileMag2}"
 
             if [[ -f ${fileMag1} ]] && [[ -f ${fileMag2} ]]; then
 

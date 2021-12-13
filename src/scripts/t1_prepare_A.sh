@@ -26,7 +26,7 @@ if ${flags_T1_dcm2niix}; then
 
 			log "###### DICOM 2 nifti ######" 
 			# if .IMA or .IMA.dcm or .dcm files exis inside T1/DICOMS
-			dicomfiles=`find $T1path/${configs_dcmFolder} -maxdepth 1 -name "*.${configs_dcmFiles}*" | wc -l`
+			dicomfiles=`find $T1path/${configs_dcmFolder}/ -maxdepth 1 -name "*.${configs_dcmFiles}*" | wc -l`
 			if [[ $dicomfiles -eq 0 ]]; then 
 				echo "No dicom (.${configs_dcmFiles}) images found."
 				echo "Please specify the correct file extension of dicom files by setting the configs_dcmFiles flag in the config file"
