@@ -35,9 +35,9 @@ def f_apply_reg(data, mask, regressors):
     return resid
 
 ###### print to log files #######
-lf = os.environ['logfile_name']
-print("=== log file is ",lf," ===")
-logfile_name = ''.join([lf,'.log'])
+QCfile_name = ''.join([os.environ['QCfile_name'],'.log'])
+fqc=open(QCfile_name, "a+")
+logfile_name = ''.join([os.environ['logfile_name'],'.log'])
 flog=open(logfile_name, "a+")
 
 flog.write("\n *** python apply_reg **** ")
@@ -162,7 +162,7 @@ if dctfMin > 0:
 
 
 if physReg == "aCompCor":
-    fname = ''.join([PhReg_path,'/dataPCA_WM-CSF.npz'])
+    fname = ''.join([PhReg_path,'/dataPCA',str(config_param),'_WM-CSF.npz'])
     numphys = np.load(fname) 
     print("-- aCompCor PC of WM & CSF regressors")
     flog.write("\n -- aCompCor PC of WM & CSF regressors" )
@@ -329,8 +329,10 @@ for r in range(0,len(zRegressMat)):
 
         vols2scrub = DVARSout["Inference"]["H"]
         print("vols to scrub: ",vols2scrub)
+        fqc.write("\n vols to scrub: "+ str(vols2scrub))
         nvols2scrub = vols2scrub.shape[0]
         print("num vols to be scrubbed: ",nvols2scrub)
+        fqc.write("\n vols to be scrubbed: "+ str(nvols2scrub))
         scrubbing = np.zeros((nvols2scrub,numTimePoints), dtype=int)
 
         if nvols2scrub > 0:

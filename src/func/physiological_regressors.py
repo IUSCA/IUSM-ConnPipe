@@ -85,9 +85,9 @@ if physReg == 'aCompCor':
     flog.write("\n Running PCA on WM time-series.\n")
     
     # save the data
-    fname = ''.join([PhReg_path,'/dataPCA_WM-CSF.npz'])
+    fname = ''.join([PhReg_path,'/dataPCA',str(num_comp),'_WM-CSF.npz'])
     np.savez(fname,CSFpca=CSFpca,CSFvar=CSFvar,CSFmask=CSFmask,CSFts=CSFts,WMpca=WMpca,WMvar=WMvar,WMmask=WMmask,WMts=WMts)
-    fname = ''.join([PhReg_path,'/dataPCA_WM-CSF.mat'])
+    fname = ''.join([PhReg_path,'/dataPCA',str(num_comp),'_WM-CSF.mat'])
     print("saving MATLAB file ", fname)
     mdic = {"CSFpca" : CSFpca,"CSFvar" : CSFvar,"CSFmask" : CSFmask,"CSFts" : CSFts,"WMpca" : WMpca,"WMvar" : WMvar,"WMmask" : WMmask,"WMts" : WMts}
     savemat(fname, mdic)
