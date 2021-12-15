@@ -162,7 +162,7 @@ if dctfMin > 0:
 
 
 if physReg == "aCompCor":
-    fname = ''.join([PhReg_path,'/dataPCA_WM-CSF.npz'])
+    fname = ''.join([PhReg_path,'/dataPCA',str(config_param),'_WM-CSF.npz'])
     numphys = np.load(fname) 
     print("-- aCompCor PC of WM & CSF regressors")
     flog.write("\n -- aCompCor PC of WM & CSF regressors" )
