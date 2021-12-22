@@ -142,8 +142,6 @@ for ((i=0; i<${#epiList[@]}; i++)); do
         
     fi 
 
-    #### ASK MARIO IF GREFMUnwarp MUST BE FALSE IF SpinEchoUnwarp = true. In his code tehy are in a if-elseif statement but not documented in configs
-
     if ${flags_EPI_GREFMUnwarp}; then 
         
         cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_GREFMUnwarp.sh"
@@ -412,7 +410,35 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             echoerr "problem at fMRI_A_EPI_ROIs. exiting."
             exit 1
         fi  
-    fi           
+    fi 
+
+    if ${flags_EPI_ReHo}; then
+
+        cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_ReHo.sh"
+        echo $cmd
+        eval $cmd
+        exitcode=$?
+
+        if [[ ${exitcode} -ne 0 ]] ; then
+            echoerr "problem at fMRI_A_EPI_ReHo. exiting."
+            exit 1
+        fi  
+    fi 
+
+    if ${flags_EPI_ALFF}; then
+
+        cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_ALFF.sh"
+        echo $cmd
+        eval $cmd
+        exitcode=$?
+
+        if [[ ${exitcode} -ne 0 ]] ; then
+            echoerr "problem at fMRI_A_EPI_ALFF. exiting."
+            exit 1
+        fi  
+    fi 
+
+
 done
 
 

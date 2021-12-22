@@ -85,40 +85,6 @@ qc "$cmd"
 out=`$cmd`
 qc "Number of voxels in ${fileOut} :  $out"
 
-# # 1st Erotion WM mask
-# fileIn="${T1path}/T1_WM_mask_eroded_1st.nii.gz"
-# fileOut="${EPIpath}/rT1_WM_mask_eroded_1st"
-# cmd="flirt -in ${fileIn} \
-#     -ref ${fileRef} \
-#     -out ${fileOut} \
-#     -applyxfm -init ${fileInit} \
-#     -interp nearestneighbour -nosearch"
-# log $cmd
-# eval $cmd 
-
-# # COmpute the volume 
-# cmd="fslstats ${fileOut} -V"
-# qc "$cmd"
-# out=`$cmd`
-# qc "Number of voxels in ${fileOut} :  $out"
-
-# # 2nd Erotion WM mask
-# fileIn="${T1path}/T1_WM_mask_eroded_2nd.nii.gz"
-# fileOut="${EPIpath}/rT1_WM_mask_eroded_2nd"
-# cmd="flirt -in ${fileIn} \
-#     -ref ${fileRef} \
-#     -out ${fileOut} \
-#     -applyxfm -init ${fileInit} \
-#     -interp nearestneighbour -nosearch"
-# log $cmd
-# eval $cmd 
-
-# # COmpute the volume 
-# cmd="fslstats ${fileOut} -V"
-# qc "$cmd"
-# out=`$cmd`
-# qc "Number of voxels in ${fileOut} :  $out"
-
 # 3rd (final) Erotion WM mask
 fileIn="${T1path}/T1_WM_mask_eroded.nii.gz"
 fileOut="${EPIpath}/rT1_WM_mask_eroded"
@@ -328,9 +294,10 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
             fileIn="/rT1_GM_parc_${parc}.nii.gz"                        
             fileOut="/rT1_GM_parc_${parc}_clean.nii.gz"   
 
-            cmd="${EXEDIR}/src/scripts/get_largest_clusters.sh ${EPIpath} ${fileIn} ${fileOut} ${configs_EPI_minVoxelsClust}"                     
+            cmd="python ${EXEDIR}/src/func/get_largest_clusters.py \
+                ${fileIn} ${fileOut} ${configs_EPI_minVoxelsClust}"                     
             log $cmd
-            eval $cmd 
+            eval $cmd             
                                                                 
         else
             log "WARNING the pnodal property is not specified for ${parc} parcellation.\
