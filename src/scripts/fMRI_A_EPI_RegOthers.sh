@@ -172,7 +172,7 @@ qc "Number of voxels in ${fileOut} :  $out"
 
 #-------------------------------------------------------------------------#
 
-# Probabilistic GM reg to fMRI spac
+# Probabilistic GM reg to fMRI space
 fileIn="${T1path}/T1_GM_mask.nii.gz"
 fileOut="${EPIpath}/rT1_GM_mask_prob"
 cmd="flirt -applyxfm \
@@ -306,3 +306,42 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
     fi
 
 done 
+
+# ------------------------------------------------------------------------- ##
+# Generate EPI -> MNI and MNI -> EPI transformations
+
+if [[ ! -e "${EPIpath}/T1_2_epi_dof6_bbr.mat" ]]; then  
+    log "WARNING File ${EPIpath}/T1_2_epi_dof6_bbr.mat does not exist. Skipping further analysis"
+    exit 1 
+fi
+
+T1reg="${T1path}/registration"
+    
+# EPI -> T1 linear dof6 and bbr (inverse of T1 -> EPI)
+fileMat="${EPIpath}/T1_2_epi_dof6_bbr.mat"
+fileMatInv="${EPIpath}/epi_dof6_bbr_2_T1.mat"
+cmd="convert_xfm -omat ${fileMatInv} -inverse ${fileMat}"
+log $cmd
+eval $cmd
+
+# Combine with T12MNI_dof6
+fileMat1="${T1reg}/T12MNI_dof6.mat"
+fileMat2="${EPIpath}/epi_dof6_bbr_2_T1.mat"
+fileMatJoint="${EPIpath}/epi_2_MNI_dof6.mat"
+cmd="convert_xfm -omat ${fileMatJoint} -concat ${fileMat1} ${fileMat2}"
+log $cmd
+eval $cmd
+
+# Finally, apply T12MNI_dof12 and make an inverse
+fileMat1="${T1reg}/T12MNI_dof12.mat"
+fileMat2="${EPIpath}/epi_2_MNI_dof6.mat"
+fileMatJoint="${EPIpath}/epi_2_MNI_final.mat"
+cmd="convert_xfm -omat ${fileMatJoint} -concat ${fileMat1} ${fileMat2}"
+log $cmd
+eval $cmd
+
+fileMat="${EPIpath}/epi_2_MNI_final.mat"
+fileMatInv="${EPIpath}/MNI_2_epi_final.mat"
+cmd="convert_xfm -omat ${fileMatInv} -inverse ${fileMat}"
+log $cmd
+eval $cmd

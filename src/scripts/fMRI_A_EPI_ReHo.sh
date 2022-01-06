@@ -72,18 +72,7 @@ log "Above command is executed directly from terminal"
 3dcalc -a ${path2ReHo}/ReHo+orig. -b ${fileFC} -expr '((a-'$mean')/'$sd'*b)' -prefix ${path2ReHo}/ReHo_normalized
 
 
-#Convert files to nifti format
-## 3dAFNItoNIFTI doesn't seem to work well if called outside of the data directory
-cd ${path2ReHo}
-cmd="3dAFNItoNIFTI ${path2ReHo}/ReHo+orig -prefix ReHo.nii"
-log $cmd
-eval $cmd
-cmd="3dAFNItoNIFTI ${path2ReHo}/ReHo_normalized+orig -prefix ReHo_normalized.nii"
-log $cmd
-eval $cmd
-cd ${EXEDIR}
-
-# Filter results through grey matter mask (optional?)
+# Filter results through grey matter mask
 fileGMmask="${EPIpath}/rT1_GM_mask.nii.gz"
 cmd="3dcalc -a ${path2ReHo}/ReHo+orig. -b ${fileGMmask} -expr '(a*b)' -prefix ${path2ReHo}/ReHo_GM"
 log $cmd
@@ -93,3 +82,47 @@ cmd="3dcalc -a ${path2ReHo}/ReHo_normalized+orig. -b ${fileGMmask} -expr '(a*b)'
 log $cmd 
 3dcalc -a ${path2ReHo}/ReHo_normalized+orig. -b ${fileGMmask} -expr '(a*b)' -prefix ${path2ReHo}/ReHo_normalized_GM
 
+
+
+#Convert files to nifti format
+## 3dAFNItoNIFTI doesn't seem to work well if called outside of the data directory
+cd ${path2ReHo}
+cmd="3dAFNItoNIFTI ${path2ReHo}/ReHo+orig -prefix ReHo.nii"
+log $cmd
+eval $cmd
+cmd="3dAFNItoNIFTI ${path2ReHo}/ReHo_normalized+orig -prefix ReHo_normalized.nii"
+log $cmd
+eval $cmd
+
+cmd="3dAFNItoNIFTI ${path2ReHo}/ReHo_GM+orig -prefix ReHo_GM.nii"
+log $cmd
+eval $cmd
+cmd="3dAFNItoNIFTI ${path2ReHo}/ReHo_normalized_GM+orig -prefix ReHo_normalized_GM.nii"
+log $cmd
+eval $cmd
+
+cd ${EXEDIR}
+
+
+## Transform output to MNI space 
+fileIn=${path2ReHo}/ReHo_normalized.nii 
+fileOut=${path2ReHo}/ReHo_normalized_MNI.nii
+cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut}"
+log $cmd
+eval $cmd
+
+if [[ ! $? -eq 0 ]]; then
+    log "ERROR - transformation of $fileIn to MNI space failed "
+    exit 1
+fi
+
+fileIn=${path2ReHo}/ReHo_normalized_GM.nii 
+fileOut=${path2ReHo}/ReHo_normalized_GM_MNI.nii
+cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut}"
+log $cmd
+eval $cmd
+
+if [[ ! $? -eq 0 ]]; then
+    log "ERROR - transformation of $fileIn to MNI space failed "
+    exit 1
+fi

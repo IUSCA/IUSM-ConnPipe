@@ -92,6 +92,28 @@ cmd="3dcalc -a ${path2ALFF}/RSFC_fALFF+orig. -b ${fileFC} -expr '((a-'$mean')/'$
 log $cmd
 3dcalc -a ${path2ALFF}/RSFC_fALFF+orig. -b ${fileFC} -expr '((a-'$mean')/'$sd'*b)' -prefix ${path2ALFF}/RSFC_fALFF_normalized
 
+
+#Filter results through grey matter mask 
+fileGMmask="${EPIpath}/rT1_GM_mask.nii.gz"
+cmd="3dcalc -a ${path2ALFF}/RSFC_ALFF+orig. -b ${fileGMmask} -expr '(a*b)' -prefix ${path2ALFF}/RSFC_ALFF_GM"
+log $cmd
+3dcalc -a ${path2ALFF}/RSFC_ALFF+orig. -b ${fileGMmask} -expr '(a*b)' -prefix ${path2ALFF}/RSFC_ALFF_GM
+
+cmd="3dcalc -a ${path2ALFF}/RSFC_ALFF_normalized+orig. -b ${fileGMmask} -expr '(a*b)' -prefix ${path2ALFF}/RSFC_ALFF_normalized_GM"
+log $cmd
+3dcalc -a ${path2ALFF}/RSFC_ALFF_normalized+orig. -b ${fileGMmask} -expr '(a*b)' -prefix ${path2ALFF}/RSFC_ALFF_normalized_GM
+
+cmd="3dcalc -a ${path2ALFF}/RSFC_fALFF+orig. -b ${fileGMmask} -expr '(a*b)' -prefix ${path2ALFF}/RSFC_fALFF_GM"
+log $cmd
+3dcalc -a ${path2ALFF}/RSFC_fALFF+orig. -b ${fileGMmask} -expr '(a*b)' -prefix ${path2ALFF}/RSFC_fALFF_GM
+
+cmd="3dcalc -a ${path2ALFF}/RSFC_fALFF_normalized+orig. -b ${fileGMmask} -expr '(a*b)' -prefix ${path2ALFF}/RSFC_fALFF_normalized_GM"
+log $cmd
+3dcalc -a ${path2ALFF}/RSFC_fALFF_normalized+orig. -b ${fileGMmask} -expr '(a*b)' -prefix ${path2ALFF}/RSFC_fALFF_normalized_GM
+
+
+
+
 #Convert files to nifti format
 ## 3dAFNItoNIFTI doesn't seem to work well if called outside of the data directory
 cd ${path2ALFF}
@@ -107,12 +129,66 @@ eval $cmd
 cmd="3dAFNItoNIFTI ${path2ALFF}/RSFC_fALFF_normalized+orig -prefix RSFC_fALFF_normalized.nii"
 log $cmd
 eval $cmd
+
+cmd="3dAFNItoNIFTI ${path2ALFF}/RSFC_ALFF_GM+orig -prefix RSFC_ALFF_GM.nii"
+log $cmd
+eval $cmd
+cmd="3dAFNItoNIFTI ${path2ALFF}/RSFC_ALFF_normalized_GM+orig -prefix RSFC_ALFF_normalized_GM.nii"
+log $cmd
+eval $cmd
+cmd="3dAFNItoNIFTI ${path2ALFF}/RSFC_fALFF_GM+orig -prefix RSFC_fALFF_GM.nii"
+log $cmd
+eval $cmd
+cmd="3dAFNItoNIFTI ${path2ALFF}/RSFC_fALFF_normalized_GM+orig -prefix RSFC_fALFF_normalized_GM.nii"
+log $cmd
+eval $cmd
+
 cd ${EXEDIR}
 
-#Filter results through grey matter mask if you so desire
-#cp "$rootdir"/"$i"/EP1/rT1_GM_mask.nii.gz "$rootdir"/"$i"/EP1/HMPreg/meanPhysReg/rT1_GM_mask.nii.gz
-#3dcalc -a "$i"_RSFC_ALFF+orig. -b rT1_GM_mask.nii.gz -expr '(a*b)' -prefix "$i"_RSFC_ALFF_GM
-#3dcalc -a "$i"_RSFC_ALFF_normalized+orig. -b rT1_GM_mask.nii.gz -expr '(a*b)' -prefix "$i"_RSFC_ALFF_normalized_GM
-#3dcalc -a "$i"_RSFC_fALFF+orig. -b rT1_GM_mask.nii.gz -expr '(a*b)' -prefix "$i"_RSFC_fALFF_GM
-#3dcalc -a "$i"_RSFC_fALFF_normalized+orig. -b rT1_GM_mask.nii.gz -expr '(a*b)' -prefix "$i"_RSFC_fALFF_normalized_GM
 
+## Transform output to MNI space 
+fileIn=${path2ALFF}/RSFC_ALFF_normalized.nii
+fileOut=${path2ALFF}/RSFC_ALFF_normalized_MNI.nii
+cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut}"
+log $cmd
+eval $cmd
+
+if [[ ! $? -eq 0 ]]; then
+    log "ERROR - transformation of $fileIn to MNI space failed "
+    exit 1
+fi
+
+## Transform output to MNI space 
+fileIn=${path2ALFF}/RSFC_fALFF_normalized.nii
+fileOut=${path2ALFF}/RSFC_fALFF_normalized_MNI.nii
+cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut}"
+log $cmd
+eval $cmd
+
+if [[ ! $? -eq 0 ]]; then
+    log "ERROR - transformation of $fileIn to MNI space failed "
+    exit 1
+fi
+
+fileIn=${path2ALFF}/RSFC_ALFF_normalized_GM.nii
+fileOut=${path2ALFF}/RSFC_ALFF_normalized_GM_MNI.nii
+cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut}"
+log $cmd
+eval $cmd
+
+if [[ ! $? -eq 0 ]]; then
+    log "ERROR - transformation of $fileIn to MNI space failed "
+    exit 1
+fi
+
+## Transform output to MNI space 
+fileIn=${path2ALFF}/RSFC_fALFF_normalized_GM.nii
+fileOut=${path2ALFF}/RSFC_fALFF_normalized_GM_MNI.nii
+cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut}"
+log $cmd
+eval $cmd
+
+if [[ ! $? -eq 0 ]]; then
+    log "ERROR - transformation of $fileIn to MNI space failed "
+    exit 1
+fi

@@ -47,7 +47,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
     eval $cmd 
 
     #-------------------------------------------------------------------------#
-    # rigid body registration (dof 6) registration of T1 to fMRI
+    # rigid body registration (dof 6) of T1 to fMRI
 
     fileIn="${T1path}/T1_brain.nii.gz"
     fileRef="${EPIpath}/2_epi_meanvol.nii.gz"
