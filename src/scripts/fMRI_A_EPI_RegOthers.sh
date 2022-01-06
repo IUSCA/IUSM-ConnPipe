@@ -85,40 +85,6 @@ qc "$cmd"
 out=`$cmd`
 qc "Number of voxels in ${fileOut} :  $out"
 
-# # 1st Erotion WM mask
-# fileIn="${T1path}/T1_WM_mask_eroded_1st.nii.gz"
-# fileOut="${EPIpath}/rT1_WM_mask_eroded_1st"
-# cmd="flirt -in ${fileIn} \
-#     -ref ${fileRef} \
-#     -out ${fileOut} \
-#     -applyxfm -init ${fileInit} \
-#     -interp nearestneighbour -nosearch"
-# log $cmd
-# eval $cmd 
-
-# # COmpute the volume 
-# cmd="fslstats ${fileOut} -V"
-# qc "$cmd"
-# out=`$cmd`
-# qc "Number of voxels in ${fileOut} :  $out"
-
-# # 2nd Erotion WM mask
-# fileIn="${T1path}/T1_WM_mask_eroded_2nd.nii.gz"
-# fileOut="${EPIpath}/rT1_WM_mask_eroded_2nd"
-# cmd="flirt -in ${fileIn} \
-#     -ref ${fileRef} \
-#     -out ${fileOut} \
-#     -applyxfm -init ${fileInit} \
-#     -interp nearestneighbour -nosearch"
-# log $cmd
-# eval $cmd 
-
-# # COmpute the volume 
-# cmd="fslstats ${fileOut} -V"
-# qc "$cmd"
-# out=`$cmd`
-# qc "Number of voxels in ${fileOut} :  $out"
-
 # 3rd (final) Erotion WM mask
 fileIn="${T1path}/T1_WM_mask_eroded.nii.gz"
 fileOut="${EPIpath}/rT1_WM_mask_eroded"
@@ -206,7 +172,7 @@ qc "Number of voxels in ${fileOut} :  $out"
 
 #-------------------------------------------------------------------------#
 
-# Probabilistic GM reg to fMRI spac
+# Probabilistic GM reg to fMRI space
 fileIn="${T1path}/T1_GM_mask.nii.gz"
 fileOut="${EPIpath}/rT1_GM_mask_prob"
 cmd="flirt -applyxfm \
@@ -328,9 +294,10 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
             fileIn="/rT1_GM_parc_${parc}.nii.gz"                        
             fileOut="/rT1_GM_parc_${parc}_clean.nii.gz"   
 
-            cmd="${EXEDIR}/src/scripts/get_largest_clusters.sh ${EPIpath} ${fileIn} ${fileOut} ${configs_EPI_minVoxelsClust}"                     
+            cmd="python ${EXEDIR}/src/func/get_largest_clusters.py \
+                ${fileIn} ${fileOut} ${configs_EPI_minVoxelsClust}"                     
             log $cmd
-            eval $cmd 
+            eval $cmd             
                                                                 
         else
             log "WARNING the pnodal property is not specified for ${parc} parcellation.\
@@ -339,3 +306,42 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
     fi
 
 done 
+
+# ------------------------------------------------------------------------- ##
+# Generate EPI -> MNI and MNI -> EPI transformations
+
+if [[ ! -e "${EPIpath}/T1_2_epi_dof6_bbr.mat" ]]; then  
+    log "WARNING File ${EPIpath}/T1_2_epi_dof6_bbr.mat does not exist. Skipping further analysis"
+    exit 1 
+fi
+
+T1reg="${T1path}/registration"
+    
+# EPI -> T1 linear dof6 and bbr (inverse of T1 -> EPI)
+fileMat="${EPIpath}/T1_2_epi_dof6_bbr.mat"
+fileMatInv="${EPIpath}/epi_dof6_bbr_2_T1.mat"
+cmd="convert_xfm -omat ${fileMatInv} -inverse ${fileMat}"
+log $cmd
+eval $cmd
+
+# Combine with T12MNI_dof6
+fileMat1="${T1reg}/T12MNI_dof6.mat"
+fileMat2="${EPIpath}/epi_dof6_bbr_2_T1.mat"
+fileMatJoint="${EPIpath}/epi_2_MNI_dof6.mat"
+cmd="convert_xfm -omat ${fileMatJoint} -concat ${fileMat1} ${fileMat2}"
+log $cmd
+eval $cmd
+
+# Finally, apply T12MNI_dof12 and make an inverse
+fileMat1="${T1reg}/T12MNI_dof12.mat"
+fileMat2="${EPIpath}/epi_2_MNI_dof6.mat"
+fileMatJoint="${EPIpath}/epi_2_MNI_final.mat"
+cmd="convert_xfm -omat ${fileMatJoint} -concat ${fileMat1} ${fileMat2}"
+log $cmd
+eval $cmd
+
+fileMat="${EPIpath}/epi_2_MNI_final.mat"
+fileMatInv="${EPIpath}/MNI_2_epi_final.mat"
+cmd="convert_xfm -omat ${fileMatInv} -inverse ${fileMat}"
+log $cmd
+eval $cmd
