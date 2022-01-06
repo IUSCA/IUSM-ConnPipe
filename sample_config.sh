@@ -24,7 +24,6 @@ export path2data="/set_your_path/Datadir"
 
     ## USER -- if running a subset of subjects, a list of subject ID's can be read from 
     ## a text file located in path2data; user can name the file here:
-    # export subj2run="subj2run_AAK.txt"
     export subj2run="subj2run.txt"
 
 ################################################################################
@@ -53,9 +52,9 @@ export path2data="/set_your_path/Datadir"
 #                 -- UNWARP -- B0_PA_DCM
 
 export configs_T1="T1"
-export configs_epiFolder="EPI1"
+export configs_epiFolder="EPI"
 	export configs_dcmFolder="DICOMS"
-	export configs_dcmFiles="IMA" #"dcm" # specify Dicom file extension
+	export configs_dcmFiles="dcm" #"dcm" # specify Dicom file extension
 	export configs_niiFiles="nii" # Nifti-1 file extension
 
 export configs_sefmFolder="UNWARP" # Reserved for Spin Eco Field Mapping series
@@ -158,7 +157,7 @@ if $T1_PREPARE_A; then
 		export configs_T1_crop=0 # 0 = no; 1 = yes (lots already done by dcm2niix)
 
 	export flags_T1_extract_and_mask=true # brain extraction and mask generation (only needed for double BET)
-		export configs_antsTemplate="NKI"  # options are: ANTS (MICCAI, NKI, IXI) or bet
+		export configs_antsTemplate="MICCAI"  # options are: ANTS (MICCAI, NKI, IXI) or bet
 		export configs_T1_A_betF="0.3" # this are brain extraction parameters with FSL bet
 		export configs_T1_A_betG="-0.1"  # see fsl bet help page for more details
 		export config_brainmask_overlap_thr="0.90"  # this is the threshold to assess whether or not the ANTS and BET masks are similar 'ehough"'
@@ -207,7 +206,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export fMRI_A=true 
+export fMRI_A=false 
 
 if $fMRI_A; then
 
@@ -257,19 +256,19 @@ if $fMRI_A; then
 	#====================== OPTION 2: GRADIENT FIELD MAP UNWARP =====================#
 	export flags_EPI_GREFMUnwarp=false # Requires GREfieldmap directory and appropriate dicoms
     	
-		export configs_use_DICOMS=false  # set to true if Extract TE1 and TE2 from the first image of Gradient Echo Magnitude Series
+		export configs_use_DICOMS=true  # set to true if Extract TE1 and TE2 from the first image of Gradient Echo Magnitude Series
 										 # set to false if gre_fieldmap_mag already generated (i.e. STANFORD data)	
 										# if set to 'false', GREFMUnwarp code will look for a single Magnitude file and try to extract Mag1 and Mag2
 										# or, it will look for Mag1 and Mag2
-			export configs_extract_twoMags=true
+			export configs_extract_twoMags=false
 			export configs_Mag_file="gre_fieldmap_mag"
 				export configs_Mag1="gre_fieldmap_mag_0000.nii.gz"  #if Mag1 and Mag2 already exist, name them here
 				export configs_Mag2="gre_fieldmap_mag_0001.nii.gz"
 			export configs_Phase_file="gre_fieldmap_phasemap"
 			
-		export configs_convert2radss=true   # if fieldmap_phasemap is in Hz, then it must be converted to rads/s 
+		export configs_convert2radss=false   # if fieldmap_phasemap is in Hz, then it must be converted to rads/s 
 												# set to true for NANSTAN
-		export configs_fsl_prepare_fieldmap=false		
+		export configs_fsl_prepare_fieldmap=true		
 
 		export configs_EPI_GREbetf=0.5; # GRE-specific bet values. Do not change
 		export configs_EPI_GREbetg=0;   # GRE-specific bet input. Change if needed 
@@ -295,13 +294,13 @@ if $fMRI_A; then
 	export flags_EPI_IntNorm4D=false # Intensity normalization to global 4D mean of 1000
 
 	#============================== MOTION AND OUTLIER CORRECTION ============================#
-	export flags_EPI_NuisanceReg=true
+	export flags_EPI_NuisanceReg=false
 	## Nuisance Regressors. There are three options that user can select from to set the flags_NuisanceReg variable:
 	# 1) flags_NuisanceReg="AROMA": ICA-based denoising; WARNING: This will smooth your data.
 	# 2) flags_NuisanceReg="HMPreg": Head Motion Parameter Regression.  
 	# 3) flags_NuisanceReg="AROMA_HMP": apply ICA-AROMA followed by HMPreg. 
 
-		export flags_NuisanceReg="AROMA_HMP"
+		export flags_NuisanceReg="HMPreg"
 
 			# if using ICA-AROMA or ICA-AROMA followed by HMP 
 			if [[ ${flags_NuisanceReg} == "AROMA" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then 
@@ -317,17 +316,17 @@ if $fMRI_A; then
 			# if using Head Motion Parameters or ICA-AROMA followed by HMP
 			if [[ ${flags_NuisanceReg} == "HMPreg" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then   
 					
-				export configs_EPI_numReg=12  # define the number of regressors Head Motion regressors. 
+				export configs_EPI_numReg=24  # define the number of regressors Head Motion regressors. 
 										      # options are: 12 (6 orig + 6 deriv) or 24 (+sq of 12)
 
 			fi
 
 	#================================ PHYSIOLOGICAL REGRESSORS =================================#
-	export flags_EPI_PhysiolReg=true  
+	export flags_EPI_PhysiolReg=false  
 	# Two options that the user can select from:
 	# 1) flags_PhysiolReg="aCompCorr" - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
 	# 2) flags_PhysiolReg=meanPhysReg - mean WM and CSF signal regression
-		export flags_PhysiolReg="aCompCor"  
+		export flags_PhysiolReg="meanPhysReg"  
 
 			if [[ ${flags_PhysiolReg} == "aCompCor" ]]; then  ### if using aCompCorr
 
@@ -347,7 +346,7 @@ if $fMRI_A; then
 	# previously defined regressors, e.g. HMP and PCA's 
 	# Optional regressors to be included are: Global signal, Discrete Cosine Transforms, DVARS
 
-	export flags_EPI_regressOthers=true
+	export flags_EPI_regressOthers=false
 
 		export flags_EPI_GS=true # include global signal regression 
 			
@@ -365,14 +364,14 @@ if $fMRI_A; then
 
     #==================================== APPLY REGRESSION ===================================#
 	## Apply regression using all previously specified regressors
-	export flags_EPI_ApplyReg=true
+	export flags_EPI_ApplyReg=false
 
 	#================================ POST-REGRESSION TWEAKS =================================#
 	# These processing options will be applied to data after regression. 
 	# We do not recommend any post-regression nuissance removal as it can potentially re-introduce 
 	# noise to the regressed data. Only post-regression scrubbing is recommended. 
-	
-	export flags_EPI_postReg=true 
+
+	export flags_EPI_postReg=false 
 
 		export flags_EPI_DemeanDetrend=false 	# Typically not needed since regressors have been z-scored and 
 												# and an intercept has been added to the regression matrix.
@@ -392,7 +391,20 @@ if $fMRI_A; then
 
 	#================ COMPUTE ROI TIME-SERIES FOR EACH NODAL PARCELLATION ===================#
 
-	export flags_EPI_ROIs=true
+	export flags_EPI_ROIs=false
+
+	
+	 #=======################################ EXTRAS ###############################=========#
+
+	
+	export flags_EPI_ReHo=false  # COMPUTE ReHo	
+		export configs_ReHo_input="7_epi_hmp24_mPhys2.nii.gz"
+		export configs_ReHo_dirName="ReHo_hmp24_mPhys2"
+
+
+	export flags_EPI_ALFF=false  # COMPUTE ReHo	
+		export configs_ALFF_input="7_epi_hmp24_mPhys2.nii.gz"
+		export configs_ALFF_dirName="ALFF_hmp24_mPhys2"
 
 fi
 
@@ -405,7 +417,7 @@ export DWI_A=false
 
 if $DWI_A; then
 
-	export scanner="GE" #  SIEMENS or GE
+	export scanner="SIEMENS" #  SIEMENS or GE
 	log "SCANNER ${scanner}"
 
 	if [[ ${scanner} == "SIEMENS" ]]; then
@@ -422,11 +434,11 @@ if $DWI_A; then
 		export scanner_param_PhaseEncodingDirection="phase_encode_direction"
 	fi
 
-	export flags_DWI_dcm2niix=false # dicom to nifti coversion
+	export flags_DWI_dcm2niix=true # dicom to nifti coversion
 								# not needed if json file(s) are provided/extracted
 		export configs_DWI_readout=[] # if empty get from dicom; else specify value
-	export configs_DWI_DICOMS2_B0only=false # if DICOMS2 are B0's only set to true; if DICOMS2 contains scalars and B0's set to false 
-	export flags_DWI_topup=false # FSL topup destortion field estimation
+	export configs_DWI_DICOMS2_B0only=true # if DICOMS2 are B0's only set to true; if DICOMS2 contains scalars and B0's set to false 
+	export flags_DWI_topup=true # FSL topup destortion field estimation
 		export configs_DWI_b0cut=1 # maximum B-value to be considered B0
 	export flags_DWI_eddy=true # FSL EDDY distortion correction
 		export configs_DWI_EDDYf='0.3' # fsl bet threshold for b0 brain mask used by EDDY
