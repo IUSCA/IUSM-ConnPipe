@@ -4,6 +4,12 @@ The IU School of Medicine Neuroscience Connectivity Pipeline (IUSM-ConnPipe) exe
 
 ---
 
+# Online-Support
+
+[CLICK HERE] (https://docs.google.com/forms/d/e/1FAIpQLSf1QJJCBy90blCoRLAQr5KwlYNzS_llfW0GJ5k7mH3DXZbxwA/viewform) to request and schedule support from a ConnPipe developer. 
+
+---
+
 ## Features
 
 For a more detailed overview of the different features, please visit our [wiki](https://github.com/IUSCA/IUSM-ConnPipe/wiki).
