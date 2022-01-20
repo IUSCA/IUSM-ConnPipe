@@ -395,16 +395,36 @@ if $fMRI_A; then
 
 	
 	 #=======################################ EXTRAS ###############################=========#
-
-	
+	 
 	export flags_EPI_ReHo=false  # COMPUTE ReHo	
 		export configs_ReHo_input="7_epi_hmp24_mPhys2.nii.gz"
-		export configs_ReHo_dirName="ReHo_hmp24_mPhys2"
+		export configs_ReHo_neigh="-neigh_RAD 3"  # Specify the neighborhood in voxels or in millimiters. Options are:
+										# " " leave the string empty # Leave string empty (e.g. "") for no bandpass for default, 27 voxels (face/edge/corner)
+										# "-nneigh 7"  face adjacent voxels
+										# "-nneigh 19" face and edge adjacent voxels 
+										# "-neigh_RAD X" to specify radius in millimeters; X must be an integer
+		export configs_ReHo_mask=		# Specify the full path and name of MNI mask that you want to use								
+										  # if not specified, the rT1_brain_mask_FC.nii.gz will be used. 
+		
+		export configs_ReHo_dirName="ReHo_hmp24_mPhys2_maskFC_neigh_RAD3"   
+		# We recommend naming the directory with the parameters used to do analysis
 
 
-	export flags_EPI_ALFF=false  # COMPUTE ReHo	
+	export flags_EPI_ALFF=false  # COMPUTE ALFF/fALFFo	
 		export configs_ALFF_input="7_epi_hmp24_mPhys2.nii.gz"
-		export configs_ALFF_dirName="ALFF_hmp24_mPhys2"
+
+		export configs_ALFF_blur="-blur 6"  # Specify size of smoothing kernel. 
+												# Leave string empty (e.g. "") for no blurying
+		export configs_ALFF_bandpass="-band 0.01 0.1"  # Specify low/high values for bandpass filter
+															# Leave string empty (e.g. "") for no bandpass
+
+		export configs_ALFF_mask=		# Specify the full path and name of MNI mask that you want to use								
+										  # if not specified, the rT1_brain_mask_FC.nii.gz will be used. 
+		
+		export configs_ALFF_otherOptions="-despike -nodetrend"  # Specify other ALFF options
+												# some options are "-despike -nodetrend -un_bp_out"
+												# Leave string empty (e.g. "") for no bandpass
+		export configs_ALFF_dirName="ALFF_hmp24_mPhys2_maskFC"
 
 fi
 

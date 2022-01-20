@@ -35,15 +35,29 @@ else
     rm -rf $path2ReHo/* 
 fi 
 
+if [ -z "${configs_ReHo_mask}" ]; then
+    configs_ReHo_mask=${fileFC}
+else
+    if [[ ! -f ${configs_ReHo_mask} ]]; then
+        log "ERROR - ${configs_ReHo_mask} not found"
+        log "skipping further analysis"
+        exit 1
+    fi
+fi
+
+log "Using ${configs_ReHo_mask} as mask"
+
 #Compute Kendall's W coefficients
-cmd="3dReHo -prefix ${path2ReHo}/ReHo -inset ${PhReg_path}/${configs_ReHo_input} -mask ${fileFC}"
+cmd="3dReHo -prefix ${path2ReHo}/ReHo \
+    -inset ${PhReg_path}/${configs_ReHo_input} \
+    ${configs_ReHo_neigh} -mask ${configs_ReHo_mask}"
 log $cmd
 eval $cmd
 #exitcode=$?
 
 #Calculate mean and standard deviations of ReHo file created in 3dReHo Step
 #within a mask and output to a text file M_SD.txt
-cmd="3dmaskdump -noijk -mask ${fileFC} ${path2ReHo}/ReHo+orig \
+cmd="3dmaskdump -noijk -mask ${configs_ReHo_mask} ${path2ReHo}/ReHo+orig \
      | 1d_tool.py -show_mmms -infile - >> ${path2ReHo}/M_SD.txt"
 log $cmd
 eval $cmd 
@@ -66,10 +80,10 @@ echo "sd is $sd"
 ### NOTE about AFNI: cannot put -expr command into a string because the expression cannot be resolved
 
 #Z-score Kendall's W values for use in group analyses
-cmd="3dcalc -a ${path2ReHo}/ReHo+orig. -b ${fileFC} -expr '((a-'$mean')/'$sd'*b)' -prefix ${path2ReHo}/ReHo_normalized"
+cmd="3dcalc -a ${path2ReHo}/ReHo+orig. -b ${configs_ReHo_mask} -expr '((a-'$mean')/'$sd'*b)' -prefix ${path2ReHo}/ReHo_normalized"
 log $cmd 
 log "Above command is executed directly from terminal"
-3dcalc -a ${path2ReHo}/ReHo+orig. -b ${fileFC} -expr '((a-'$mean')/'$sd'*b)' -prefix ${path2ReHo}/ReHo_normalized
+3dcalc -a ${path2ReHo}/ReHo+orig. -b ${configs_ReHo_mask} -expr '((a-'$mean')/'$sd'*b)' -prefix ${path2ReHo}/ReHo_normalized
 
 
 # Filter results through grey matter mask
