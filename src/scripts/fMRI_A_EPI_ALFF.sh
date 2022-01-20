@@ -16,7 +16,6 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ############################################################################### 
 
-
 log "# =========================================================="
 log "# 10. EXTRAS - ALFF. "
 log "# =========================================================="
@@ -35,18 +34,33 @@ else
     rm -rf $path2ALFF/* 
 fi 
 
+if [ -z "${configs_ALFF_mask}" ]; then
+    configs_ALFF_mask=${fileFC}
+else
+    if [[ ! -f ${configs_ALFF_mask} ]]; then
+        log "ERROR - ${configs_ALFF_mask} not found"
+        log "skipping further analysis"
+        exit 1
+    fi
+fi
+
+log "Using ${configs_ALFF_mask} as mask"
+
 #Run 3dRSFC with a 6 mm blur on input dataset
-cmd="3dRSFC -prefix ${path2ALFF}/RSFC -blur 6 -mask ${fileFC} -input ${PhReg_path}/${configs_ALFF_input} 0.01 0.1"
+cmd="3dRSFC -prefix ${path2ALFF}/RSFC ${configs_ALFF_blur} \
+    -mask ${configs_ALFF_mask} \
+    -input ${PhReg_path}/${configs_ALFF_input} \
+    ${configs_ALFF_bandpass} ${configs_ALFF_otherOptions}"
 log $cmd
 eval $cmd
 
 #Calculate mean and standard deviations of ALFF and fALFF created in 3dRSFC Step
 #within a mask and output to a text file M_SD.txt
-cmd="3dmaskdump -noijk -mask ${fileFC} ${path2ALFF}/RSFC_ALFF+orig | 1d_tool.py -show_mmms -infile - >> ${path2ALFF}/M_SD1.txt"
+cmd="3dmaskdump -noijk -mask ${configs_ALFF_mask} ${path2ALFF}/RSFC_ALFF+orig | 1d_tool.py -show_mmms -infile - >> ${path2ALFF}/M_SD1.txt"
 log $cmd
 eval $cmd
 
-cmd="3dmaskdump -noijk -mask ${fileFC} ${path2ALFF}/RSFC_fALFF+orig | 1d_tool.py -show_mmms -infile - >> ${path2ALFF}/M_SD3.txt"
+cmd="3dmaskdump -noijk -mask ${configs_ALFF_mask} ${path2ALFF}/RSFC_fALFF+orig | 1d_tool.py -show_mmms -infile - >> ${path2ALFF}/M_SD3.txt"
 log $cmd
 eval $cmd
 
@@ -67,9 +81,9 @@ sd=`cat ${path2ALFF}/M_SD1.txt | grep 'stdev' | awk '{printf $14}'`
 echo "sd is $sd"
 
 #Z-score ALFF values for use in group analyses
-cmd="3dcalc -a ${path2ALFF}/RSFC_ALFF+orig. -b ${fileFC} -expr '((a-'$mean')/'$sd'*b)' -prefix ${path2ALFF}/RSFC_ALFF_normalized"
+cmd="3dcalc -a ${path2ALFF}/RSFC_ALFF+orig. -b ${configs_ALFF_mask} -expr '((a-'$mean')/'$sd'*b)' -prefix ${path2ALFF}/RSFC_ALFF_normalized"
 log $cmd
-3dcalc -a ${path2ALFF}/RSFC_ALFF+orig. -b ${fileFC} -expr '((a-'$mean')/'$sd'*b)' -prefix ${path2ALFF}/RSFC_ALFF_normalized
+3dcalc -a ${path2ALFF}/RSFC_ALFF+orig. -b ${configs_ALFF_mask} -expr '((a-'$mean')/'$sd'*b)' -prefix ${path2ALFF}/RSFC_ALFF_normalized
 
 #Do some manipulations of the text file M_SD3.txt and via a temporary file 
 #M_SD4.txt, then save out the mean and standard deviations
@@ -88,9 +102,9 @@ sd=`cat ${path2ALFF}/M_SD3.txt | grep 'stdev' | awk '{printf $14}'`
 echo "sd is $sd"
 
 #Z-score fALFF values for use in group analyses
-cmd="3dcalc -a ${path2ALFF}/RSFC_fALFF+orig. -b ${fileFC} -expr '((a-'$mean')/'$sd'*b)' -prefix ${path2ALFF}/RSFC_fALFF_normalized"
+cmd="3dcalc -a ${path2ALFF}/RSFC_fALFF+orig. -b ${configs_ALFF_mask} -expr '((a-'$mean')/'$sd'*b)' -prefix ${path2ALFF}/RSFC_fALFF_normalized"
 log $cmd
-3dcalc -a ${path2ALFF}/RSFC_fALFF+orig. -b ${fileFC} -expr '((a-'$mean')/'$sd'*b)' -prefix ${path2ALFF}/RSFC_fALFF_normalized
+3dcalc -a ${path2ALFF}/RSFC_fALFF+orig. -b ${configs_ALFF_mask} -expr '((a-'$mean')/'$sd'*b)' -prefix ${path2ALFF}/RSFC_fALFF_normalized
 
 
 #Filter results through grey matter mask 
