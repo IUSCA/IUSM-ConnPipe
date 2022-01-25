@@ -163,7 +163,8 @@ cd ${EXEDIR}
 ## Transform output to MNI space 
 fileIn=${path2ALFF}/RSFC_ALFF_normalized.nii
 fileOut=${path2ALFF}/RSFC_ALFF_normalized_MNI.nii
-cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut}"
+
+cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut} ${configs_ALFF_MNIres}"
 log $cmd
 eval $cmd
 
@@ -175,7 +176,7 @@ fi
 ## Transform output to MNI space 
 fileIn=${path2ALFF}/RSFC_fALFF_normalized.nii
 fileOut=${path2ALFF}/RSFC_fALFF_normalized_MNI.nii
-cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut}"
+cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut} ${configs_ALFF_MNIres}"
 log $cmd
 eval $cmd
 
@@ -186,7 +187,8 @@ fi
 
 fileIn=${path2ALFF}/RSFC_ALFF_normalized_GM.nii
 fileOut=${path2ALFF}/RSFC_ALFF_normalized_GM_MNI.nii
-cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut}"
+
+cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut} ${configs_ALFF_MNIres}"
 log $cmd
 eval $cmd
 
@@ -198,7 +200,7 @@ fi
 ## Transform output to MNI space 
 fileIn=${path2ALFF}/RSFC_fALFF_normalized_GM.nii
 fileOut=${path2ALFF}/RSFC_fALFF_normalized_GM_MNI.nii
-cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut}"
+cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut} ${configs_ALFF_MNIres}"
 log $cmd
 eval $cmd
 

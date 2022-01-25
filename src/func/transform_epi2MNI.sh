@@ -33,24 +33,29 @@ EPIpath=$1
 T1reg=$2
 fileIn=$3
 fileOut=$4
+MNIres=$5
 
 echo "EPIpath is -- ${EPIpath}"
 echo "T1reg is -- ${T1reg}"
 echo "fileIn is -- ${fileIn}"
 echo "fileOut is -- ${fileOut}"
+echo "MNI resolution is -- ${MNIres}"
 
 fileMat="${EPIpath}/epi_2_MNI_final.mat"
 fileWarp="${T1reg}T12MNI_warp.nii.gz"
 
-# 1mm resolution
-path2MNIref1="${FSLDIR}/data/standard/MNI152_T1_1mm.nii.gz"
-# 2mm resolution
-path2MNIref2="${FSLDIR}/data/standard/MNI152_T1_2mm.nii.gz"
+if [[ ${MNIres} -eq "1" ]]; then 
+    # 1mm resolution
+    path2MNIref="${FSLDIR}/data/standard/MNI152_T1_1mm.nii.gz"
+elif [[ ${MNIres} -eq "2" ]]; then 
+    # 2mm resolution
+    path2MNIref="${FSLDIR}/data/standard/MNI152_T1_2mm.nii.gz"
+fi 
 
 # check that all needed files exist
 # ref images
-if [[ ! -e ${path2MNIref1} ]] || [[ ! -e ${path2MNIref2} ]]; then
-    echo "ERROR  - ${path2MNIref1} or ${path2MNIref2} not found. Exiting..."
+if [[ ! -e ${path2MNIref} ]]; then
+    echo "ERROR  - ${path2MNIref} not found. Exiting..."
     exit 1
 fi
 
@@ -67,8 +72,8 @@ if [[ ! "${EPIpath}/epi_2_MNI_final.mat" ]]; then
 fi
 
 cmd="applywarp -i ${fileIn} \
-    -o ${fileOut} \
-    -r ${path2MNIref1} \
+    -o ${fileOut}_1mm \
+    -r ${path2MNIref} \
     -w ${T1reg}/T12MNI_warp.nii.gz \
     --premat=${EPIpath}/epi_2_MNI_final.mat \
     --interp=nn"

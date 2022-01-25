@@ -121,7 +121,7 @@ cd ${EXEDIR}
 ## Transform output to MNI space 
 fileIn=${path2ReHo}/ReHo_normalized.nii 
 fileOut=${path2ReHo}/ReHo_normalized_MNI.nii
-cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut}"
+cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut} ${configs_ReHo_MNIres}"
 log $cmd
 eval $cmd
 
@@ -132,7 +132,7 @@ fi
 
 fileIn=${path2ReHo}/ReHo_normalized_GM.nii 
 fileOut=${path2ReHo}/ReHo_normalized_GM_MNI.nii
-cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut}"
+cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut} ${configs_ReHo_MNIres}"
 log $cmd
 eval $cmd
 
