@@ -281,7 +281,7 @@ if [[ -d ${DWIpath} ]]; then
         else  
 
             if [[ ! -e "${DWIpath}/${fileBval}" ]] && [[ ! -e "${DWIpath}/${fileBvec}" ]]; then
-                log "WARNIGN Bvec and/or Bval files do not exist. Skipping further analyses"
+                log "WARNING Bvec and/or Bval files do not exist. Skipping further analyses"
                 exit 1
             else
                 out=$(read_bvals_bvecs ${DWIpath})
