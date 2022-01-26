@@ -43,8 +43,8 @@ fi
 if ${flags_EPI_GS}; then
     log " Global signal regression is ON "
 else
-    log " Global signal regression is OFF "
-    export configs_EPI_numGS=0
+    log " Global signal regression is OFF - will compute global signal for QC"
+    export configs_EPI_numGS=2
 fi
 
 if ${configs_EPI_DCThighpass}; then
