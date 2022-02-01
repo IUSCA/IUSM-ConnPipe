@@ -5,10 +5,11 @@ import nibabel as nib
 from scipy import stats
 from scipy.io import savemat
 
-flog.write("\n *** python apply_bandpass **** ")
 
 logfile_name = ''.join([os.environ['logfile_name'],'.log'])
 flog=open(logfile_name, "a+")
+flog.write("\n *** python apply_bandpass **** ")
+
 
 EPIpath=os.environ['EPIpath']
 print("EPIpath ",EPIpath)

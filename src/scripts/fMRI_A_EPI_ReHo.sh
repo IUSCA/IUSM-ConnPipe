@@ -119,9 +119,12 @@ cd ${EXEDIR}
 
 
 ## Transform output to MNI space 
+
 fileIn=${path2ReHo}/ReHo_normalized.nii 
-fileOut=${path2ReHo}/ReHo_normalized_MNI.nii
-cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut} ${configs_ReHo_MNIres}"
+fileOut=${path2ReHo}/ReHo_normalized_MNI_${configs_ReHo_MNIres}mm.nii.gz
+cmd="${EXEDIR}/src/func/transform_epi2MNI.sh \
+    ${EPIpath} ${T1path}/registration \
+    ${fileIn} ${fileOut} ${configs_ReHo_MNIres}"
 log $cmd
 eval $cmd
 
@@ -129,14 +132,51 @@ if [[ ! $? -eq 0 ]]; then
     log "ERROR - transformation of $fileIn to MNI space failed "
     exit 1
 fi
+
+if [[ "${configs_ReHo_MNIres}" != "1" ]] && [[ "${configs_ReHo_MNIres}" != "2" ]]; then
+    # custom resolution defined by user
+    log "WARNING - configs_ReHo_MNIres is not standard. Resampling will be performed"
+    fileIn1mm=${path2ReHo}/ReHo_normalized_MNI_1mm.nii.gz
+    cmd="mv ${fileOut} ${fileIn1mm}"
+    log $cmd
+    eval $cmd 
+
+    # resample data
+    cmd="${EXEDIR}/src/func/resample_MNIres.sh \
+        ${fileIn1mm} ${fileOut} 1 ${configs_ReHo_MNIres}"
+    log $cmd
+    eval $cmd 
+
+fi 
+
 
 fileIn=${path2ReHo}/ReHo_normalized_GM.nii 
-fileOut=${path2ReHo}/ReHo_normalized_GM_MNI.nii
-cmd="${EXEDIR}/src/func/transform_epi2MNI.sh ${EPIpath} ${T1path}/registration ${fileIn} ${fileOut} ${configs_ReHo_MNIres}"
+fileOut=${path2ReHo}/ReHo_normalized_GM_MNI_${configs_ReHo_MNIres}mm.nii.gz
+cmd="${EXEDIR}/src/func/transform_epi2MNI.sh \
+    ${EPIpath} ${T1path}/registration \
+    ${fileIn} ${fileOut} ${configs_ReHo_MNIres}"
 log $cmd
 eval $cmd
+
 
 if [[ ! $? -eq 0 ]]; then
     log "ERROR - transformation of $fileIn to MNI space failed "
     exit 1
 fi
+
+
+if [[ "${configs_ReHo_MNIres}" != "1" ]] && [[ "${configs_ReHo_MNIres}" != "2" ]]; then
+    # custom resolution defined by user
+    log "WARNING - configs_ReHo_MNIres is not standard. Resampling will be performed"
+    fileIn1mm=${path2ReHo}/ReHo_normalized_GM_MNI_1mm.nii.gz
+    cmd="mv ${fileOut} ${fileIn1mm}"
+    log $cmd
+    eval $cmd 
+
+    # resample data
+    cmd="${EXEDIR}/src/func/resample_MNIres.sh \
+        ${fileIn1mm} ${fileOut} 1 ${configs_ReHo_MNIres}"
+    log $cmd
+    eval $cmd 
+
+fi 

@@ -44,12 +44,13 @@ echo "MNI resolution is -- ${MNIres}"
 fileMat="${EPIpath}/epi_2_MNI_final.mat"
 fileWarp="${T1reg}T12MNI_warp.nii.gz"
 
-if [[ ${MNIres} -eq "1" ]]; then 
-    # 1mm resolution
-    path2MNIref="${FSLDIR}/data/standard/MNI152_T1_1mm.nii.gz"
-elif [[ ${MNIres} -eq "2" ]]; then 
+if [[ "${MNIres}" == "2" ]]; then 
     # 2mm resolution
     path2MNIref="${FSLDIR}/data/standard/MNI152_T1_2mm.nii.gz"
+# elif [[ ${MNIres} -eq "2" ]]; then 
+else # use 1mm resolution to ensure that scaling factor = desired res size. 
+    # 1mm resolution
+    path2MNIref="${FSLDIR}/data/standard/MNI152_T1_1mm.nii.gz"
 fi 
 
 # check that all needed files exist
@@ -72,10 +73,12 @@ if [[ ! "${EPIpath}/epi_2_MNI_final.mat" ]]; then
 fi
 
 cmd="applywarp -i ${fileIn} \
-    -o ${fileOut}_1mm \
+    -o ${fileOut} \
     -r ${path2MNIref} \
     -w ${T1reg}/T12MNI_warp.nii.gz \
     --premat=${EPIpath}/epi_2_MNI_final.mat \
     --interp=nn"
 echo $cmd
 eval $cmd 
+
+
