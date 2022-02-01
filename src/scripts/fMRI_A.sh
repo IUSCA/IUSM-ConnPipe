@@ -293,20 +293,20 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 
 
 
-    if ${flags_EPI_regressOthers}; then  
+    # if ${flags_EPI_regressOthers}; then  
+    ### Always run regressOthers - it computes Global signal for QC purposes, but won't be applied ot regression
+    echo "Other Regressors"
 
-        echo "Other Regressors"
+    cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_regressOthers.sh"
+    echo $cmd
+    eval $cmd
+    exitcode=$?
 
-        cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_regressOthers.sh"
-        echo $cmd
-        eval $cmd
-        exitcode=$?
-
-        if [[ ${exitcode} -ne 0 ]] ; then
-            echoerr "problem at fMRI_A_EPI_regressOthers. exiting."
-            exit 1
-        fi  
+    if [[ ${exitcode} -ne 0 ]] ; then
+        echoerr "problem at fMRI_A_EPI_regressOthers. exiting."
+        exit 1
     fi  
+    # fi  
 
 
 
