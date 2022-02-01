@@ -206,7 +206,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export fMRI_A=false 
+export fMRI_A=true 
 
 if $fMRI_A; then
 
@@ -336,7 +336,7 @@ if $fMRI_A; then
 
 			elif [[ ${flags_PhysiolReg} == "meanPhysReg" ]]; then  ### if using WM and CSF mean signal regression
 
-				export configs_EPI_numPhys=8  # define how many regressors to use. 
+				export configs_EPI_numPhys=2  # define how many regressors to use. 
 										      # options are: 2-mean signal; 4-mean signal+derivatives; 8-mean signal+derivatives+sq
 		
 			fi
@@ -346,21 +346,21 @@ if $fMRI_A; then
 	# previously defined regressors, e.g. HMP and PCA's 
 	# Optional regressors to be included are: Global signal, Discrete Cosine Transforms, DVARS
 
-	export flags_EPI_regressOthers=false
+	#export flags_EPI_regressOthers=true
 
-		export flags_EPI_GS=true # include global signal regression 
-			
-			export configs_EPI_numGS=4 # define number of global signal regressors
-									   # Options are: 1-mean signal; 2-mean signal+deriv; 4-mean signal+deriv+sq
-			
-		export configs_EPI_DCThighpass=true  # Perform highpass filtering within regression using Discrete Cosine Transforms. 
-			
-			export configs_EPI_dctfMin=0.009  # Specify level of high-pass filtering in Hz, 
-										      # i.e. the lowest frequency signals that will be retained 
-										      # The appropriate number (k) of DCT bases will be determined as follows:
-										      # k = fMin * 2 * TR * numTimePoints 
+	export flags_EPI_GS=true # include global signal regression 
+		
+		export configs_EPI_numGS=2 # define number of global signal regressors
+									# Options are: 1-mean signal; 2-mean signal+deriv; 4-mean signal+deriv+sq
+		
+	export configs_EPI_DCThighpass=false  # Perform highpass filtering within regression using Discrete Cosine Transforms. 
+		
+		export configs_EPI_dctfMin=0.009  # Specify level of high-pass filtering in Hz, 
+											# i.e. the lowest frequency signals that will be retained 
+											# The appropriate number (k) of DCT bases will be determined as follows:
+											# k = fMin * 2 * TR * numTimePoints 
 
-		export flags_EPI_DVARS=true 
+	export flags_EPI_DVARS=false 
 
     #==================================== APPLY REGRESSION ===================================#
 	## Apply regression using all previously specified regressors
@@ -385,7 +385,7 @@ if $fMRI_A; then
 			export configs_EPI_fMax=0.08
 
 
-		export configs_EPI_scrub=true     # Apply scrubbing:
+		export configs_EPI_scrub=false     # Apply scrubbing:
 										  # if flags_EPI_DVARS=true then scrubbing is based on computed DVARS
 										  # if flag_EPI_DVARS=false then scrubbing is based on FSL's FD & DVARS 
 
@@ -395,18 +395,22 @@ if $fMRI_A; then
 
 	
 	 #=======################################ EXTRAS ###############################=========#
-	 
+
+	
 	export flags_EPI_ReHo=false  # COMPUTE ReHo	
-		export configs_ReHo_input="7_epi_hmp24_mPhys2.nii.gz"
+		export configs_ReHo_input="7_epi_hmp24_mPhys2_Gs2.nii.gz"
 		export configs_ReHo_neigh="-neigh_RAD 3"  # Specify the neighborhood in voxels or in millimiters. Options are:
-										# " " leave the string empty # Leave string empty (e.g. "") for no bandpass for default, 27 voxels (face/edge/corner)
+										# " "  Leave string empty (e.g. "") for default, 27 voxels (face/edge/corner)
 										# "-nneigh 7"  face adjacent voxels
 										# "-nneigh 19" face and edge adjacent voxels 
 										# "-neigh_RAD X" to specify radius in millimeters; X must be an integer
 		export configs_ReHo_mask=		# Specify the full path and name of MNI mask that you want to use								
 										  # if not specified, the rT1_brain_mask_FC.nii.gz will be used. 
+		export configs_ReHo_MNIres="2"    # Specify the resolution of the reference image
+										   # Options are "1" for 1mm, "2" for 2mm. Enter custom resolution
+										   # to use flirt to resample your data to selected resolution. 
 		
-		export configs_ReHo_dirName="ReHo_hmp24_mPhys2_maskFC_neigh_RAD3"   
+		export configs_ReHo_dirName="ReHo_hmp24_mPhys2_Gs2_maskFC_neigh_RAD3"   
 		# We recommend naming the directory with the parameters used to do analysis
 
 
@@ -420,6 +424,9 @@ if $fMRI_A; then
 
 		export configs_ALFF_mask=		# Specify the full path and name of MNI mask that you want to use								
 										  # if not specified, the rT1_brain_mask_FC.nii.gz will be used. 
+
+		export configs_ALFF_MNIres=2.5    # Specify the resolution of the reference image
+										   # Options are "1", 1mm, "2", 2mm, or user defined. 
 		
 		export configs_ALFF_otherOptions="-despike -nodetrend"  # Specify other ALFF options
 												# some options are "-despike -nodetrend -un_bp_out"
