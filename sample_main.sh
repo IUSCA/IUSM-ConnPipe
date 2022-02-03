@@ -32,6 +32,8 @@ source ${EXEDIR}/config.sh
 ################################################################################
 ############################ Dependencies ######################################
 
+export pathMNItmplates="${pathSM}/MNI_templates"
+
 export pathFSLstandard="${FSLDIR}/data/standard"
 
 if [[ -e "${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz" ]]; then
