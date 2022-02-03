@@ -591,22 +591,31 @@ if ${flags_T1_parc}; then
 
                 # Generate inverse subcortical mask to isolate cortical portion of parcellation.
                 fileIn="${T1path}/T1_subcort_mask.nii.gz"
-                fileOut="${T1path}/T1_subcort_mask_dil.nii.gz"
-                fileMas="${T1path}/T1_GM_mask.nii.gz"
+                fileMas="${T1path}/T1_GM_mask.nii.gz"            
 
-                cmd="fslmaths ${fileIn} -dilD ${fileOut}"
-                log $cmd
-                eval $cmd 
+                if ${configs_T1_subcortUser}; then
+
+                    fileOut=${fileIn}
+                    fileMas2="${T1path}/T1_subcort_mask_inv.nii.gz"
+
+                else  # dilate subcort mask 
+                    fileOut="${T1path}/T1_subcort_mask_dil.nii.gz"
+                    cmd="fslmaths ${fileIn} -dilD ${fileOut}"
+                    log $cmd
+                    eval $cmd  
+
+                    fileMas2="${T1path}/T1_subcort_mask_dil_inv.nii.gz"                  
+                fi
 
                 cmd="fslmaths ${fileOut} -mas ${fileMas} ${fileOut}"
                 log $cmd
                 eval $cmd 
 
-                fileMas2="${T1path}/T1_subcort_mask_dil_inv.nii.gz"
 
                 cmd="fslmaths ${fileOut} -binv ${fileMas2}"
                 log $cmd
                 eval $cmd 
+                
 
             fi 
 
@@ -655,18 +664,39 @@ if ${flags_T1_parc}; then
                 eval $cmd
 
                 dof6_inv="${T1reg}/MNI2T1_dof6.mat"
-                FileIn="${T1reg}/cerebellum_unwarped_dof12"
+
+                # Dilate Cereb-unwarped
+                if ${configs_dilate_cerebellum}; then
+                     
+                    log "WARING dilating ${FileOut}"
+                    
+                    fileDil="${T1reg}/cerebellum_unwarped_dof12_dil"
+
+                    cmd="fslmaths ${FileOut} -dilD ${fileDil}"
+                    log $cmd
+                    eval $cmd 
+
+                    FileIn=${fileDil}
+                    FileCereb_bin="${T1reg}/Cerebellum_dil_bin.nii.gz"
+                    FileCereb_inv="${T1path}/Cerebellum_dil_Inv.nii.gz"
+
+                else
+                    FileIn="${T1reg}/cerebellum_unwarped_dof12"
+                    FileCereb_bin="${T1reg}/Cerebellum_bin.nii.gz"
+                    FileCereb_inv="${T1path}/Cerebellum_Inv.nii.gz"
+                fi
+
                 if ${configs_T1_useMNIbrain}; then
                     FileRef="${T1path}/T1_brain.nii.gz"
                 else
                     FileRef="${T1path}/T1_fov_denoised.nii"
                 fi
-                FileOut="${T1reg}/Cerebellum_bin.nii.gz"
+                
 
                 cmd="flirt \
                 -in ${FileIn} \
                 -ref ${FileRef} \
-                -out ${FileOut} \
+                -out ${FileCereb_bin} \
                 -applyxfm \
                 -init ${dof6_inv} \
                 -interp nearestneighbour
@@ -675,9 +705,7 @@ if ${flags_T1_parc}; then
                 eval $cmd
 
                 # Generate cerebellar inverse mask
-                FileIn="${T1reg}/Cerebellum_bin.nii.gz"
-                FileOut="${T1path}/Cerebellum_Inv.nii.gz"
-                cmd="fslmaths ${FileIn} -binv ${FileOut}"
+                cmd="fslmaths ${FileCereb_bin} -binv ${FileCereb_inv}"
                 log $cmd
                 eval $cmd
 
@@ -688,9 +716,13 @@ if ${flags_T1_parc}; then
             # #-------------------------------------------------------------------------%    
             # # Remove any parcellation contamination of the cerebellum.                             
             FileIn="${T1path}/T1_GM_parc_${parc}.nii.gz"
-            FileInv="${T1path}/Cerebellum_Inv.nii.gz"
+            if ${configs_dilate_cerebellum}; then
+                FileCereb_inv="${T1path}/Cerebellum_dil_Inv.nii.gz"
+            else
+                FileCereb_inv="${T1path}/Cerebellum_Inv.nii.gz"
+            fi
             
-            cmd="fslmaths ${FileIn} -mas ${FileInv} ${FileIn}"
+            cmd="fslmaths ${FileIn} -mas ${FileCereb_inv} ${FileIn}"
             log $cmd
             eval $cmd  
 
@@ -729,7 +761,7 @@ if ${flags_T1_parc}; then
 
                         if ! ${onesubcort} ; then
                             # check that parcellation is available in T1 space
-                            fileSubcortUser="T1_parc_${parcii}.nii.gz"
+                            fileSubcortUser="T1_GM_parc_${parcii}.nii.gz"
 
                             if [[ -f "${T1path}/${fileSubcortUser}" ]]; then
 
@@ -750,6 +782,8 @@ if ${flags_T1_parc}; then
             fi
 
             log "fileSubcort is ${fileSubcort}"
+            
+            FileIn="${T1path}/T1_GM_parc_${parc}.nii.gz"
             
             log "ADD_SUBCORT_PARC using ${FileIn} and ${fileSubcort}"
             # call python script
