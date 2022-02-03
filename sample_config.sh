@@ -178,18 +178,23 @@ export T1_PREPARE_B=false
 if $T1_PREPARE_B; then
 
 	# registration flags
-	export flags_T1_reg2MNI=true
+	export flags_T1_reg2MNI=false
 		export configs_T1_useExistingMats=false
 		export configs_T1_useMNIbrain=true
 		export configs_T1_fnirtSubSamp="4,4,2,1"
 	# segmentation flags
-	export flags_T1_seg=true		
+	export flags_T1_seg=false		
 		export configs_T1_segfastH="0.25"
 		export configs_T1_masklowthr=1
 		export configs_T1_flirtdof6cost="mutualinfo"
 	# parcellation flags
 	export flags_T1_parc=true
-		export configs_T1_numDilReMask=3
+		export configs_T1_numDilReMask=3  
+		# Set number of times that 
+		# parc gets dilated and remasked to fill GM
+		export configs_dilate_cerebellum=true
+		# We recommed dilating cerebellum mask to ensure no cortical-cerebellum overlap. 
+		# this dilation may not be needed for subjects where CSF is enlarged. 
 		export configs_T1_addsubcort=true 
 		# add FSL subcortical to cortial parcellations 	
 		# but ONLY to nodal parcellation as individual regions
