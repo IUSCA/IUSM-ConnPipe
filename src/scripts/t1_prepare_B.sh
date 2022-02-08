@@ -761,7 +761,7 @@ if ${flags_T1_parc}; then
 
                         if ! ${onesubcort} ; then
                             # check that parcellation is available in T1 space
-                            fileSubcortUser="T1_GM_parc_${parcii}.nii.gz"
+                            fileSubcortUser="T1_parc_${parcii}.nii.gz"
 
                             if [[ -f "${T1path}/${fileSubcortUser}" ]]; then
 
