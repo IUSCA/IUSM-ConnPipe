@@ -28,8 +28,6 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         path_GREmagdcm="${GREFMpath}/${configs_GREmagdcm}"
         path_GREphasedcm="${GREFMpath}/${configs_GREphasedcm}"
 
-        fileNm1=${configs_Mag_file}
-        fileNm2="${configs_Phase_file}"
         filePhaseMapNm="gre_fieldmap_phasediff"
             
         log "EPI session number: ${EPInum}"
@@ -58,14 +56,14 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                     # fsval image descrip would do the same but truncates TEs to a single digit!
                     echo "There are ${#dicom_files[@]} dicom files in ${path_GREmagdcm} "
                     
-                    dcm_file=${dicom_files[0]}
+                    dcm_file=${dicom_files[2]}
                     cmd="dicom_hinfo -tag 0018,0081 ${dcm_file}"
                     log $cmd
                     out=`$cmd`
                     TE1=`echo $out | awk -F' ' '{ print $2}'`
                     echo "Header extracted TE1 is: ${TE1}" 
 
-                    dcm_file=${dicom_files[1]}
+                    dcm_file=${dicom_files[0]}
                     cmd="dicom_hinfo -tag 0018,0081 ${dcm_file}"
                     log $cmd
                     out=`$cmd`
@@ -76,14 +74,14 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                     log "Calculated DeltaTE is ${DeltaTE}"
                 fi
 
-                fileMag1="${GREFMpath}/${fileNm1}_e1.nii"
+                fileMag1="${GREFMpath}/${configs_Mag_file}_e1.nii"
                 if [[ -f ${fileMag1} ]]; then
                     cmd="rm ${fileMag1}"
                     log $cmd
                     eval $cmd
                 fi
 
-                fileMag2="${GREFMpath}/${fileNm1}_e2.nii"
+                fileMag2="${GREFMpath}/${configs_Mag_file}_e2.nii"
                 if [[ -f ${fileMag2} ]]; then
                     cmd="rm ${fileMag2}"
                     log $cmd
@@ -92,38 +90,51 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
                 # dicom import
                 fileLog="${path_GREmagdcm}/dcm2niix.log"
-                cmd="dcm2niix -f $fileNm1 -o ${GREFMpath} -v y -x y ${path_GREmagdcm} > ${fileLog}"
+                cmd="dcm2niix -f ${configs_Mag_file} -o ${GREFMpath} \
+                    -v y -x y ${path_GREmagdcm} > ${fileLog}"
                 log $cmd
                 eval $cmd
 
-                # remove any existing file
-                filePhaseMap="${GREFMpath}/${fileNm2}_e2_ph.nii"
-                if [[ -f ${filePhaseMap} ]]; then
-                    cmd="rm ${filePhaseMap}"
-                    log $cmd
-                    eval $cmd
-                fi
+                # remove any existing phase-map files
+                rm ${GREFMpath}/${configs_Phase_file}_e2_ph*
+
 
                 # dicom import
                 fileLog="${path_GREphasedcm}/dcm2niix.log"
-                cmd="dcm2niix -f $fileNm2 -o ${GREFMpath} -v y -x y ${path_GREphasedcm} > ${fileLog}"
+                cmd="dcm2niix -f ${configs_Phase_file} -o ${GREFMpath} \
+                    -v y -x y ${path_GREphasedcm} > ${fileLog}"
                 log $cmd
                 eval $cmd 
 
-            elif ! ${configs_use_DICOMS} && ${configs_extract_twoMags} && [ -f "${GREFMpath}/${fileNm1}.nii.gz" ]; then 
+                # identify full name of phasemap file with echoNum
+                if [[ -f "${GREFMpath}/${configs_Phase_file}_e2_ph.nii" ]]; then
+                    export configs_Phase_file="${configs_Phase_file}_e2_ph"
+                elif [[ -f "${GREFMpath}/${configs_Phase_file}_e1_ph.nii" ]]; then
+                    export configs_Phase_file="${configs_Phase_file}_e1_ph"
+                else
+                    log "WARNING ${GREFMpath}/${configs_Phase_file} not found. Exiting..."
+                    exit 1   
+                fi
 
-                log "GREFM Extracting Mag1 and Mag2 from ${GREFMpath}/${fileNm1}"
+                log "Phasemap file name is ${configs_Phase_file}"
 
-                fileMag1="${GREFMpath}/${fileNm1}_0000.nii.gz"
-                fileMag2="${GREFMpath}/${fileNm1}_0001.nii.gz"
+            elif ! ${configs_use_DICOMS} && ${configs_extract_twoMags} \
+                && [ -f "${GREFMpath}/${configs_Mag_file}.nii.gz" ]; then 
+
+                log "GREFM Extracting Mag1 and Mag2 from ${GREFMpath}/${configs_Mag_file}"
 
                 # split 3D volumes in Mag image, corresponding to Mag1 and Mag2
-                cmd="fslsplit ${GREFMpath}/${fileNm1}.nii.gz ${GREFMpath}/${fileNm1}_ -t"
+                cmd="fslsplit ${GREFMpath}/${configs_Mag_file}.nii.gz \
+                    ${GREFMpath}/${configs_Mag_file}_ -t"
                 log $cmd
                 eval $cmd 
 
+                fileMag1="${GREFMpath}/${configs_Mag1}.nii.gz"
+                fileMag2="${GREFMpath}/${configs_Mag2}.nii.gz"                
+
             elif ! ${configs_use_DICOMS} && ! ${configs_extract_twoMags} && \ 
-                 [ -f "${GREFMpath}/${configs_Mag1}" ] && [ -f "${GREFMpath}/${configs_Mag2}" ]; then 
+                 [ -f "${GREFMpath}/${configs_Mag1}" ] \
+                 && [ -f "${GREFMpath}/${configs_Mag2}" ]; then 
 
                 log "GREFM Mag1 and Mag2 provided by user"
 
@@ -132,13 +143,11 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 
             else 
-                log "WARNING UNWARP DICOMS folders or filedmap magnitude nii images do not exist. Field Map correction failed. Exiting..."
+                log "WARNING UNWARP DICOMS folders or filedmap magnitude \
+                    nii images do not exist. Field Map correction failed. Exiting..."
                 exit 1
 
             fi
-
-            echo "FINDING ${fileMag1}"
-            echo "FINDING ${fileMag2}"
 
             if [[ -f ${fileMag1} ]] && [[ -f ${fileMag2} ]]; then
 
@@ -156,12 +165,23 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                 log $cmd
                 eval $cmd 
 
-                fileFMap="${GREFMpath}/${fileNm2}_rads_prepared"
+                # gzip fieldmap volumes                  
+                cmd="gzip -f ${GREFMpath}/${configs_Phase_file}.nii"
+                log $cmd
+                eval $cmd 
+
+                fileFMap="${GREFMpath}/${configs_Phase_file}.nii.gz"
 
                 if ${configs_use_DICOMS} && ${configs_fsl_prepare_fieldmap}; then
                     # Prepare phase map
-                    # fsl_prepare_fieldmap <scanner> <phase_image> <magnitude_image> <out_image> <deltaTE (in ms)>
-                    cmd="fsl_prepare_fieldmap ${scanner} ${GREFMpath}/${fileNm2} ${fileMagBrain} ${fileFMap} ${DeltaTE}"
+                    # fsl_prepare_fieldmap <scanner> <phase_image> 
+                        #<magnitude_image> <out_image> <deltaTE (in ms)>
+                        # 
+                    fileFMap="${GREFMpath}/${configs_Phase_file}_rads_prepared.nii.gz"
+                    
+                    cmd="fsl_prepare_fieldmap ${scanner} \
+                        ${GREFMpath}/${configs_Phase_file} \
+                        ${fileMagBrain} ${fileFMap} ${DeltaTE}"
                     log $cmd
                     eval $cmd
                 fi 
@@ -169,30 +189,28 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                 if ${configs_convert2radss}; then 
                   # phasemap needs to be converted from Hz to Rad/s and masked 
 
-                    cmd="fslmaths ${GREFMpath}/${fileNm2}.nii.gz -mul 6.28 ${fileFMap}"
+                    cmd="fslmaths ${GREFMpath}/${configs_Phase_file}.nii.gz -mul 6.28 ${fileFMap}"
                     log $cmd
                     eval $cmd
 
-                    cmd="fslmaths ${fileFMap}.nii.gz \
-                        -mul ${fileMagBrain}_mask.nii.gz ${fileFMap}.nii.gz" 
+                    cmd="fslmaths ${fileFMap} \
+                        -mul ${fileMagBrain}_mask.nii.gz ${fileFMap}" 
                     log $cmd
                     eval $cmd
                 fi                   
 
                 # Now run fugue (-s 3 : apply Gaussian smoothing of sigma = 3mm -- smoothing 
-                fileFMapIn="${fileFMap}.nii.gz"
-
-                if [ -f ${fileFMapIn} ]; then
+                if [ -f ${fileFMap} ]; then
 
                     if ${configs_EPI_GREdespike}; then
                         fileFMapRads="${GREFMpath}/fm_rads_brain_sm${configs_EPI_GREsmooth}_m_ds"
-                        cmd="fugue --loadfmap=${fileFMapIn} \
+                        cmd="fugue --loadfmap=${fileFMap} \
                         -s ${configs_EPI_GREsmooth} \
                         -m --despike \
                         --savefmap=${fileFMapRads}"
                     else
                         fileFMapRads="${GREFMpath}/fm_rads_brain_sm${configs_EPI_GREsmooth}_m"
-                        cmd="fugue --loadfmap=${fileFMapIn} \
+                        cmd="fugue --loadfmap=${fileFMap} \
                         -s ${configs_EPI_GREsmooth} \
                         -m --savefmap=${fileFMapRads}"                    
 
@@ -210,7 +228,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                     fi
 
                 else 
-                    "WARNING ${fileFMapIn} not found. Exiting..."
+                    "WARNING ${fileFMap} not found. Exiting..."
                     exit 1
                 fi
 
