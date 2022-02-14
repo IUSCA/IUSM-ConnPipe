@@ -124,15 +124,15 @@ export PARC4psubcortonly=1;
 ## THE NAMING FORMAT. NOTE THAT PARCELLATIONS ARE RUN IN THE ORDER IN WHICH THEY ARE 
 ## LISTED ABOVE. FOR EXAMPLE IF numParcs is set to 1, ONLY CSF AND PARC1="shen_278"
 ## WILL BE USED
-export numParcs=4  # CSF doesn't count; numParcs cannot be less than 1. Schaefer is the defailt parc
+export numParcs=3  # CSF doesn't count; numParcs cannot be less than 1. Schaefer is the defailt parc
 
 
 ############################# T1 DENOISING #####################################
 
-#### THE DENOISING FLAG IS USED IN T1_PREAPARE_A AND T1_PREPARE_B SO IT IS SET AS A GLOBAL FLAG
+#### THE DENOISING FLAG IS USED IN T1_PREAPARE_A AND T1_PREPARE_B SO IT IS SET AS A GLOBAL FALG
 #### REGARDLESS OF WHETHER YOU ARE APPLYING DENOISING OR NOT, YOU MUST SET THIS FLAG 
 # OPTIONS ARE: "ANTS", "SUSAN" FOR FSL'S SUSAN, OR "NONE" FOR NO DENOISING
-configs_T1_denoised="ANTS"
+configs_T1_denoised="NONE"
 
 
 ################################################################################
@@ -158,8 +158,8 @@ if $T1_PREPARE_A; then
 
 	export flags_T1_extract_and_mask=true # brain extraction and mask generation (only needed for double BET)
 		export configs_antsTemplate="MICCAI"  # options are: ANTS (MICCAI, NKI, IXI) or bet
-		export configs_T1_A_betF="0.3" # this are brain extraction parameters with FSL bet
-		export configs_T1_A_betG="-0.1"  # see fsl bet help page for more details
+		export configs_T1_A_betF="0.2" # this are brain extraction parameters with FSL bet
+		export configs_T1_A_betG="0"  # see fsl bet help page for more details
 		export config_brainmask_overlap_thr="0.90"  # this is the threshold to assess whether or not the ANTS and BET masks are similar 'ehough"'
 		# USER if runnign ANTS, bet will be run anyway as a QC check for the brain maks.
 		# QC output will be printed out in the QC file for each subject. 
@@ -178,12 +178,12 @@ export T1_PREPARE_B=false
 if $T1_PREPARE_B; then
 
 	# registration flags
-	export flags_T1_reg2MNI=false
+	export flags_T1_reg2MNI=true
 		export configs_T1_useExistingMats=false
 		export configs_T1_useMNIbrain=true
 		export configs_T1_fnirtSubSamp="4,4,2,1"
 	# segmentation flags
-	export flags_T1_seg=false		
+	export flags_T1_seg=true		
 		export configs_T1_segfastH="0.25"
 		export configs_T1_masklowthr=1
 		export configs_T1_flirtdof6cost="mutualinfo"
@@ -199,7 +199,7 @@ if $T1_PREPARE_B; then
 		# add FSL subcortical to cortial parcellations 	
 		# but ONLY to nodal parcellation as individual regions
 		# To others add as a single subcortical network.
-		export configs_T1_subcortUser=true   
+		export configs_T1_subcortUser=false   
 		# false = default FSL; true = user-provided
 		# Name of user-provided subcortical parcellation (assumed to be found in ConnPipeSM folder)
 		# should be set in the desired parcellation name for index "N" with "psubcortonly=1"	
@@ -259,21 +259,24 @@ if $fMRI_A; then
 		export flags_EPI_RunTopup=true # 1=Run topup (1st pass), 0=Do not rerun if previously completed. 
 
 	#====================== OPTION 2: GRADIENT FIELD MAP UNWARP =====================#
-	export flags_EPI_GREFMUnwarp=false # Requires GREfieldmap directory and appropriate dicoms
+	export flags_EPI_GREFMUnwarp=true # Requires GREfieldmap directory and appropriate dicoms
     	
-		export configs_use_DICOMS=true  # set to true if Extract TE1 and TE2 from the first image of Gradient Echo Magnitude Series
-										 # set to false if gre_fieldmap_mag already generated (i.e. STANFORD data)	
-										# if set to 'false', GREFMUnwarp code will look for a single Magnitude file and try to extract Mag1 and Mag2
-										# or, it will look for Mag1 and Mag2
+		export configs_use_DICOMS=true   # set to true if Extract TE1 and TE2 from the first image of Gradient Echo Magnitude Series
+										 # set to false if gre_fieldmap_mag already generated (i.e. STANFORD GE data)	
+										 # if set to 'false', GREFMUnwarp code will look for a single Magnitude file and try to extract Mag1 and Mag2
+										 # or, it will look for Mag1 and Mag2
 			export configs_extract_twoMags=false
 			export configs_Mag_file="gre_fieldmap_mag"
 				export configs_Mag1="gre_fieldmap_mag_0000.nii.gz"  #if Mag1 and Mag2 already exist, name them here
 				export configs_Mag2="gre_fieldmap_mag_0001.nii.gz"
 			export configs_Phase_file="gre_fieldmap_phasemap"
-			
+		
+		export configs_fsl_prepare_fieldmap=true   # Output from fsl_prepare_fieldmap will be in rad/s
+												   # https://lcni.uoregon.edu/kb-articles/kb-0003	
+		
 		export configs_convert2radss=false   # if fieldmap_phasemap is in Hz, then it must be converted to rads/s 
-												# set to true for NANSTAN
-		export configs_fsl_prepare_fieldmap=true		
+											
+				
 
 		export configs_EPI_GREbetf=0.5; # GRE-specific bet values. Do not change
 		export configs_EPI_GREbetg=0;   # GRE-specific bet input. Change if needed 
@@ -283,23 +286,23 @@ if $fMRI_A; then
 	#==================================================================================#
 	#==================================================================================#
 
-	export flags_EPI_SliceTimingCorr=false		
+	export flags_EPI_SliceTimingCorr=true		
 		export configs_EPI_minTR=1.6   # perform Slice Timing correction only if TR > configs_EPI_minTR
 		export configs_EPI_UseTcustom=1   # 1: use header-extracted times (suggested)
 
-	export flags_EPI_MotionCorr=false   # head motion estimation with FSL's mcflirt; generates 6 motion param for each BOLD image
+	export flags_EPI_MotionCorr=true   # head motion estimation with FSL's mcflirt; generates 6 motion param for each BOLD image
 
-	export flags_EPI_RegT1=false
+	export flags_EPI_RegT1=true
 		export configs_EPI_epibetF=0.3000;
 
-	export flags_EPI_RegOthers=false 
+	export flags_EPI_RegOthers=true 
 		export configs_EPI_GMprobthr=0.2 # Threshold the GM probability image; change from 0.25 to 0.2 or 0.15										
 		export configs_EPI_minVoxelsClust=8 
 
-	export flags_EPI_IntNorm4D=false # Intensity normalization to global 4D mean of 1000
+	export flags_EPI_IntNorm4D=true # Intensity normalization to global 4D mean of 1000
 
 	#============================== MOTION AND OUTLIER CORRECTION ============================#
-	export flags_EPI_NuisanceReg=false
+	export flags_EPI_NuisanceReg=true
 	## Nuisance Regressors. There are three options that user can select from to set the flags_NuisanceReg variable:
 	# 1) flags_NuisanceReg="AROMA": ICA-based denoising; WARNING: This will smooth your data.
 	# 2) flags_NuisanceReg="HMPreg": Head Motion Parameter Regression.  
@@ -315,7 +318,7 @@ if $fMRI_A; then
 				export flag_AROMA_dim=
 
 				# If AROMA has already been run, save computation time by skipping that step. 
-				export AROMA_exists=true
+				export AROMA_exists=false
 			fi
 
 			# if using Head Motion Parameters or ICA-AROMA followed by HMP
@@ -327,11 +330,11 @@ if $fMRI_A; then
 			fi
 
 	#================================ PHYSIOLOGICAL REGRESSORS =================================#
-	export flags_EPI_PhysiolReg=false  
+	export flags_EPI_PhysiolReg=true  
 	# Two options that the user can select from:
 	# 1) flags_PhysiolReg="aCompCorr" - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
 	# 2) flags_PhysiolReg=meanPhysReg - mean WM and CSF signal regression
-		export flags_PhysiolReg="meanPhysReg"  
+		export flags_PhysiolReg="aCompCor"  
 
 			if [[ ${flags_PhysiolReg} == "aCompCor" ]]; then  ### if using aCompCorr
 
@@ -351,32 +354,32 @@ if $fMRI_A; then
 	# previously defined regressors, e.g. HMP and PCA's 
 	# Optional regressors to be included are: Global signal, Discrete Cosine Transforms, DVARS
 
-	#export flags_EPI_regressOthers=true
+	export flags_EPI_regressOthers=true
 
-	export flags_EPI_GS=true # include global signal regression 
-		
-		export configs_EPI_numGS=2 # define number of global signal regressors
-									# Options are: 1-mean signal; 2-mean signal+deriv; 4-mean signal+deriv+sq
-		
-	export configs_EPI_DCThighpass=false  # Perform highpass filtering within regression using Discrete Cosine Transforms. 
-		
-		export configs_EPI_dctfMin=0.009  # Specify level of high-pass filtering in Hz, 
-											# i.e. the lowest frequency signals that will be retained 
-											# The appropriate number (k) of DCT bases will be determined as follows:
-											# k = fMin * 2 * TR * numTimePoints 
+		export flags_EPI_GS=true # include global signal regression 
+			
+			export configs_EPI_numGS=4 # define number of global signal regressors
+										# Options are: 1-mean signal; 2-mean signal+deriv; 4-mean signal+deriv+sq
+			
+		export configs_EPI_DCThighpass=true  # Perform highpass filtering within regression using Discrete Cosine Transforms. 
+			
+			export configs_EPI_dctfMin=0.009  # Specify level of high-pass filtering in Hz, 
+												# i.e. the lowest frequency signals that will be retained 
+												# The appropriate number (k) of DCT bases will be determined as follows:
+												# k = fMin * 2 * TR * numTimePoints 
 
-	export flags_EPI_DVARS=false 
+		export flags_EPI_DVARS=true 
 
     #==================================== APPLY REGRESSION ===================================#
 	## Apply regression using all previously specified regressors
-	export flags_EPI_ApplyReg=false
+	export flags_EPI_ApplyReg=true
 
 	#================================ POST-REGRESSION TWEAKS =================================#
 	# These processing options will be applied to data after regression. 
 	# We do not recommend any post-regression nuissance removal as it can potentially re-introduce 
 	# noise to the regressed data. Only post-regression scrubbing is recommended. 
 
-	export flags_EPI_postReg=false 
+	export flags_EPI_postReg=true 
 
 		export flags_EPI_DemeanDetrend=false 	# Typically not needed since regressors have been z-scored and 
 												# and an intercept has been added to the regression matrix.
@@ -390,13 +393,13 @@ if $fMRI_A; then
 			export configs_EPI_fMax=0.08
 
 
-		export configs_EPI_scrub=false     # Apply scrubbing:
+		export configs_EPI_scrub=true     # Apply scrubbing:
 										  # if flags_EPI_DVARS=true then scrubbing is based on computed DVARS
 										  # if flag_EPI_DVARS=false then scrubbing is based on FSL's FD & DVARS 
 
 	#================ COMPUTE ROI TIME-SERIES FOR EACH NODAL PARCELLATION ===================#
 
-	export flags_EPI_ROIs=false
+	export flags_EPI_ROIs=true
 
 	
 	 #=======################################ EXTRAS ###############################=========#

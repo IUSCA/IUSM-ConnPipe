@@ -351,10 +351,7 @@ if ${flags_T1_seg}; then
     log $cmd 
     eval $cmd
 
-    cmd="fslmaths ${T1path}/T1_subcort_seg.nii.gz -mas ${fileMas} ${T1path}/T1_subcort_seg.nii.gz"
-    log $cmd 
-    eval $cmd
-
+    # Inverse of subcortical mask
     cmd="fslmaths ${fileIn} -mul -1 -add 1 ${T1path}/T1_subcort_mask_inv.nii.gz"
     log $cmd 
     eval $cmd
