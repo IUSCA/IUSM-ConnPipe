@@ -120,7 +120,7 @@ for pc in range(0,len(resid)):
                             fqc.write("\n WARNING ROI "+str(roi)+" T "+str(tp)+ " is NAN")
                         ROIs_numNans[roi,tp] = np.isnan(vx).sum()
                 else:
-                    fqc.write("\n WARNING ROI "+str(roi)+" T "+str(tp)+ " has zero voxels")
+                    fqc.write("\n WARNING ROI "+str(roi)+ " has zero voxels")
                     
             toc = time.clock()
             print(toc-tic)

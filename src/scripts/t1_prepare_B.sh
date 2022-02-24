@@ -581,7 +581,7 @@ if ${flags_T1_parc}; then
         fi
 
         # Intersect any subcortical parc with subcortical mask from FSL first.
-        if [[ "${psubcortonly}" -eq 0 ]]; then 
+        if [[ "${psubcortonly}" -eq 1 ]]; then 
 
             fileSubMask="${T1path}/T1_subcort_mask.nii.gz"
             fileOut="${T1path}/T1_GM_parc_${parc}.nii.gz"

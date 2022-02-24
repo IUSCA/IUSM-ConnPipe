@@ -78,6 +78,9 @@ parcs.psubcortonly(4).true=1;
 
 %% UNLESS YOU KNOW WHAT YOU ARE DOING, DON'T TOUCH CODE BELOW THIS LINE!!!
 % ========================================================================= 
+config.EPI.numVols2burn = 10; % number of time-points to remove at beginning and end of time-series. 
+                              % scrubbed volumes within the burning range
+                              % will be subtracted. 
 %                   ---- Figure configurations ----
 configs.EPI.preColorMin = 0; % minimum colorbar value for pre-regress plots
 configs.EPI.preColorMax = 1500; % maximum colorbar value for pre-regress plots
@@ -576,8 +579,17 @@ for i=1:length(subjectList)
         parcCount = parcCount + 1;
         parcSeries = parc_data{parc};
         [numParcRows,numParcCols] = size(parcSeries);
+        
+        vols2scrub = nreg_gs.vols2scrub;
+        
+        init_burn = 1:config.EPI.numVols2burn;
+        init_burn = length(setdiff(init_burn,vols2scrub));
+        
+        end_burn = numParcCols-config.EPI.numVols2burn+1:numParcCols;
+        end_burn = length(setdiff(end_burn,vols2scrub)); %numParcCols-length(setdiff(end_burn,vols2scrub))+1:numParcCols;
 
-        parcSeries = parcSeries(:, 11:(numParcCols - 10));
+%         parcSeries = parcSeries(:, 11:(numParcCols - 10));
+        parcSeries = parcSeries(:,(init_burn + 1):(numParcCols - end_burn));
         halftS = floor(size(parcSeries,2)/2);
         parcSeries1 = parcSeries(:,1:halftS);
         parcSeries2 = parcSeries(:,halftS+1:end);
@@ -679,31 +691,29 @@ for i=1:length(subjectList)
     end
     
     % =========================================================================
-    if DVARS
-        resting_file=fullfile(path2regressors,sprintf('7_epi_%s.nii.gz',pre_nR));
-        V1 = load_untouch_nii(resting_file);
-        V2 = V1.img;
-        X0 = size(V2,1); Y0 = size(V2,2); Z0 = size(V2,3); T0 = size(V2,4);
-        I0 = prod([X0,Y0,Z0]);
-        Y  = reshape(V2,[I0,T0]); clear V2 V1;
 
-        [DVARS,DVARS_Stat]=DVARSCalc(Y,'scale',1/10,'TransPower',1/3,'RDVARS','verbose',1);
-        [V,DSE_Stat]=DSEvars(Y,'scale',1/10);
-        figure8=figure('position',[226 40 896 832]);
-        if exist(fullfile(path2EPI,'motionRegressor_fd.txt'),'file')
-            MovPar=MovPartextImport(fullfile(path2EPI,'motionRegressor_fd.txt'));
-            [FDts,FD_Stat]=FDCalc(MovPar);        
-            fMRIDiag_plot(V,DVARS_Stat,'BOLD',Y,'FD',FDts,'AbsMov',[FD_Stat.AbsRot FD_Stat.AbsTrans],'figure',figure8)
-        else 
-            fMRIDiag_plot(V,DVARS_Stat,'BOLD',Y,'figure',figure8)
-        end
+    resting_file=fullfile(path2regressors,sprintf('7_epi_%s.nii.gz',pre_nR));
+    V1 = load_untouch_nii(resting_file);
+    V2 = V1.img;
+    X0 = size(V2,1); Y0 = size(V2,2); Z0 = size(V2,3); T0 = size(V2,4);
+    I0 = prod([X0,Y0,Z0]);
+    Y  = reshape(V2,[I0,T0]); clear V2 V1;
 
-        %figure8 = gcf
-        saveas(figure8,fullfile(path2figures,'DVARS'), 'png')
-        pause(3)
-        
-    end
+    [DVARS,DVARS_Stat]=DVARSCalc(Y,'scale',1/10,'TransPower',1/3,'RDVARS','verbose',1);
+    [V,DSE_Stat]=DSEvars(Y,'scale',1/10);
+    figure8=figure('position',[226 40 896 832]);
+%     if exist(fullfile(path2EPI,'motionRegressor_fd.txt'),'file')
+%         MovPar=MovPartextImport(fullfile(path2EPI,'motionRegressor_fd.txt'));
+%         [FDts,FD_Stat]=FDCalc(MovPar);        
+%         fMRIDiag_plot(V,DVARS_Stat,'BOLD',Y,'FD',FDts,'AbsMov',[FD_Stat.AbsRot FD_Stat.AbsTrans],'figure',figure8)
+%     else 
+    fMRIDiag_plot(V,DVARS_Stat,'BOLD',Y,'figure',figure8)
+%     end
+
+    sgtitle({sprintf('%s',subjID)})
+    saveas(figure8,fullfile(path2figures,'DVARS'), 'png')
     
+    pause(3)
     disp(['======== DONE SUBJECT ',subjID,' ========='])
     close all
     clc
