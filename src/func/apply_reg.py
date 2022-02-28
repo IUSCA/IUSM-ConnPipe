@@ -368,6 +368,9 @@ for r in range(0,len(zRegressMat)):
         mdic = {"resid" : rr, "vols2scrub":vols2scrub}
         savemat(matlabfilename, mdic)
 
+        fdvars.close()
+
+
 if dvars_scrub == 'true': 
     resid_before_DVARS = resid
     resid = resid_DVARS
@@ -386,5 +389,4 @@ else:
 print("Saved residuals")
 
 flog.close()
-fdvars.close()
 fqc.close()
