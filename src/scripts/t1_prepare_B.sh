@@ -605,18 +605,20 @@ if ${flags_T1_parc}; then
                 fileIn="${T1path}/T1_subcort_mask.nii.gz"
                 fileMas="${T1path}/T1_GM_mask.nii.gz"            
 
-                if ${configs_T1_subcortUser}; then
+                if ${configs_T1_dilate_subcort}; then  # dilate subcort mask
 
-                    fileOut=${fileIn}
-                    fileMas2="${T1path}/T1_subcort_mask_inv.nii.gz"
-
-                else  # dilate subcort mask 
                     fileOut="${T1path}/T1_subcort_mask_dil.nii.gz"
                     cmd="fslmaths ${fileIn} -dilD ${fileOut}"
                     log $cmd
                     eval $cmd  
 
-                    fileMas2="${T1path}/T1_subcort_mask_dil_inv.nii.gz"                  
+                    fileMas2="${T1path}/T1_subcort_mask_dil_inv.nii.gz" 
+
+                else   
+                
+                    fileOut=${fileIn}
+                    fileMas2="${T1path}/T1_subcort_mask_inv.nii.gz"
+                 
                 fi
 
                 cmd="fslmaths ${fileOut} -mas ${fileMas} ${fileOut}"
