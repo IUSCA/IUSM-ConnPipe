@@ -351,10 +351,7 @@ if ${flags_T1_seg}; then
     log $cmd 
     eval $cmd
 
-    cmd="fslmaths ${T1path}/T1_subcort_seg.nii.gz -mas ${fileMas} ${T1path}/T1_subcort_seg.nii.gz"
-    log $cmd 
-    eval $cmd
-
+    # Inverse of subcortical mask
     cmd="fslmaths ${fileIn} -mul -1 -add 1 ${T1path}/T1_subcort_mask_inv.nii.gz"
     log $cmd 
     eval $cmd
@@ -537,48 +534,63 @@ if ${flags_T1_parc}; then
         psubcortonly="PARC${i}psubcortonly"    
         psubcortonly="${!psubcortonly}"
 
-        echo "${parc} parcellation intersection with GM; pcort is -- ${pcort}"
-
         fileIn="${T1path}/T1_parc_${parc}.nii.gz"
         checkisfile ${fileIn}
 
-        fileOut="${T1path}/T1_parc_${parc}_dil.nii.gz"
+        if [[ "${psubcortonly}" -eq 0 ]]; then # do not do iterative dilation on subcort-only parcellation
+            
+            echo "${parc} parcellation intersection with GM; pcort is -- ${pcort}"
+
+            fileOut="${T1path}/T1_parc_${parc}_dil.nii.gz"
         
-        # Dilate the parcellation.
-        cmd="fslmaths ${fileIn} -dilD ${fileOut}"
-        log $cmd
-        eval $cmd 
-
-        # Iteratively mask the dilated parcellation with GM.
-        fileMul="${T1path}/T1_GM_mask.nii.gz"
-        checkisfile ${fileMul}
-
-        # # Apply subject GM mask
-        fileOut2="${T1path}/T1_GM_parc_${parc}.nii.gz"
-
-        cmd="fslmaths ${fileOut} -mul ${fileMul} ${fileOut2}"
-        log $cmd
-        eval $cmd 
-
-        # Dilate and remask to fill GM mask a set number of times
-        fileOut3="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
-
-        for ((j=1; j<=${configs_T1_numDilReMask}; j++)); do
-
-            cmd="fslmaths ${fileOut2} -dilD ${fileOut3}"
-            log $cmd
-            eval $cmd
-
-            cmd="fslmaths ${fileOut3} -mul ${fileMul} ${fileOut2}"
+            # Dilate the parcellation.
+            cmd="fslmaths ${fileIn} -dilD ${fileOut}"
             log $cmd
             eval $cmd 
 
-        done 
+            # Iteratively mask the dilated parcellation with GM.
+            fileMul="${T1path}/T1_GM_mask.nii.gz"
+            checkisfile ${fileMul}
 
-        # Remove the left over dil parcellation images.
-        cmd="rm ${fileOut} ${fileOut3}"
-        log $cmd
-        eval $cmd 
+            # # Apply subject GM mask
+            fileOut2="${T1path}/T1_GM_parc_${parc}.nii.gz"
+
+            cmd="fslmaths ${fileOut} -mul ${fileMul} ${fileOut2}"
+            log $cmd
+            eval $cmd 
+
+            # Dilate and remask to fill GM mask a set number of times
+            fileOut3="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
+
+            for ((j=1; j<=${configs_T1_numDilReMask}; j++)); do
+
+                cmd="fslmaths ${fileOut2} -dilD ${fileOut3}"
+                log $cmd
+                eval $cmd
+
+                cmd="fslmaths ${fileOut3} -mul ${fileMul} ${fileOut2}"
+                log $cmd
+                eval $cmd 
+
+            done 
+
+            # Remove the left over dil parcellation images.
+            cmd="rm ${fileOut} ${fileOut3}"
+            log $cmd
+            eval $cmd 
+        fi
+
+        # Intersect any subcortical parc with subcortical mask from FSL first.
+        if [[ "${psubcortonly}" -eq 1 ]]; then 
+
+            fileSubMask="${T1path}/T1_subcort_mask.nii.gz"
+            fileOut="${T1path}/T1_GM_parc_${parc}.nii.gz"
+
+            cmd="fslmaths ${fileIn} -dilD -mul ${fileSubMask} ${fileOut}"
+            log $cmd
+            eval $cmd 
+
+        fi
 
         if [ "${pcort}" -eq 1 ]; then
 
@@ -593,18 +605,20 @@ if ${flags_T1_parc}; then
                 fileIn="${T1path}/T1_subcort_mask.nii.gz"
                 fileMas="${T1path}/T1_GM_mask.nii.gz"            
 
-                if ${configs_T1_subcortUser}; then
+                if ${configs_T1_dilate_subcort}; then  # dilate subcort mask
 
-                    fileOut=${fileIn}
-                    fileMas2="${T1path}/T1_subcort_mask_inv.nii.gz"
-
-                else  # dilate subcort mask 
                     fileOut="${T1path}/T1_subcort_mask_dil.nii.gz"
                     cmd="fslmaths ${fileIn} -dilD ${fileOut}"
                     log $cmd
                     eval $cmd  
 
-                    fileMas2="${T1path}/T1_subcort_mask_dil_inv.nii.gz"                  
+                    fileMas2="${T1path}/T1_subcort_mask_dil_inv.nii.gz" 
+
+                else   
+                
+                    fileOut=${fileIn}
+                    fileMas2="${T1path}/T1_subcort_mask_inv.nii.gz"
+                 
                 fi
 
                 cmd="fslmaths ${fileOut} -mas ${fileMas} ${fileOut}"
@@ -761,7 +775,7 @@ if ${flags_T1_parc}; then
 
                         if ! ${onesubcort} ; then
                             # check that parcellation is available in T1 space
-                            fileSubcortUser="T1_parc_${parcii}.nii.gz"
+                            fileSubcortUser="T1_GM_parc_${parcii}.nii.gz"
 
                             if [[ -f "${T1path}/${fileSubcortUser}" ]]; then
 

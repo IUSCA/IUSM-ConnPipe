@@ -320,6 +320,10 @@ for r in range(0,len(zRegressMat)):
         flog.write("\n configs_EPI_path2DVARS "+ str(configs_EPI_path2DVARS))
         print("configs_EPI_path2dvars ",configs_EPI_path2DVARS)
 
+        # Define file name where DVARS info will be printed
+        fname = ''.join([PhReg_path,'/DVARS_',nR,'.txt'])
+        fdvars=open(fname, "a+")
+
         import sys
         sys.path.append(configs_EPI_path2DVARS)
         from DSE import DSE_Calc, DVARS_Calc, CleanNIFTI
@@ -329,10 +333,10 @@ for r in range(0,len(zRegressMat)):
 
         vols2scrub = DVARSout["Inference"]["H"]
         print("vols to scrub: ",vols2scrub)
-        fqc.write("\n vols to scrub: "+ str(vols2scrub))
+        fdvars.write("\n vols to scrub: "+ str(vols2scrub))
         nvols2scrub = vols2scrub.shape[0]
         print("num vols to be scrubbed: ",nvols2scrub)
-        fqc.write("\n vols to be scrubbed: "+ str(nvols2scrub))
+        fdvars.write("\n vols to be scrubbed: "+ str(nvols2scrub))
         scrubbing = np.zeros((nvols2scrub,numTimePoints), dtype=int)
 
         if nvols2scrub > 0:
@@ -364,6 +368,9 @@ for r in range(0,len(zRegressMat)):
         mdic = {"resid" : rr, "vols2scrub":vols2scrub}
         savemat(matlabfilename, mdic)
 
+        fdvars.close()
+
+
 if dvars_scrub == 'true': 
     resid_before_DVARS = resid
     resid = resid_DVARS
@@ -382,3 +389,4 @@ else:
 print("Saved residuals")
 
 flog.close()
+fqc.close()

@@ -1,11 +1,12 @@
 #!/bin/bash
 
-# IU modules load
+# # IU modules load
 module unload python 
-module load python/3.6.8 
+module load python #/3.6.8 
 module load fsl/6.0.1
 module load mricrogl
-module load afni/18.3.03
+module load gsl  #needed for AFNI. 
+module load afni
 module load ants
 module load ica-aroma/0.4.4
 module load mrtrix/3.0
