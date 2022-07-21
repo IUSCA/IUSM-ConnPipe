@@ -27,6 +27,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         # SEdir="${configs_sefmFolder}${configs_EPI_SEindex}"
         # path_EPI_SEFM="${path2data}/${SUBJ}/${SEdir}"
         path_EPI_SEFM="${path2data}/${SUBJ}/${configs_sefmFolder}"
+        #path_EPI_SEFM="${path2data}/${SUBJ}/${configs_sefmFolder}${EPInum}"
         echo "MULTIPLE SE FIELDMAP FOLDERS ${path_EPI_SEFM}"
     fi 
 
@@ -139,14 +140,15 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                 # Generate (topup) and apply (applytopup) spin echo field map
                 # correction to 0_epi image.
 
-                fileIn="${path_EPI_SEFM}/sefield.nii.gz"
-                if [[ -e "${fileIn}" ]] && [[ -e ${acqparams} ]]; then
-                    fileOutName="${path_EPI_SEFM}/topup_results"
-                    fileOutField="${path_EPI_SEFM}/topup_field"
-                    fileOutUnwarped="${path_EPI_SEFM}/topup_unwarped"
+                if ${flags_EPI_RunTopup}; then
 
+                    fileIn="${path_EPI_SEFM}/sefield.nii.gz"
 
-                    if ${flags_EPI_RunTopup}; then
+                    if [[ -e "${fileIn}" ]] && [[ -e ${acqparams} ]]; then
+                        fileOutName="${path_EPI_SEFM}/topup_results"
+                        fileOutField="${path_EPI_SEFM}/topup_field"
+                        fileOutUnwarped="${path_EPI_SEFM}/topup_unwarped"
+                    
                         log "topup: Starting topup on sefiled.nii.gz  --  This might take a wile... "
                         cmd="topup --imain=${fileIn} \
                         --datain=${acqparams} \
@@ -156,16 +158,51 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                         log $cmd
                         eval $cmd 
                         echo $?
-                    fi 
 
-                    if [[ ! -e "${fileOutUnwarped}.nii.gz" ]]; then  # check that topup has been completed
-                        log "ERROR Topup output not created. Exiting... "
+                        if [[ ! -e "${fileOutUnwarped}.nii.gz" ]]; then  # check that topup has been completed
+                            log "ERROR Topup output not created. Exiting... "
+                            exit 1
+                        fi
+
+                        fileIn="${EPIpath}/0_epi.nii.gz"
+                        acqparams="${path_EPI_SEFM}/acqparams.txt"
+                        fileOutName="${path_EPI_SEFM}/topup_results"
+                        fileOutCoefName="${fileOutName}_fieldcoef.nii.gz"
+
+                        if [[ -f "${fileIn}" ]] && [[ -f "${acqparams}" ]] && [[ -f "${fileOutCoefName}" ]]; then 
+
+                            fileOut="${path_EPI_SEFM}/0_epi_unwarped.nii.gz"
+
+                            log "applytopup -- starting applytopup on 0_epi.nii.gz"
+
+                            cmd="applytopup --imain=${fileIn} \
+                            --datain=${acqparams} \
+                            --inindex=1 \
+                            --topup=${fileOutName} \
+                            --out=${fileOut} --method=jac"
+
+                            log $cmd 
+                            eval $cmd  
+                        else
+                            log "WARNING 0_epi.nii.gz not found or topup outputs do not exist. Exiting..."
+                            exit 1 
+                        fi
+
+                        if [[ -e "${fileOut}" ]]; then  
+                            cmd="mv ${fileOut} ${EPIpath}/0_epi_unwarped.nii.gz"
+                            log $cmd 
+                            eval $cmd 
+                            exitcode=$?
+
+                            if [[ $exitcode -eq 0 ]]; then
+                                log "- -------------EPI volume unwarping completed---------------"
+                            fi
+
+                        fi                  
+                    else 
+                        log " WARNING ${fileIn} or ${acqparams} are missing. topup not started"
                         exit 1
-                    fi
-
-                else 
-                    log " WARNING UNWARP/sefield.nii.gz or acqparams.txt are missing. topup not started"
-                    exit 1
+                    fi 
                 fi 
             else
                 log "WARNING ${fileInAP} and/or ${fileInPA} files not found. Exiting..."
@@ -182,43 +219,6 @@ source ${EXEDIR}/src/func/bash_funcs.sh
             exit 1
 
         fi
-
-
-        fileIn="${EPIpath}/0_epi.nii.gz"
-        acqparams="${path_EPI_SEFM}/acqparams.txt"
-        fileOutName="${path_EPI_SEFM}/topup_results"
-        fileOutCoefName="${fileOutName}_fieldcoef.nii.gz"
-
-        if [[ -f "${fileIn}" ]] && [[ -f "${acqparams}" ]] && [[ -f "${fileOutCoefName}" ]]; then 
-
-            fileOut="${path_EPI_SEFM}/0_epi_unwarped.nii.gz"
-
-            log "applytopup -- starting applytopup on 0_epi.nii.gz"
-
-            cmd="applytopup --imain=${fileIn} \
-            --datain=${acqparams} \
-            --inindex=1 \
-            --topup=${fileOutName} \
-            --out=${fileOut} --method=jac"
-
-            log $cmd 
-            eval $cmd  
-        else
-            log "WARNING 0_epi.nii.gz not found or topup outputs do not exist. Exiting..."
-            exit 1 
-        fi
-
-        if [[ -e "${fileOut}" ]]; then  
-            cmd="mv ${fileOut} ${EPIpath}/0_epi_unwarped.nii.gz"
-            log $cmd 
-            eval $cmd 
-            exitcode=$?
-
-            if [[ $exitcode -eq 0 ]]; then
-                log "- -------------EPI volume unwarping completed---------------"
-            fi
-
-        fi 
 
     else
         log "WARNING ${path_EPI_SEFM} doesn't exist. Field map correction must be skipped."
