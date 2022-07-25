@@ -196,6 +196,7 @@ if $T1_PREPARE_B; then
 		# Determine whether subcortical parcellation gets dilated. 
 		# We do NOT recommend dilating user-provided subcort parc (i.e. when configs_T1_subcortUser=true)
 		export configs_dilate_cerebellum=true
+			export configs_numDilCereb=1
 		# We recommed dilating cerebellum mask to ensure no cortical-cerebellum overlap. 
 		# this dilation may not be needed for subjects where CSF is enlarged. 
 		export configs_T1_addsubcort=true 

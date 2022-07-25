@@ -690,6 +690,14 @@ if ${flags_T1_parc}; then
                     log $cmd
                     eval $cmd 
 
+                    for ((c=1; c<${configs_numDilCereb}; c++)); do
+
+                        cmd="fslmaths ${fileDil} -dilD ${fileDil}"
+                        log $cmd
+                        eval $cmd 
+
+                    done 
+
                     FileIn=${fileDil}
                     FileCereb_bin="${T1reg}/Cerebellum_dil_bin.nii.gz"
                     FileCereb_inv="${T1path}/Cerebellum_dil_Inv.nii.gz"
