@@ -103,7 +103,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         declare -a dicom_files
         while IFS= read -r -d $'\0' dicomfile; do 
             dicom_files+=( "$dicomfile" )
-        done < <(find ${path_EPIdcm} -iname "*.${configs_dcmFiles}" -print0 | sort -z)
+        done < $(find ${path_EPIdcm} -iname "*.${configs_dcmFiles}" -print0 | sort -z)
 
         if [ ${#dicom_files[@]} -eq 0 ]; then 
             echo "No dicom (.${configs_dcmFiles}) images found."

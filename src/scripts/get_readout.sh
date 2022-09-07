@@ -134,7 +134,7 @@ if [ -z ${SEreadOutTime} ]; then
     declare -a dicom_files
     while IFS= read -r -d $'\0' dicomfile; do 
         dicom_files+=( "$dicomfile" )
-    done < <(find ${dicomPath} -iname "*.${configs_dcmFiles}" -print0 | sort -z)
+    done < $(find ${dicomPath} -iname "*.${configs_dcmFiles}" -print0 | sort -z)
 
     if [ ${#dicom_files[@]} -eq 0 ]; then 
         log2file "No dicom (.${configs_dcmFiles}) images found at ${dicomPath}."
@@ -194,7 +194,7 @@ if [ -z ${SEreadOutTime} ]; then
     declare -a dicom_files
     while IFS= read -r -d $'\0' dicomfile; do 
         dicom_files+=( "$dicomfile" )
-    done < <(find ${dicomPath} -iname "*.${configs_dcmFiles}" -print0 | sort -z)
+    done < $(find ${dicomPath} -iname "*.${configs_dcmFiles}" -print0 | sort -z)
 
     if [ ${#dicom_files[@]} -eq 0 ]; then 
         log2file "No dicom (.${configs_dcmFiles}) images found."

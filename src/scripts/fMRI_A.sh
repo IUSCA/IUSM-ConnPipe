@@ -21,7 +21,7 @@ log "fMRI_A"
 declare -a epiList
 while IFS= read -r -d $'\0' REPLY; do 
     epiList+=( "$REPLY" )
-done < <(find ${path2data}/${SUBJ} -maxdepth 1 -type d -iname "${configs_epiFolder}*" -print0 | sort -z)
+done < $(find ${path2data}/${SUBJ} -maxdepth 1 -type d -iname "${configs_epiFolder}*" -print0 | sort -z)
 
 
 if [ ${#epiList[@]} -eq 0 ]; then 
