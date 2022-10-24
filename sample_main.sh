@@ -54,6 +54,21 @@ export pathParcellations="${pathSM}/Parcellations"
 export PYpck="${pathSM}/python-pkgs"
 
 
+# # Create Derivatives dir if does not exist already 
+# #===========================================================================================					
+
+path2derivs="$path2proj/derivatives"
+if [[ ! -d "${path2derivs}" ]]; then
+	mkdir ${path2derivs}
+fi
+
+path2derivs="$path2derivs/connpipe"
+if [[ ! -d "${path2derivs}" ]]; then
+	mkdir ${path2derivs}
+fi
+
+
+
 # # Setting denoising option
 # #===========================================================================================					
 if [[ "${configs_T1_denoised}" == "ANTS" ]]; then 
@@ -215,7 +230,7 @@ fi
 	
 if ${runAll}; then
 	find ${path2data} -maxdepth 1 -mindepth 1 -type d -printf '%f\n' \
-	| sort > ${path2data}/${subj2run}	
+	| sort > ${path2derivs}/${subj2run}	
 fi 
 
 #################################################################################
@@ -227,7 +242,7 @@ main() {
 
 log "START running Connectivity Pipeline on the following subjects:"
 
-IFS=$'\r\n' GLOBIGNORE='*' command eval 'SUBJECTS=($(cat ${path2data}/${subj2run}))'
+IFS=$'\r\n' GLOBIGNORE='*' command eval 'SUBJECTS=($(cat ${path2derivs}/${subj2run}))'
 log "subjects: ${SUBJECTS[@]}"
 
 echo "##################"
@@ -242,17 +257,25 @@ for SUBJdir in "${SUBJECTS[@]}"; do
     
     log "Subject ${SUBJ}"
 
-    export T1path="${path2data}/${SUBJ}/${configs_T1}"
-    export DWIpath="${path2data}/${SUBJ}/${configs_DWI}"
-    #echo "============== T1path is ${T1path} =============="
-    #echo "============== DWIpath is ${DWIpath} =============="
-
     # specify name of logfile written inside each subjects dir
     today=$(date +"%m_%d_%Y_%H_%M")
-    export logfile_name="${path2data}/${SUBJ}/out_${today}"
-    export QCfile_name="${path2data}/${SUBJ}/qc"
-    export ERRfile_name="${path2data}/error_report"
+    export logfile_name="${path2derivs}/${SUBJ}/${configs_session}/out_${today}"
+    export QCfile_name="${path2derivs}/${SUBJ}/${configs_session}/qc"
+    export ERRfile_name="${path2derivs}/error_report"
  
+ 
+    ## Path to raw data
+    export T1path_raw="${path2data}/${SUBJ}/${configs_session}/${configs_T1}"
+
+    ## Path to derivatives
+    export T1path="${path2derivs}/${SUBJ}/${configs_session}/${configs_T1}"
+    if [[ ! -d "${T1path}" ]]; then
+        mkdir -p ${T1path}
+    fi
+
+    echo "============== T1path is ${T1path} =============="
+
+
 
     log "# ############################ T1_PREPARE_A #####################################"
 
@@ -344,6 +367,14 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
 
         if $DWI_A; then
+
+            export DWIpath_raw="${path2data}/${SUBJ}/${configs_session}/${configs_DWI}"
+
+            ## Path to derivatives
+            export DWIpath="${path2derivs}/${SUBJ}/${configs_session}/${configs_DWI}"
+            if [[ ! -d "${DWIpath}" ]]; then
+                mkdir -p ${DWIpath}
+            fi
 
             if [[ -d "${DWIpath}" ]]; then 
 

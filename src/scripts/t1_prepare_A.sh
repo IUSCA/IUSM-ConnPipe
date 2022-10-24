@@ -17,6 +17,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 log "T1_PREPARE_A"
 
+
 ##### DICOM 2 nifti ######
 if ${flags_T1_dcm2niix}; then
 
@@ -91,7 +92,7 @@ file4fslanat="$T1path/${configs_fslanat}"
 if ${flags_T1_applyDenoising}; then
 	log "********** Denoising T1 ***********"
 
-	fileIn="$T1path/${configs_T1}.nii.gz"
+	fileIn="$T1path_raw/${SUBJ}_${configs_session}_T1w.nii"  ### ATTENTION HERE
 	if [[ "${configs_fslanat}" == "T1_denoised_ANTS" ]]; then 
 
 		log "-------- Denoising T1 WITH ANTS ---------"
