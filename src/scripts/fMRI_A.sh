@@ -17,12 +17,17 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 log "fMRI_A"
 
+echo "THIS IS THE EPI FOLDER ${configs_epiFolder}"
+
+log "fMRI_A"
+
 # Generate list of EPI scan directories
 declare -a epiList
 while IFS= read -r -d $'\0' REPLY; do 
     epiList+=( "$REPLY" )
-done < $(find ${path2data}/${SUBJ} -maxdepth 1 -type d -iname "${configs_epiFolder}*" -print0 | sort -z)
+done < <(find ${path2data}/${SUBJ} -maxdepth 1 -type d -iname "${configs_epiFolder}*" -print0 | sort -z)
 
+#epiList[0]=`find $path2data/${SUBJ}/ -maxdepth 1 -type d -name "EPI*"`
 
 if [ ${#epiList[@]} -eq 0 ]; then 
     echo "No EPI directories found for subject $SUBJ. Check consistency of naming convention."

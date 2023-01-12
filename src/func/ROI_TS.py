@@ -100,7 +100,7 @@ for pc in range(0,len(resid)):
             ROIs_numNans = np.empty((numROIs,numTimePoints))
             ROIs_numNans[:] = np.NaN
 
-            tic = time.clock()
+            #tic = time.clock()
             for roi in range(0,numROIs): 
                 voxelsROI = (parcGM == (roi+1))
                 ROIs_numVoxels[roi] = np.count_nonzero(voxelsROI)
@@ -122,8 +122,8 @@ for pc in range(0,len(resid)):
                 else:
                     fqc.write("\n WARNING ROI "+str(roi)+ " has zero voxels")
                     
-            toc = time.clock()
-            print(toc-tic)
+            #toc = time.clock()
+            #print(toc-tic)
 
 
             fileOut = "/8_epi_%s_ROIs.npz" % parc_label

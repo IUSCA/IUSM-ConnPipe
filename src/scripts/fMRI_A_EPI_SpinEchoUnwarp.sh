@@ -24,11 +24,18 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         echo "SINGLE SE FIELDMAP FOLDER ${EPIpath}/${configs_sefmFolder}"
         path_EPI_SEFM="${EPIpath}/${configs_sefmFolder}"
     else  # Allows multiple UNWARP folders at the subject level (UNWARP1, UNWARP2,...)
-        # SEdir="${configs_sefmFolder}${configs_EPI_SEindex}"
-        # path_EPI_SEFM="${path2data}/${SUBJ}/${SEdir}"
-        path_EPI_SEFM="${path2data}/${SUBJ}/${configs_sefmFolder}"
-        #path_EPI_SEFM="${path2data}/${SUBJ}/${configs_sefmFolder}${EPInum}"
-        echo "MULTIPLE SE FIELDMAP FOLDERS ${path_EPI_SEFM}"
+        echo "MULTIPLE SE FIELDMAP FOLDERS"
+        if ${configs_EPI_match}; then
+            # match UNWARPi with EPIi
+            echo "MATCH EPI AND UNWARP INDEX"
+            path_EPI_SEFM="${path2data}/${SUBJ}/${configs_sefmFolder}${EPInum}"
+            echo "FIELDMAP FOLDER: ${path_EPI_SEFM}"
+        else
+            # use single UNWARP foler (configs_sefmFolder) for all EPIi sessions
+            echo "USING SINGLE ${configs_sefmFolder} FOR ALL EPI SESSIONS"
+            path_EPI_SEFM="${path2data}/${SUBJ}/${configs_sefmFolder}"
+            echo "FIELDMAP FOLDER: ${path_EPI_SEFM}"       
+        fi
     fi 
 
     path_EPI_APdcm="${path_EPI_SEFM}/${configs_APdcm}"
@@ -37,8 +44,8 @@ source ${EXEDIR}/src/func/bash_funcs.sh
     echo "PAdcm path is ${path_EPI_PAdcm}"
 
     if [[ -d ${path_EPI_SEFM} ]]; then
-
-        if [[ -z "${EPInum}" ]] || [[ ${EPInum} -le ${configs_EPI_skipFMcalc4EPI} ]]; then  # if EPInum is unset or smaller than the predefined skip threshold
+        # if EPInum is unset or smaller than the predefined skip threshold
+        if [[ -z "${EPInum}" ]] || [[ ${EPInum} -le ${configs_EPI_skipFMcalc4EPI} ]]; then  
 
             fileInAP="${path_EPI_SEFM}/AP.nii.gz"
             fileInPA="${path_EPI_SEFM}/PA.nii.gz"
@@ -92,7 +99,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
                 eval $cmd                 
 
                 # Generate an acqparams text file based on number of field maps.
-                path_EPIdcm=${EPIpath}/${configs_dcmFolder}
+                #path_EPIdcm=${EPIpath}/${configs_dcmFolder}
 
                 echo "EPI_SEreadOutTime -- ${EPI_SEreadOutTime}"
 
