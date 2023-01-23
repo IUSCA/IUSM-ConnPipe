@@ -17,10 +17,6 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 log "fMRI_A"
 
-echo "THIS IS THE EPI FOLDER ${configs_epiFolder}"
-
-log "fMRI_A"
-
 # Generate list of EPI scan directories
 declare -a epiList
 while IFS= read -r -d $'\0' REPLY; do 
@@ -35,6 +31,8 @@ if [ ${#epiList[@]} -eq 0 ]; then
 else
     echo "There are ${#epiList[@]} EPI-series "
 fi
+
+export first_FMcalc=false
 
 for ((i=0; i<${#epiList[@]}; i++)); do
 
@@ -51,9 +49,11 @@ for ((i=0; i<${#epiList[@]}; i++)); do
     
     elif [[ $ind =~ $re ]] ; then
 
+        echo "==== ind = ${ind}"
+
         if [ $ind -lt "${configs_EPI_epiMin}" ] || [ $ind -gt "${configs_EPI_epiMax}" ]; then
             log "WARNING Skipping f_MRI_A processing on ${epiList[$i]}. Scan session is not within the epiMin and epiMax configuration settings."
-            break
+            continue
         fi
     fi
 
@@ -66,7 +66,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
     log "fMRI_A on subject ${SUBJ}"
     log "EPI-series ${EPIpath}"
     log "EPI session number ${EPInum}"
-
+    
     ## functional connectivity
 
     # ### Convert dcm2nii
@@ -143,6 +143,9 @@ for ((i=0; i<${#epiList[@]}; i++)); do
         if [[ ${exitcode} -ne 0 ]] ; then
             echoerr "problem at fMRI_A_EPI_SpinEchoUnwarp. exiting."
             exit 1
+        else
+            log "First calculation of FM done"
+            first_FMcalc=true
         fi
         
     fi 

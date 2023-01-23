@@ -3,30 +3,34 @@ close all
 clc
 
 path2code = pwd;
-path2dvars = '/basepath/ConnPipelineSM/DVARS';
+path2dvars = '/N/project/username/ConnPipelineSM/DVARS';
 addpath(genpath(path2dvars));
-addpath('/basepath/ConnPipelineSM/toolbox_matlab_nifti')
+addpath('/N/project/username/ConnPipelineSM/toolbox_matlab_nifti')
 
 % set path to data directory
-path2data = '/N/project/DataDir';
+path2data = '/N/project/username/Datadir';
 
 % Define Subjects to run
-subjectList = dir(fullfile(path2data,'Subj0*'));   % e.g. All subjects in path2data direcotry whose ID starts with Subj0
+%subjectList = dir(fullfile(path2data,'NAN0003*'));   % e.g. All subjects in path2data direcotry whose ID starts with Subj0
 % Or a specific set of subjects:
-% subjectList(1).name = 'Subj02'; 
-% subjectList(2).name = 'Subj09'; 
+subjectList(1).name = 'NF0019'; 
 
 
 % These variables should be set up to match the config.sh settings
 EPIdir_name = 'EPI1'
-path2reg = 'AROMA_HMP/aCompCor'; %other options may be: 'AROMA/aCompCorr', HMPreg/PhysReg, AROMA/PhysReg;
-pre_nR = 'aroma_hmp12_pca5_Gs4_DCT'; % This should match the regression parameters of your 8_epi_*.nii.gz image; 
-                                    % other options may be: 'aroma_pca3_Gs2_DCT' if only running AROMA, or 'hmp12_pca5_Gs4_DCT' if only running HMP;     
+path2reg = 'AROMA_HMP/aCompCor'; %other options may be: 'AROMA/aCompCorr', HMPreg/PhysReg, AROMA/PhysReg, AROMA_HMP/aCompCor;
+pre_nR = 'aroma_hmp24_pca5_Gs4_DCT'; % This should match the regression parameters of your 8_epi_*.nii.gz image; 
+                                      % other options may be: 'aroma_pca3_Gs2_DCT', or 'hmp12_pca5_Gs4_DCT' if only running HMP;
+                                      
+%% If using AROMA or AROMA_HMP                                      
+resting_vol = '/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz';
+%% if using HMP only
+%resting_vol = '/4_epi.nii.gz';
 DVARS = true; 
 % postregression parameters
 demean_detrend = false;
 bandpass = false;
-scrubbed = true; 
+scrubbed = false; 
 % ----------------Do not modify the following section ------------------------ %
 if DVARS
     nR = strcat(pre_nR,'_DVARS');
@@ -35,46 +39,51 @@ else
 end
 if demean_detrend
     post_nR = strcat(nR,'_dmdt');
+    postReg = 8;
 else
     post_nR = '';
+    postReg = 7;
 end
 if bandpass
     post_nR = strcat(post_nR,'_butter');
+    postReg = 8;
 end
 if scrubbed
     post_nR = strcat(post_nR,'_scrubbed');
+    postReg = 8;
 end
  % ---------------------------------------------------------------------- %                    
 %% =========================================================================
 % SET WHICH PARCELLATIONS YOU WANT TO USE
 % Schaefer parcellation of yeo17 into 200 nodes
-parcs.plabel(1).name='schaefer200_yeo17';
-parcs.pdir(1).name='Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm';
-parcs.pcort(1).true=1;
+% see MelbourneSubCort for the original parcels 
+% Tian subcortical parcellation (7T-derived, S1-S4, coarse-to-fine parcels)
+parcs.plabel(1).name='tian_subcortical_S2';
+parcs.pdir(1).name='Tian_Subcortex_S2_7T_FSLMNI152_1mm';
+parcs.pcort(1).true=0;
 parcs.pnodal(1).true=1;
-parcs.psubcortonly(1).true=0;
+parcs.psubcortonly(1).true=1;
 
-% Schaefer parcellation of yeo17 into 300 nodes
-parcs.plabel(2).name='schaefer300_yeo17';
-parcs.pdir(2).name='Schaefer2018_300Parcels_17Networks_order_FSLMNI152_1mm';
+parcs.plabel(2).name='schaefer200_yeo17';
+parcs.pdir(2).name='Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm';
 parcs.pcort(2).true=1;
 parcs.pnodal(2).true=1;
 parcs.psubcortonly(2).true=0;
 
-% yeo 17 resting state network parcellation
-parcs.plabel(3).name='yeo17';
-parcs.pdir(3).name='yeo17_MNI152';
+% Schaefer parcellation of yeo17 into 300 nodes
+parcs.plabel(3).name='schaefer300_yeo17';
+parcs.pdir(3).name='Schaefer2018_300Parcels_17Networks_order_FSLMNI152_1mm';
 parcs.pcort(3).true=1;
-parcs.pnodal(3).true=0;
+parcs.pnodal(3).true=1;
 parcs.psubcortonly(3).true=0;
 
-% see MelbourneSubCort for the original parcels 
-% Tian subcortical parcellation (7T-derived, S1-S4, coarse-to-fine parcels)
-parcs.plabel(4).name='tian_subcortical_S2';
-parcs.pdir(4).name='Tian_Subcortex_S2_7T_FSLMNI152_1mm';
-parcs.pcort(4).true=0;
-parcs.pnodal(4).true=1;
-parcs.psubcortonly(4).true=1;
+% yeo 17 resting state network parcellation
+parcs.plabel(4).name='yeo17';
+parcs.pdir(4).name='yeo17_MNI152';
+parcs.pcort(4).true=1;
+parcs.pnodal(4).true=0;
+parcs.psubcortonly(4).true=0;
+
 
 %% UNLESS YOU KNOW WHAT YOU ARE DOING, DON'T TOUCH CODE BELOW THIS LINE!!!
 % ========================================================================= 
@@ -107,11 +116,13 @@ for i=1:length(subjectList)
 
     path2EPI = fullfile(path2data,subjID,EPIdir_name);
     path2regressors = fullfile(path2EPI,path2reg);  % This needs to be expanded to all nuissance reg options
-
+    path2_resting_vol = fullfile(path2EPI,resting_vol);   
+ 
     timeseriesDir = sprintf('TimeSeries_%s%s',nR,post_nR);
-    nuisanceReg_all = sprintf('NuisanceRegression_%s%s.mat',nR,post_nR);
-    nuisanceReg = sprintf('NuisanceRegression_%s.mat',nR);
-    preReg = sprintf('NuisanceRegression_%s.mat',pre_nR);
+    nuisanceReg_all = sprintf('%d_epi_%s%s.nii.gz',postReg,nR,post_nR);
+    nuisanceReg = sprintf('7_epi_%s.nii.gz',nR);
+    preReg = sprintf('7_epi_%s.nii.gz',pre_nR);
+    vols2scrub = sprintf('volumes2scrub_%s%s.mat',nR,post_nR);
 
     path2figures = fullfile(path2EPI,sprintf('figures_%s',timeseriesDir));
     if ~exist( path2figures, 'dir')
@@ -129,19 +140,33 @@ for i=1:length(subjectList)
     disp('Loaded: motion.txt \n')
     tdim = size(dvars_series,1);
 
-    nreg_gs_all = load(fullfile(path2regressors, nuisanceReg_all));
+    post_resid = MRIread(fullfile(path2regressors, nuisanceReg_all));
+    post_resid = post_resid.vol;
     disp(['Loaded: ',nuisanceReg_all])
 
-    nreg_gs = load(fullfile(path2regressors, nuisanceReg));
+    nreg_gs_postDVARS = MRIread(fullfile(path2regressors, nuisanceReg));
+    nreg_gs_postDVARS = nreg_gs_postDVARS.vol;
     disp(['Loaded: ',nuisanceReg])
+    
+    preReg_rest_vol = MRIread(fullfile(path2_resting_vol));
+    preReg_rest_vol = preReg_rest_vol.vol;
+    disp(['Loaded: ',path2_resting_vol])
 
-    nreg_gs_preDVARS = load(fullfile(path2regressors, preReg));
-    preReg_rest_vol = nreg_gs_preDVARS.resting_vol;
+    nreg_gs_preDVARS = MRIread(fullfile(path2regressors, preReg));
+    nreg_gs_preDVARS = nreg_gs_preDVARS.vol;
     disp(['Loaded: ',preReg])
 
     gs_data = load(fullfile(path2regressors, 'dataGS.mat'));
     disp('Loaded: dataGS.mat')
-
+    
+    if scrubbed
+        vols2scrub = load(fullfile(path2regressors,vols2scrub));
+        vols2scrub = vols2scrub.vols2scrub;
+        disp(['Loaded: ',vols2scrub])
+    else
+        vols2scrub = [];
+    end
+        
     parc_data = cell(1,max(size(parcs.plabel)));
     parc_label = string(zeros(1,max(size(parc_data))));
     for p = 1:max(size(parcs.plabel))
@@ -242,7 +267,6 @@ for i=1:length(subjectList)
     disp('Loaded: Pre-regression CSF data')
 
 
-    post_resid = nreg_gs_all.resid;
     xdim = size(post_resid,1);
     ydim = size(post_resid,2);
     zdim = size(post_resid,3);
@@ -316,8 +340,8 @@ for i=1:length(subjectList)
 
 
     % %%%%%%%%%%%%%%%%%%%%% LOAD PRE-DVARS RESIDUAL TISSUE DATA %%%%%%%%%%%%%%%%%%%%%
-    nreg_gs_postDVARS = nreg_gs.resid;
-    nreg_gs_preDVARS = nreg_gs_preDVARS.resid;
+    %nreg_gs_postDVARS = nreg_gs.resid;
+    %nreg_gs_preDVARS = nreg_gs_preDVARS.resid;
     post_resid = nreg_gs_postDVARS - nreg_gs_preDVARS;
     gm_post_resid = zeros(xdim,ydim,zdim,tdim);
     wm_post_resid = zeros(xdim,ydim,zdim,tdim);
@@ -419,33 +443,33 @@ for i=1:length(subjectList)
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%% PRE IMG PLOTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     figure2 = figure('visible','off');
-    sgtitle({sprintf('%s','Pre-Regression Motion and Tissue Plots,',subjID)})
-    subplot(6,1,1)
+    sgtitle({sprintf('%s','Pre-Regression Motion Plots,',subjID)})
+    subplot(2,1,1)
     plot(fd_series)
     legend('FD', 'Location', 'best')
-    subplot(6,1,2)
+    subplot(2,1,2)
     plot(dvars_series)
     legend('DVARS', 'Location', 'best')
-    subplot(6,1,3)
-    plot(mn_reg(:,1:3)) 
-    legend('X', 'Y', 'Z', 'Location', 'best')
-    ylim([-.02, .02])
-    subplot(6,1,4)
-    imagesc(dataGMpre)
-    ylabel('GM')
-    %caxis([configs.EPI.preColorMin configs.EPI.preColorMax])
-    %colorbar
-    subplot(6,1,5)
-    imagesc(dataWMpre)
-    ylabel('WM')
-    %caxis([configs.EPI.preColorMin configs.EPI.preColorMax])
-    %colorbar
-    subplot(6,1,6)
-    imagesc(dataCSFpre)
-    ylabel('CSF')
-    %caxis([configs.EPI.preColorMin configs.EPI.preColorMax])
-    clrbr = colorbar('east');
-    colormap gray
+%     subplot(2,1,3)
+%     plot(mn_reg(:,1:3)) 
+%     legend('X', 'Y', 'Z', 'Location', 'best')
+%     ylim([-.02, .02])
+%     subplot(6,1,4)
+%     imagesc(dataGMpre)
+%     ylabel('GM')
+%     %caxis([configs.EPI.preColorMin configs.EPI.preColorMax])
+%     %colorbar
+%     subplot(6,1,5)
+%     imagesc(dataWMpre)
+%     ylabel('WM')
+%     %caxis([configs.EPI.preColorMin configs.EPI.preColorMax])
+%     %colorbar
+%     subplot(6,1,6)
+%     imagesc(dataCSFpre)
+%     ylabel('CSF')
+%     %caxis([configs.EPI.preColorMin configs.EPI.preColorMax])
+%     clrbr = colorbar('east');
+%     colormap gray
     set(gcf,'Position',[200 100 1200 800])
 
     saveas(figure2,fullfile(path2figures,'pre_reg_tissue'), 'png')
@@ -579,9 +603,7 @@ for i=1:length(subjectList)
         parcCount = parcCount + 1;
         parcSeries = parc_data{parc};
         [numParcRows,numParcCols] = size(parcSeries);
-        
-        vols2scrub = nreg_gs.vols2scrub;
-        
+                
         init_burn = 1:config.EPI.numVols2burn;
         init_burn = length(setdiff(init_burn,vols2scrub));
         
@@ -685,7 +707,7 @@ for i=1:length(subjectList)
 
             saveas(figure6,fullfile(path2figures,figTitle), 'png')
 
-            pause(5)
+            pause(3)
         end
     
     end

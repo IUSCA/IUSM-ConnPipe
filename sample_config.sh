@@ -10,13 +10,13 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ## Path to Supplementary Materials. Please download from: 
 # https://drive.google.com/drive/folders/1b7S9UcWDeDXVx3NUjuO8NJxxmChgNQ1G?usp=sharing 
-export pathSM="/N/slate/aiavenak/ConnPipelineSM"
+export pathSM="/N/project/username/ConnPipelineSM"
 
 ################################################################################
 ############################  PATH TO DATA  ###################################
 
 # USER INSTRUCTIONS- PLEASE SET THIS PATH TO POINT TO YOUR DATA DIRECTORY
-export path2data="/N/project/Datadir"
+export path2data="/N/project/username/Datadir"
 
     ## USER: if running all subjects in the path2data directory, set this flag to true; 
     ## set to false if you'd like to process a subset of subjects 
@@ -24,6 +24,7 @@ export path2data="/N/project/Datadir"
 
     ## USER -- if running a subset of subjects, a list of subject ID's can be read from 
     ## a text file located in path2data; user can name the file here:
+    # export subj2run="subj2run_AAK.txt"
     export subj2run="subj2run.txt"
 
 ################################################################################
@@ -52,12 +53,22 @@ export path2data="/N/project/Datadir"
 #                 -- UNWARP -- B0_PA_DCM
 
 export configs_T1="T1"
-export configs_epiFolder="EPI2"
+# for multiple EPI sessions, specify only the base name of folder
+# i.e. if there are EPI1, EPI2, EPI3, set configs_epiFolder="EPI"
+# for a single EPI session, specify the exact name of the folder
+# i.e. if the folder is EPI1, set configs_epiFolder="EPI1"
+export configs_epiFolder="EPI" 
 	export configs_dcmFolder="DICOMS"
 	export configs_dcmFiles="dcm" #"dcm" # specify Dicom file extension
 	export configs_niiFiles="nii" # Nifti-1 file extension
 
-export configs_sefmFolder="UNWARP2" # Reserved for Spin Eco Field Mapping series
+# for multiple EPI & UNWARP folders, specify only the base name of folder
+# i.e. if there are UNWARP1, UNWARP2, UNWARP3, set configs_sefmFolder="UNWARP"
+# for a single UNWARP folder, specify the exact name of the folder
+# i.e. if the folder is UNWARP1, set configs_sefmFolder="UNWARP1"
+# if using a single UNWARPi folder with multiple EPIj sessions, then
+# spcify the exact name of the UNWARPi folder. 
+export configs_sefmFolder="UNWARP" # Reserved for Spin Eco Field Mapping series
 	export configs_APdcm="SEFM_AP_DICOMS" # Spin Echo A-P
 	export configs_PAdcm="SEFM_PA_DICOMS" # Spin Echo P-A
 
@@ -87,36 +98,35 @@ export PARC0pcort=0;
 export PARC0pnodal=0;
 export PARC0psubcortonly=0;
 
+# optional
+export PARC1="tian_subcortical_S2"
+export PARC1dir="Tian_Subcortex_S2_3T_FSLMNI152_1mm"
+export PARC1pcort=0;
+export PARC1pnodal=1;
+export PARC1psubcortonly=1;
+
 # required
 # Schaefer parcellation of yeo17 into 200 nodes
-export PARC1="schaefer200_yeo7"
-export PARC1dir="Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm"
-export PARC1pcort=1;
-export PARC1pnodal=1;
-export PARC1psubcortonly=0;
-
-# Schaefer parcellation of yeo17 into 300 nodes
-# optional
-export PARC2="schaefer300_yeo7"
-export PARC2dir="Schaefer2018_300Parcels_17Networks_order_FSLMNI152_1mm"
+export PARC2="schaefer200_yeo17"
+export PARC2dir="Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm"
 export PARC2pcort=1;
 export PARC2pnodal=1;
 export PARC2psubcortonly=0;
 
+# Schaefer parcellation of yeo17 into 300 nodes
 # optional
-export PARC3="yeo7"
-export PARC3dir="yeo7_MNI152"
+export PARC3="schaefer300_yeo17"
+export PARC3dir="Schaefer2018_300Parcels_17Networks_order_FSLMNI152_1mm"
 export PARC3pcort=1;
-export PARC3pnodal=0;
+export PARC3pnodal=1;
 export PARC3psubcortonly=0;
 
 # optional
-export PARC4="tian_subcortical_S2"
-export PARC4dir="Tian_Subcortex_S2_3T_FSLMNI152_1mm"
-export PARC4pcort=0;
-export PARC4pnodal=1;
-export PARC4psubcortonly=1;
-
+export PARC4="yeo17"
+export PARC4dir="yeo17_MNI152"
+export PARC4pcort=1;
+export PARC4pnodal=0;
+export PARC4psubcortonly=0;
 
 
 ## USER INSTRUCTIONS - SET THE NUMBER OF PARCELLATIONS THAT YOU WANT TO USE
@@ -173,7 +183,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export T1_PREPARE_B=true
+export T1_PREPARE_B=false
 
 if $T1_PREPARE_B; then
 
@@ -203,7 +213,7 @@ if $T1_PREPARE_B; then
 		# add FSL subcortical to cortial parcellations 	
 		# but ONLY to nodal parcellation as individual regions
 		# To others add as a single subcortical network.
-		export configs_T1_subcortUser=false   
+		export configs_T1_subcortUser=true   
 		# false = default FSL; true = user-provided
 		# Name of user-provided subcortical parcellation (assumed to be found in ConnPipeSM folder)
 		# should be set in the desired parcellation name for index "N" with "psubcortonly=1"	
@@ -242,28 +252,34 @@ if $fMRI_A; then
 	# 1) Spin echo field maps -- uses FSL's topup and applytopup
 	# 2) Gradient echo field maps -- uses FUGE
 	 
-	# In the case of multiple EPI sessions, please select whether or not to use calculated distortion fields to be applied 
-	# for subsequent EPI scans (rather than redoing unwarping for each scan)	
-	export configs_EPI_skipFMcalc4EPI=2 # Skip SEmap/GREFM calculation for EPI scan index > configs_EPI_skipFMcalc4EPI
-		##  e.g.; 1 to skip redoing unwarping for EPIs 2-6; 5 to skip for EPI6
+	# In the case of multiple EPI sessions, please select how to use  
+	# calculated distortion fields to be applied to EPI scans 
+	export configs_EPI_match=false
+	# Options available are:
+	# false - Use a single UNWARP folder for a specific range of EPI sessions  
+	#    This option will do a single field map calculation and apply topup to all EPI
+	#    sessions within the range specified by configs_EPI_epiMin & configs_EPI_epiMax
+	# true - Use UNWARPi folder for EPIi session. 
+	#	 This option will calculate field maps for each UNWARP folder and apply 
+	#    to calculation the corresponding EPI folder, matching index i in EPIi with UNWARPi 
+	#    with i in the range specified by configs_EPI_epiMin & configs_EPI_epiMax
 	
 	#============================ OPTION 1: SPIN ECO UNWARP =======================#
-	export flags_EPI_SpinEchoUnwarp=false # Requires UNWARP directory and approporiate dicoms.
+	export flags_EPI_SpinEchoUnwarp=true # Requires UNWARP directory and approporiate dicoms.
 
     	export configs_EPI_multiSEfieldmaps=true # false - single pair of SE fieldmaps within EPI folder
-												  # true -  one or multiple UNWARP folders at the subject level (UNWARP1, UNWARP2,...)
-			# #if configs_EPI_multiSEfieldmaps=true, specify number of UNWARP directories (0: UNWARP; 1: UNWARP1, 2: UNWARP2)
-			# export configs_EPI_SEindex=1
-
+												 # true -  One or multiple UNWARP folders at the subject level (UNWARP1, UNWARP2,...)
+												 #         
 	# # SPIN ECHO PAIRS (A-P, P-A) Acquistion on the Prisma
 		export configs_EPI_SEnumMaps=3; # Fallback Number of PAIRS of AP and PA field maps.
 	# # Defaults to reading *.dcm/ima files in SE AP/PA folders
 
 	# # topup (see www.mccauslanddenter.sc.edu/cml/tools/advanced-dti - Chris Rorden's description
-		export flags_EPI_RunTopup=false # 1=Run topup (1st pass), 0=Do not rerun if previously completed. 
+		export flags_EPI_RunTopup=true # true - Run topup (1st pass)
+									   # false - Do not rerun if previously completed. 
 
 	#====================== OPTION 2: GRADIENT FIELD MAP UNWARP =====================#
-	export flags_EPI_GREFMUnwarp=true # Requires GREfieldmap directory and appropriate dicoms
+	export flags_EPI_GREFMUnwarp=false # Requires GREfieldmap directory and appropriate dicoms
     	
 		export configs_use_DICOMS=false   # set to true if Extract TE1 and TE2 from the first image of Gradient Echo Magnitude Series
 										 # set to false if gre_fieldmap_mag already generated (i.e. STANFORD GE data)	
@@ -312,7 +328,7 @@ if $fMRI_A; then
 	# 2) flags_NuisanceReg="HMPreg": Head Motion Parameter Regression.  
 	# 3) flags_NuisanceReg="AROMA_HMP": apply ICA-AROMA followed by HMPreg. 
 
-		export flags_NuisanceReg="HMPreg"
+		export flags_NuisanceReg="AROMA_HMP"
 
 			# if using ICA-AROMA or ICA-AROMA followed by HMP 
 			if [[ ${flags_NuisanceReg} == "AROMA" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then 
@@ -328,7 +344,7 @@ if $fMRI_A; then
 			# if using Head Motion Parameters or ICA-AROMA followed by HMP
 			if [[ ${flags_NuisanceReg} == "HMPreg" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then   
 					
-				export configs_EPI_numReg=24  # define the number of regressors Head Motion regressors. 
+				export configs_EPI_numReg=12  # define the number of regressors Head Motion regressors. 
 										      # options are: 12 (6 orig + 6 deriv) or 24 (+sq of 12)
 
 			fi

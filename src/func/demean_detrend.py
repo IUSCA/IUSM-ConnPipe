@@ -87,8 +87,8 @@ ff = ''.join([fileOut,'.npz'])
 np.savez(ff,resid=resid)
 print("Saved demeaned and detrended residuals")
 
-ff = ''.join([fileOut,'.mat'])
-print("savign MATLAB file ", ff)
-mdic = {"resid" : resid}
-savemat(ff, mdic)
+# ff = ''.join([fileOut,'.mat'])
+# print("savign MATLAB file ", ff)
+# mdic = {"resid" : resid}
+# savemat(ff, mdic)
 
