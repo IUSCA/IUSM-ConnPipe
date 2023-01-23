@@ -70,10 +70,10 @@ fileOut = ''.join([PhReg_path,'/NuisanceRegression_',post_nR,'_scrubbed.npz'])
 np.savez(fileOut,resid=resid)
 print("Saved Scrubbed residuals")
 
-fileOut = ''.join([PhReg_path,'/NuisanceRegression_',post_nR,'_scrubbed.mat'])
-print("savign MATLAB file ", fileOut)
-mdic = {"resid" : resid[0]}
-savemat(fileOut, mdic)
+# fileOut = ''.join([PhReg_path,'/NuisanceRegression_',post_nR,'_scrubbed.mat'])
+# print("savign MATLAB file ", fileOut)
+# mdic = {"resid" : resid[0]}
+# savemat(fileOut, mdic)
 
 flog.close()
 

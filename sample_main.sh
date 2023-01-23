@@ -2,13 +2,13 @@
 
 # # IU modules load
 module unload python 
-module load python #/3.6.8 
+module load python/3.9.8 
 module load fsl/6.0.1
 module load mricrogl
-module load gsl  #needed for AFNI. 
+module load gsl
 module load afni
 module load ants
-module load ica-aroma/0.4.4
+#module load ica-aroma/0.4.4
 module load mrtrix/3.0
 # module load singularity
 
@@ -244,8 +244,8 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
     export T1path="${path2data}/${SUBJ}/${configs_T1}"
     export DWIpath="${path2data}/${SUBJ}/${configs_DWI}"
-    #echo "============== T1path is ${T1path} =============="
-    #echo "============== DWIpath is ${DWIpath} =============="
+    echo "============== T1path is ${T1path} =============="
+    # echo "============== EXEDIR is ${EXEDIR} =============="
 
     # specify name of logfile written inside each subjects dir
     today=$(date +"%m_%d_%Y_%H_%M")

@@ -295,10 +295,10 @@ for r in range(0,len(zRegressMat)):
     # save nifti image
     if len(zRegressMat)==1:
         fileOut = "/7_epi_%s.nii.gz" % nR 
-        matlabfilename = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.mat'])
+        # matlabfilename = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.mat'])
     else:
         fileOut = "/7_epi_%s%d.nii.gz" % (nR,pc)
-        matlabfilename = ''.join([PhReg_path,'/NuisanceRegression_',nR,pc,'.mat'])
+        # matlabfilename = ''.join([PhReg_path,'/NuisanceRegression_',nR,pc,'.mat'])
 
     fileOut = ''.join([PhReg_path,fileOut])
     print("Nifti file to be saved is: ",fileOut)
@@ -308,9 +308,9 @@ for r in range(0,len(zRegressMat)):
     nib.save(resting_new,fileOut) 
 
     
-    print("savign MATLAB file ", matlabfilename)
-    mdic = {"resid" : rr,"resting_vol" : resting_vol}
-    savemat(matlabfilename, mdic)
+    # print("savign MATLAB file ", matlabfilename)
+    # mdic = {"resid" : rr,"resting_vol" : resting_vol}
+    # savemat(matlabfilename, mdic)
 
     ## Calculate DVARS after regression
 
@@ -352,10 +352,10 @@ for r in range(0,len(zRegressMat)):
         # save nifti image
         if len(zRegressMat)==1:
             fileOut = "/7_epi_%s_DVARS.nii.gz" % nR 
-            matlabfilename = ''.join([PhReg_path,'/NuisanceRegression_',nR,'_DVARS.mat'])
+            matlabfilename = ''.join([PhReg_path,'/volumes2scrub_',nR,'_DVARS.mat'])
         else:
             fileOut = "/7_epi_%s%d_DVARS.nii.gz" % (nR,pc)
-            matlabfilename = ''.join([PhReg_path,'/NuisanceRegression_',nR,pc,'_DVARS.mat'])
+            matlabfilename = ''.join([PhReg_path,'/volumes2scrub_',nR,pc,'_DVARS.mat'])
 
         fileOut = ''.join([PhReg_path,fileOut])
         print("Nifti file to be saved is: ",fileOut)
@@ -365,7 +365,8 @@ for r in range(0,len(zRegressMat)):
         nib.save(resting_new,fileOut) 
 
         print("savign MATLAB file ", matlabfilename)
-        mdic = {"resid" : rr, "vols2scrub":vols2scrub}
+        # mdic = {"resid" : rr, "vols2scrub":vols2scrub}
+        mdic = {"vols2scrub":vols2scrub}
         savemat(matlabfilename, mdic)
 
         fdvars.close()
