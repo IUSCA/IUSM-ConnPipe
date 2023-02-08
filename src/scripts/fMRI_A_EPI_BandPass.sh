@@ -25,13 +25,13 @@ log "# =========================================================="
 PhReg_path="${EPIpath}/${regPath}"
 
 # Make sure files exist
-if ${flags_EPI_DemeanDetrend}; then 
-    fileIn="${PhReg_path}/NuisanceRegression_${nR}_dmdt.npz"
-    fileOut="${PhReg_path}/NuisanceRegression_${nR}_dmdt_butter"
-else
-    fileIn="${PhReg_path}/NuisanceRegression_${nR}.npz"
-    fileOut="${PhReg_path}/NuisanceRegression_${nR}_butter"
-fi
+# if ${flags_EPI_DemeanDetrend}; then 
+    fileIn="${PhReg_path}/NuisanceRegression_${post_nR}.npz"
+    fileOut="${PhReg_path}/NuisanceRegression_${post_nR}_butter"
+# else
+#     fileIn="${PhReg_path}/NuisanceRegression_${nR}.npz"
+#     fileOut="${PhReg_path}/NuisanceRegression_${nR}_butter"
+# fi
 
 log "Using ${fileIn}"
 

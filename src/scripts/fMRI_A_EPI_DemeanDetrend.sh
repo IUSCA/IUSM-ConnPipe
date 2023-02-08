@@ -24,8 +24,8 @@ log "# =========================================================="
 
 
 PhReg_path="${EPIpath}/${regPath}"
-fileIn="${PhReg_path}/NuisanceRegression_${nR}.npz"
-fileOut="${PhReg_path}/NuisanceRegression_${nR}_dmdt"
+fileIn="${PhReg_path}/NuisanceRegression_${post_nR}.npz"
+fileOut="${PhReg_path}/NuisanceRegression_${post_nR}_dmdt"
 
 if [[ ! -e "${fileIn}" ]]; then  
     log " WARNING ${fileIn} not found. Exiting..."

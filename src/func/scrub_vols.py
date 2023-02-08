@@ -34,9 +34,9 @@ print("resid[0].shape ", sizeX,sizeY,sizeZ,numTimePoints)
 
 # load DVARS / FD
 if dvars_scrub == 'true': 
-    fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.npz'])
-    scrubdata = np.load(fname) 
-    dvars=scrubdata['DVARS_Inference_Hprac']
+    # fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.npz'])
+    # scrubdata = np.load(fname) 
+    dvars=data['DVARS_Inference_Hprac']
     print("DVARS: ",dvars)
     goodvols = np.ones(numTimePoints, dtype=int)
     goodvols[dvars]=0

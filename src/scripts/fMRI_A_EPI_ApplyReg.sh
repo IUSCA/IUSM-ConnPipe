@@ -22,11 +22,11 @@ msg2file "              5.3 APPLY REGRESSORS "
 msg2file " =========================================================="
 
 
-if ${flags_EPI_DVARS}; then
-    log "filename postfix for output image -- ${nR}_DVARS"
-else
-    log "filename postfix for output image -- ${nR}"
-fi
+# if ${flags_EPI_DVARS}; then
+    # log "filename postfix for output image -- ${nR}_DVARS"
+# else
+    log "filename postfix for output image -- ${post_nR}"
+# fi
 
 if ${flags_EPI_GS}; then
     log " Global signal regression is ON "
