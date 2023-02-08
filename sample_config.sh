@@ -10,13 +10,13 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ## Path to Supplementary Materials. Please download from: 
 # https://drive.google.com/drive/folders/1b7S9UcWDeDXVx3NUjuO8NJxxmChgNQ1G?usp=sharing 
-export pathSM="/N/project/username/ConnPipelineSM"
+export pathSM="/N/project/ConnPipelineSM"
 
 ################################################################################
 ############################  PATH TO DATA  ###################################
 
 # USER INSTRUCTIONS- PLEASE SET THIS PATH TO POINT TO YOUR DATA DIRECTORY
-export path2data="/N/project/username/Datadir"
+export path2data="/N/project/DataDir"
 
     ## USER: if running all subjects in the path2data directory, set this flag to true; 
     ## set to false if you'd like to process a subset of subjects 
@@ -234,7 +234,7 @@ if $fMRI_A; then
 
 	# # set number of EPI sessions/scans
 	export configs_EPI_epiMin=1 # minimum scan index to be processed
-	export configs_EPI_epiMax=2 # maximum scan index to be processed
+	export configs_EPI_epiMax=3 # maximum scan index to be processed
 
 	# dicom import
 	export flags_EPI_dcm2niix=true
@@ -254,7 +254,7 @@ if $fMRI_A; then
 	 
 	# In the case of multiple EPI sessions, please select how to use  
 	# calculated distortion fields to be applied to EPI scans 
-	export configs_EPI_match=false
+	export configs_EPI_match=true
 	# Options available are:
 	# false - Use a single UNWARP folder for a specific range of EPI sessions  
 	#    This option will do a single field map calculation and apply topup to all EPI
@@ -328,7 +328,7 @@ if $fMRI_A; then
 	# 2) flags_NuisanceReg="HMPreg": Head Motion Parameter Regression.  
 	# 3) flags_NuisanceReg="AROMA_HMP": apply ICA-AROMA followed by HMPreg. 
 
-		export flags_NuisanceReg="AROMA_HMP"
+		export flags_NuisanceReg="HMPreg"
 
 			# if using ICA-AROMA or ICA-AROMA followed by HMP 
 			if [[ ${flags_NuisanceReg} == "AROMA" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then 
@@ -344,7 +344,7 @@ if $fMRI_A; then
 			# if using Head Motion Parameters or ICA-AROMA followed by HMP
 			if [[ ${flags_NuisanceReg} == "HMPreg" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then   
 					
-				export configs_EPI_numReg=12  # define the number of regressors Head Motion regressors. 
+				export configs_EPI_numReg=24  # define the number of regressors Head Motion regressors. 
 										      # options are: 12 (6 orig + 6 deriv) or 24 (+sq of 12)
 
 			fi

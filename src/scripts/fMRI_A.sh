@@ -336,9 +336,12 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 
     fi  
 
+    # now we can create a post-reg nR that gets built as we add post-regression analyses. 
+    export post_nR="${nR}"
+
     # now we can update nR
     if ${flags_EPI_DVARS}; then
-        export nR="${nR}_DVARS"
+        export post_nR="${post_nR}_DVARS"
     fi
 
 
@@ -358,6 +361,8 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                 echoerr "problem at fMRI_A_EPI_DemeanDetrend. exiting."
                 exit 1
             fi  
+
+            export post_nR="${post_nR}_dmdt"
         fi             
 
         if ${flags_EPI_BandPass}; then
@@ -371,6 +376,8 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                 echoerr "problem at fMRI_A_EPI_BandPass. exiting."
                 exit 1
             fi  
+
+            export post_nR="${post_nR}_butter"
         fi 
 
         if ${configs_EPI_scrub}; then
@@ -384,28 +391,12 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                 echoerr "problem at fMRI_A_EPI_Scrub. exiting."
                 exit 1
             fi  
-        fi              
 
+            export post_nR="${post_nR}_scrubbed"
+
+        fi              
     fi      
 
-    # now we can create a post-reg nR
-    post_nR="${nR}"
-
-    if ${flags_EPI_DemeanDetrend}; then
-        post_nR="${post_nR}_dmdt"
-    fi
-
-    # now we can update post-reg nR
-    if ${flags_EPI_BandPass}; then
-        post_nR="${post_nR}_butter"
-    fi   
-
-    # now we can update post-reg nR
-    if ${configs_EPI_scrub}; then
-        post_nR="${post_nR}_scrubbed"
-    fi  
-
-    export post_nR                
 
     if ${flags_EPI_ROIs}; then
 
@@ -419,6 +410,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             exit 1
         fi  
     fi 
+
 
     if ${flags_EPI_ReHo}; then
 
@@ -446,6 +438,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
         fi  
     fi 
 
+    export post_nR=""
 
 done
 

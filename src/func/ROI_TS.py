@@ -21,25 +21,26 @@ numParcs = int(os.environ['numParcs'])
 flog.write("\n numParcs "+ str(numParcs))
 EPIpath=os.environ['EPIpath']
 flog.write("\n EPIpath "+ EPIpath)
-nR=os.environ['nR']
-flog.write("\n nR "+ nR)
+# nR=os.environ['nR']
+# flog.write("\n nR "+ nR)
 post_nR=os.environ['post_nR']
 flog.write("\n post_nR "+ post_nR)
 
-fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.npz'])
+fname = ''.join([PhReg_path,'/NuisanceRegression_',post_nR,'.npz'])
 print("loading data from ",fname)
 data = np.load(fname) 
+resid=data['resid']
 
-# load appropriate residuals
-if nR == post_nR:
-    print("No post-regression denoising found. Loading residuals from ",fname)
-    resid=data['resid']
-else:
-    fname_post = ''.join([PhReg_path,'/NuisanceRegression_',post_nR,'.npz'])
-    print("Loading post-regression residuals from ",fname_post)
-    flog.write("\n Loading post-regression residuals "+fname_post)
-    data_postreg = np.load(fname_post) 
-    resid = data_postreg['resid'] 
+# # load appropriate residuals
+# if nR == post_nR:
+#     print("No post-regression denoising found. Loading residuals from ",fname)
+#     resid=data['resid']
+# else:
+#     fname_post = ''.join([PhReg_path,'/NuisanceRegression_',post_nR,'.npz'])
+#     print("Loading post-regression residuals from ",fname_post)
+#     flog.write("\n Loading post-regression residuals "+fname_post)
+#     data_postreg = np.load(fname_post) 
+#     resid = data_postreg['resid'] 
 
 ### read nifti data
  # find the correct WM mask
