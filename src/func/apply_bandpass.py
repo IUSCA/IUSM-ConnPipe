@@ -4,6 +4,7 @@ import numpy as np
 import nibabel as nib
 from scipy import stats
 from scipy.io import savemat
+from scipy import signal
 
 
 logfile_name = ''.join([os.environ['logfile_name'],'.log'])
