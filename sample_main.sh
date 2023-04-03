@@ -26,7 +26,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ################################################################################
 # USER INSTRUCTIONS- PLEASE SET THE NAME OF THE CONFIG FILE TO READ
-source ${EXEDIR}/config.sh
+source ${EXEDIR}/sample_config.sh
 ################################################################################
 
 
@@ -63,7 +63,12 @@ elif [[ "${configs_T1_denoised}" == "SUSAN" ]]; then
 	export configs_fslanat="T1_denoised_SUSAN"
 	echo "USING SUSAN FOR DENOISING"
 elif [[ "${configs_T1_denoised}" == "NONE" ]]; then  # do not perform denoising 
-	export configs_fslanat=${configs_T1}
+    # use the appropriate T1: fov cropped or non cropped. 
+	if flags_T1_robustfov; then
+		export configs_fslanat="${configs_T1}_fov"
+	else
+		export configs_fslanat=${configs_T1}
+	fi
 	echo "T1 WILL NOT BE DENOISED"
 fi
 

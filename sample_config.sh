@@ -150,13 +150,17 @@ configs_T1_denoised="ANTS"
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export T1_PREPARE_A=false
+export T1_PREPARE_A=true
 
 if $T1_PREPARE_A; then
 
 	export flags_T1_dcm2niix=true  # dicom to nifti conversion 
 		export configs_T1_useCropped=false # use cropped field-of-view output of dcm2niix
-		
+
+    # Alternative T1 crop. May improve brain masking, in particular with ants.
+	# We do not recommend using robustfov together with dcm2niix cropping. 
+	export flags_T1_robustfov=false	
+
 	#### SET flags_T1_applyDenoising=true AND configs_T1_denoised="NONE" IF NO DENOSING IS REQUIRED
 	#### SET flags_T1_applyDenoising=FALSE AND configs_T1_denoised="ANTS"/"SUSAN" 
 	#### IF DENOISING HAS ALREADY BEEN APPLYIED AND THUS THE PROCESS CAN BE SKIPPED. 
@@ -328,7 +332,7 @@ if $fMRI_A; then
 	# 2) flags_NuisanceReg="HMPreg": Head Motion Parameter Regression.  
 	# 3) flags_NuisanceReg="AROMA_HMP": apply ICA-AROMA followed by HMPreg. 
 
-		export flags_NuisanceReg="HMPreg"
+		export flags_NuisanceReg="AROMA_HMP"
 
 			# if using ICA-AROMA or ICA-AROMA followed by HMP 
 			if [[ ${flags_NuisanceReg} == "AROMA" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then 
