@@ -84,25 +84,43 @@ if ${flags_T1_dcm2niix}; then
 
 fi
 
+# Apply fsl's robustfov
+if ${flags_T1_robustfov}; then
+
+	fileIn="$T1path/${configs_T1}.nii.gz"
+	fileOut="$T1path/${configs_T1}_fov.nii.gz"
+
+	cmd="robustfov -i ${fileIn} -r ${fileOut}"
+	log $cmd
+	eval $cmd
+
+fi
+
 
 ##### T1 denoiser ######
 file4fslanat="$T1path/${configs_fslanat}"
 
 if ${flags_T1_applyDenoising}; then
 	log "********** Denoising T1 ***********"
+	
+	# use the appropriate T1: fov cropped or non cropped. 
+	if ${flags_T1_robustfov}; then
+		fileIn="$T1path/${configs_T1}_fov"
+	else
+		fileIn="$T1path/${configs_T1}"
+	fi
 
-	fileIn="$T1path/${configs_T1}.nii.gz"
 	if [[ "${configs_fslanat}" == "T1_denoised_ANTS" ]]; then 
 
 		log "-------- Denoising T1 WITH ANTS ---------"
-		cmd="DenoiseImage -v -d 3 -n Gaussian -p 1 -r 1 -i ${fileIn} -o ${file4fslanat}.nii.gz"
+		cmd="DenoiseImage -v -d 3 -n Gaussian -p 1 -r 1 -i ${fileIn}.nii.gz -o ${file4fslanat}.nii.gz"
 		log $cmd
 		eval $cmd
 	elif [[ "${configs_fslanat}" == "T1_denoised_SUSAN" ]]; then
 
 		file4fslanat="$T1path/${configs_fslanat}"
 		log "-------- Denoising T1 WITH SUSAN --------"
-		cmd="susan $T1path/${configs_T1} 56.5007996 3 3 1 0 ${file4fslanat}"
+		cmd="susan ${fileIn} 56.5007996 3 3 1 0 ${file4fslanat}"
 		log $cmd
 		eval $cmd
 	else
