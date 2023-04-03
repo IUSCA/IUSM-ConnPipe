@@ -166,7 +166,7 @@ if [[ -d ${DWIpath} ]]; then
             declare -a dicom_files
             while IFS= read -r -d $'\0' dicomfile; do 
                 dicom_files+=( "$dicomfile" )
-            done < $(find ${path_DWIdcm} -iname "*.${configs_dcmFiles}" -print0 | sort -z)
+            done < <(find ${path_DWIdcm} -iname "*.${configs_dcmFiles}" -print0 | sort -z)
 
             if [ ${#dicom_files[@]} -eq 0 ]; then 
 
