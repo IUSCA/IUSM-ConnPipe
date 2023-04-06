@@ -2,57 +2,31 @@ clear all
 close all
 clc
 
-path2code = pwd;
-path2dvars = '/N/project/username/ConnPipelineSM/DVARS';
-addpath(genpath(path2dvars));
-addpath('/N/project/username/ConnPipelineSM/toolbox_matlab_nifti')
+path2SM = '/N/project/username/ConnPipelineSM';
 
-% set path to data directory
-path2data = '/N/project/username/Datadir';
+% set path to derivables directory
+path2data = '/N/project/username/Derivables';
 
 % Define Subjects to run
 %subjectList = dir(fullfile(path2data,'NAN0003*'));   % e.g. All subjects in path2data direcotry whose ID starts with Subj0
 % Or a specific set of subjects:
-subjectList(1).name = 'NF0019'; 
+subjectList(1).name = 'NF0011'; 
 
 
 % These variables should be set up to match the config.sh settings
 EPIdir_name = 'EPI1'
-path2reg = 'AROMA_HMP/aCompCor'; %other options may be: 'AROMA/aCompCorr', HMPreg/PhysReg, AROMA/PhysReg, AROMA_HMP/aCompCor;
-pre_nR = 'aroma_hmp24_pca5_Gs4_DCT'; % This should match the regression parameters of your 8_epi_*.nii.gz image; 
+path2reg = 'HMPreg/aCompCor'; %other options may be: 'AROMA/aCompCorr', HMPreg/PhysReg, AROMA/PhysReg, AROMA_HMP/aCompCor;
+pre_nR = 'hmp24_pca5_Gs4_DCT'; % This should match the regression parameters of your 7_epi_*.nii.gz image; 
                                       % other options may be: 'aroma_pca3_Gs2_DCT', or 'hmp12_pca5_Gs4_DCT' if only running HMP;
                                       
-%% If using AROMA or AROMA_HMP                                      
-resting_vol = '/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz';
-%% if using HMP only
-%resting_vol = '/4_epi.nii.gz';
-DVARS = true; 
+% regression parameters
+AROMA = false;  % set to true if using AROMA
+DVARS = true;   % set to true if using DVARS regressors
 % postregression parameters
 demean_detrend = false;
 bandpass = false;
-scrubbed = false; 
-% ----------------Do not modify the following section ------------------------ %
-if DVARS
-    nR = strcat(pre_nR,'_DVARS');
-else
-    nR = pre_nR;
-end
-if demean_detrend
-    post_nR = strcat(nR,'_dmdt');
-    postReg = 8;
-else
-    post_nR = '';
-    postReg = 7;
-end
-if bandpass
-    post_nR = strcat(post_nR,'_butter');
-    postReg = 8;
-end
-if scrubbed
-    post_nR = strcat(post_nR,'_scrubbed');
-    postReg = 8;
-end
- % ---------------------------------------------------------------------- %                    
+scrubbed = true; 
+                  
 %% =========================================================================
 % SET WHICH PARCELLATIONS YOU WANT TO USE
 % Schaefer parcellation of yeo17 into 200 nodes
@@ -84,9 +58,10 @@ parcs.pcort(4).true=1;
 parcs.pnodal(4).true=0;
 parcs.psubcortonly(4).true=0;
 
-
+% ========================================================================= 
 %% UNLESS YOU KNOW WHAT YOU ARE DOING, DON'T TOUCH CODE BELOW THIS LINE!!!
 % ========================================================================= 
+
 config.EPI.numVols2burn = 10; % number of time-points to remove at beginning and end of time-series. 
                               % scrubbed volumes within the burning range
                               % will be subtracted. 
@@ -105,6 +80,43 @@ configs.EPI.fcColorMaxP = 0.8; % 0.75; % maximum colorbar value for Pearson;s FC
 configs.EPI.nbinPearson = 201; % number of histogram bins (Pearson's correlation)
 configs.EPI.kernelPearsonBw = 0.05; % fitting kernel bandwidth  
 
+% ========================================================================= 
+% ------------------- Set up file names ------------------------ %
+if AROMA
+    resting_vol = '/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz';
+else
+    resting_vol = '/4_epi.nii.gz';
+end
+if DVARS
+    nR = strcat(pre_nR,'_DVARS');
+else
+    nR = pre_nR;
+end
+if demean_detrend
+    post_nR = strcat(nR,'_dmdt');
+    postReg = 8;
+else
+    post_nR = '';
+    postReg = 7;
+end
+if bandpass
+    post_nR = strcat(post_nR,'_butter');
+    postReg = 8;
+end
+if scrubbed
+    post_nR = strcat(post_nR,'_scrubbed');
+    postReg = 8;
+end
+% ---------------------------------------------------------------------- %  
+% ========================================================================= 
+% Set up global paths
+path2code = pwd;
+path2dvars = fullfile(path2SM,'DVARS');
+addpath(genpath(path2dvars));
+path2nifti_tools = fullfile(path2SM,'toolbox_matlab_nifti');
+addpath(path2nifti_tools)
+% ========================================================================= 
+
 %% FOR LOOP OVER SUBJECTS STARTS HERE
 % Generate figures for all subjects in subjectList
 for i=1:length(subjectList)
@@ -122,7 +134,7 @@ for i=1:length(subjectList)
     nuisanceReg_all = sprintf('%d_epi_%s%s.nii.gz',postReg,nR,post_nR);
     nuisanceReg = sprintf('7_epi_%s.nii.gz',nR);
     preReg = sprintf('7_epi_%s.nii.gz',pre_nR);
-    vols2scrub = sprintf('volumes2scrub_%s%s.mat',nR,post_nR);
+    vols2scrub = sprintf('volumes2scrub_%s%s.mat',nR);
 
     path2figures = fullfile(path2EPI,sprintf('figures_%s',timeseriesDir));
     if ~exist( path2figures, 'dir')

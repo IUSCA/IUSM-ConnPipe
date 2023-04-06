@@ -14,43 +14,49 @@
 %%
 clearvars
 clc
-%% ------------------------------- PATHS ------------------------------- %%
-
-% Exporting FSL path
-paths.FSL='/N/soft/rhel7/fsl/6.0.1b/bin'
-% Addings connectome spripts path (Includes NIfTI toolbox)
-fsl_config = fullfile(paths.FSL,'..','etc','fslconf','fsl.sh')
-run_fsl_config=sprintf('. %s',fsl_config)
-system(run_fsl_config)
-
-path2code = pwd;
-path2SM = '/N/slate/aiavenak/ConnPipelineSM';
-addpath(genpath(path2SM));
-MNI = fullfile(path2SM,'MNI_templates','MNI152_T1_1mm.nii.gz');
-addpath(genpath(fullfile(path2SM,'toolbox_matlab_nifti')))
 
 %% --------------------- USER DEFINED INPUT DATA ----------------------- %%
+% Path to ConnPipe Supplementary Materials folder
+path2SM = '/N/project/username/ConnPipelineSM/';
+
 % Data directory (contains subject directories)
-path2data = '/N/project/MY_multilayer/ADNI/Testing_for_Andrea/ADNI';
+path2data = '/N/project/username/Derivables';
 
 % Define Subjects to run
-%subjectList = dir(fullfile(path2data,'NAN0003*'));   % e.g. All subjects in path2data direcotry whose ID starts with Subj0
+%subjectList = dir(fullfile(path2data,'Subj0*'));   % e.g. All subjects in path2data direcotry whose ID starts with Subj0
 % Or a specific set of subjects:
-subjectList(1).name = '002_S_6007';
-% subjectList(1).name = 'NAN0020';
+subjectList(1).name = 'NF0011';
 
 % These variables should be set up to match the config.sh settings
-EPIdir = 'EPI';
+EPIdir = 'EPI1';
 T1dir = 'T1';
 
-%
 % Set to 1 the modalities you wish to create QA figures for:
 section_T1brainmask = 1;
+section_T1masks = 0; % we recommend running this section alone and manually rotating the 3D image for inspection 
 section_T1reg = 1;
 section_T1parc = 1;
 section_EPI = 1;
 %
+%% ------------------------------- PATHS ------------------------------- %%
+
+% Exporting FSL path
+paths.FSL='/N/soft/rhel7/fsl/6.0.1b/bin';
+% Addings connectome spripts path (Includes NIfTI toolbox)
+fsl_config = fullfile(paths.FSL,'..','etc','fslconf','fsl.sh');
+run_fsl_config = sprintf('. %s',fsl_config);
+system(run_fsl_config)
+
+path2code = pwd;
+addpath(genpath(path2SM));
+MNI = fullfile(path2SM,'MNI_templates','MNI152_T1_1mm.nii.gz');
+addpath(genpath(fullfile(path2SM,'toolbox_matlab_nifti')))
+addpath(fullfile(path2SM,'functions'));
+
+
 %%
+%% -------------------------- GENERATE FIGS -------------------------- %%
+
 for k=1:length(subjectList)
     
     %% GENERATE SUBJECT PATHS
@@ -65,10 +71,9 @@ for k=1:length(subjectList)
     if ~exist(paths.QAdir,'dir')
         mkdir(paths.QAdir) % make output directory if it doesn't exist
     end
-    
+
+    %% 1-brain_mask_on_fov_denoised
     if section_T1brainmask == 1
-        
-        %% 1-brain_mask_on_fov_denoised
         % Set paths and filenames
         T1fpath=fullfile(Subj_T1,'T1_fov_denoised.nii');
         maskfpath=fullfile(Subj_T1,'T1_brain_mask_filled.nii.gz');
@@ -80,8 +85,8 @@ for k=1:length(subjectList)
             slices=[midslice-30 midslice-15 midslice midslice+25 midslice+40];
             % initialize figure
             h=figure;
-            h.Units='inches';
-            h.Position=[1 1 20 5];
+            h.Units='pixels';
+            h.Position=[671 469 1084 242];
             % generate a grayscale loropmap with red as the highest intensity color
             cmap=colormap(gray(128));
             cmap(129,:)=[1 0 0];
@@ -108,14 +113,16 @@ for k=1:length(subjectList)
             if count > 0
                 fileout = fullfile(paths.QAdir,sprintf('1-brain_mask_on_fov_denoised_v%d.png',count+1));
             end
+            %set(gcf, 'Units', 'pixels','Position',[150 100 1200 800])
             print(fileout,'-dpng','-r600')
-            close all
+            % close all
         else
             disp('no T1_fov_denoised and/or T1_brain_mask found.')
         end
     end
+    
+    %% 2-T1-warped_contour_onMNI
     if section_T1reg == 1
-        %% 2-T1-warped_contour_onMNI
         % read in template and subject data
         T1mnifile = fullfile(Subj_T1,'registration','T1_warped.nii.gz');
         if exist(T1mnifile,'file')
@@ -151,54 +158,60 @@ for k=1:length(subjectList)
                     imwrite(imind,cm,filename,'gif','DelayTime',.2,'WriteMode','append')
                 end
             end
-            close all
+            % close all
         else
             fprintf('%s: No T1_warped.nii.gz found.\n',subjectList(k).name)
         end
     end
-%     if section_T1masks == 1
-%         %% 3-T1_tissue_masks
-%         masks=struct;
-%         masks(1).name = 'T1_subcort_mask.nii.gz';
-%         masks(2).name = 'registration/Cerebellum_dil_bin.nii.gz';
-%         masks(3).name = 'T1_mask_CSFvent.nii.gz';
-%         if exist(fullfile(Subj_T1,masks(2).name),'file')
-%             T1=MRIread(fullfile(Subj_T1,'T1_fov_denoised.nii'));
-%             f3=figure;
-%             for mm = 1:length(masks)
-%                 tmp_mask=MRIread(fullfile(Subj_T1,masks(mm).name));
-%                 [X,Y,Z]=ind2sub(size(tmp_mask.vol),find(tmp_mask.vol>0));
-%                 if mm==1
-%                     scatter3(X(:),Y(:),Z(:),2,'filled');
-%                     xlim([1 size(tmp_mask.vol,1)])
-%                     ylim([1 size(tmp_mask.vol,2)])
-%                     zlim([1 size(tmp_mask.vol,3)])
-%                     hold on
-%                 elseif mm ==2
-%                     scatter3(X(:),Y(:),Z(:),2,'filled','MarkerEdgeAlpha',.05,'MarkerFaceAlpha',.05);
-%                 elseif mm ==3
-%                     scatter3(X(:),Y(:),Z(:),2,'filled','MarkerEdgeAlpha',.2,'MarkerFaceAlpha',.2);
-%                 end
-%                 clear tmp_mask
-%             end
-%             hold off
-%             legend({'Subcortical','Cerebellar','Ventricular'},'Location','northeast')
-%             title(subjectList(k).name,'Interpreter','none')
-%             
-%             fileout = fullfile(paths.QAdir,'3-subcort_vols.png');
-%             count=length(dir(strcat(fileout(1:end-4),'*')));
-%             if count > 0
-%                 fileout = fullfile(paths.QAdir,sprintf('3-subcort_vols_v%d.png',count+1));
-%             end
-%             print(fileout,'-dpng','-r300')
-%             close all
-%         else
-%             fprintf('Subject %s no Cerebellum mask found!\n',subjectList(k).name)
-%         end
-%     end
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    %% 3-T1_tissue_masks
+    if section_T1masks == 1
+        
+        masks=struct;
+        masks(1).name = 'T1_subcort_mask.nii.gz';
+        masks(2).name = 'registration/Cerebellum_dil_bin.nii.gz';
+        masks(3).name = 'T1_mask_CSFvent.nii.gz';
+        if exist(fullfile(Subj_T1,masks(2).name),'file')
+            T1=MRIread(fullfile(Subj_T1,'T1_fov_denoised.nii'));
+            f3=figure;
+            for mm = 1:length(masks)
+                tmp_mask=MRIread(fullfile(Subj_T1,masks(mm).name));
+                [X,Y,Z]=ind2sub(size(tmp_mask.vol),find(tmp_mask.vol>0));
+                if mm==1
+                    %plot3(X(1:3:end),Y(1:3:end),Z(1:3:end))%,'.','MarkerEdgeAlpha',.05,'MarkerFaceAlpha',.05)
+                    scatter3(X(1:100:end),Y(1:100:end),Z(1:100:end),10,'filled');
+                    xlim([1 size(tmp_mask.vol,1)])
+                    ylim([1 size(tmp_mask.vol,2)])
+                    zlim([1 size(tmp_mask.vol,3)])
+                    hold on
+                elseif mm ==2
+                    %plot3(X(1:3:end),Y(1:3:end),Z(1:3:end),'.')%,'MarkerEdgeAlpha',.05,'MarkerFaceAlpha',.05)
+                    scatter3(X(1:100:end),Y(1:100:end),Z(1:100:end),10,'filled','MarkerEdgeAlpha',.2,'MarkerFaceAlpha',.2);
+                elseif mm ==3
+                    %plot3(X(1:3:end),Y(1:3:end),Z(1:3:end),'.')%,'MarkerEdgeAlpha',.05,'MarkerFaceAlpha',.05)
+                    scatter3(X(1:100:end),Y(1:100:end),Z(1:100:end),10,'filled','MarkerEdgeAlpha',.5,'MarkerFaceAlpha',.5);
+                end
+                clear tmp_mask
+            end
+            hold off
+            legend({'Subcortical','Cerebellar','Ventricular'},'Location','northeast')
+            title(subjectList(k).name,'Interpreter','none')
+            
+            fileout = fullfile(paths.QAdir,'3-subcort_vols.png');
+            count=length(dir(strcat(fileout(1:end-4),'*')));
+            if count > 0
+                fileout = fullfile(paths.QAdir,sprintf('3-subcort_vols_v%d.png',count+1));
+            end
+            % print(fileout,'-dpng','-r300')
+            % close all
+        else
+            fprintf('Subject %s no Cerebellum mask found!\n',subjectList(k).name)
+        end
+    end
+    
+    %% 3-GM_parc_on_fov_denoised
     if section_T1parc == 1
-        %% 3-GM_parc_on_fov_denoised
+        
         % get a list of parcellation files
         parcs=dir(fullfile(Subj_T1,'T1_GM_parc*'));
         % remove the dilated versions
@@ -263,7 +276,7 @@ for k=1:length(subjectList)
                 fileout = fullfile(paths.QAdir,sprintf('3-GM_parc_on_fov_denoised_v%d.png',count+1));
             end
             print(fileout,'-dpng','-r600')
-            close all
+            %close all
         else
             fprintf(2,'%s - no T1_fov_denoised found.\n',subjectList(k).name)
         end
@@ -303,7 +316,7 @@ for k=1:length(subjectList)
             fileout = fullfile(paths.QAdir,sprintf('4-mcFLIRT_motion_parameters_v%d.png',count+1));
         end
         print(fileout,'-dpng','-r600')
-        close all
+       % close all
         
         %% 5-rT1_GM_mask_on_epiMeanVol
         % Set filenames/read in data
@@ -345,7 +358,7 @@ for k=1:length(subjectList)
             fileout = fullfile(paths.QAdir,sprintf('5-rT1_GM_mask_on_epiMeanVol_v%d.png',count+1));
         end
         print(fileout,'-dpng','-r600')
-        close all
+        %close all
         
         %% 6-rT1_GM_parc_on_epi_meanVol
         % get a list of parcellation files
@@ -397,7 +410,7 @@ for k=1:length(subjectList)
             fileout = fullfile(paths.QAdir,sprintf('6-rT1_GM_parc_on_epi_meanVol_v%d.png',count+1));
         end
         print(fileout,'-dpng','-r600')
-        close all
+        %close all
         
         %% 8-Nuisance_regressors
         %TBD
