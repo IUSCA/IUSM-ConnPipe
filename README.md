@@ -89,6 +89,35 @@ IUSM-ConnPipe comes with a pre-formatted configurations file titled **sample_con
 
 The variable `pathSM` in line 13 should point to the location where the Supplementary Packages have been downloaded and/or saved. 
 
+#### Formatting Raw Subject data.
+
+The following diagram is a sample directory tree for a single subject. The pipeline expects each subject's raw data to be organized according to this structure. All output files will be organized following the same directory structure, saved at the `path2derivs` location (defined below). 
+
+```
+# SUBJECT1 -- T1 -- DICOMS
+#          |
+#          -- EPI1 -- DICOMS (If only one EPI scan then this can be called EPI)
+#          |
+#          -- EPI2 -- DICOMS (May have multiple EPI scans)
+#          |         
+#          |               (SPIN-ECHO)       (GRADIENT ECHO)
+#          -- UNWARP1  -- SEFM_AP_DICOMS (OR) GREFM_MAG_DICOMS
+#          |         
+#          |           -- SEFM_PA_DICOMS (OR) GREFM_PHASE_DICOMS
+#          |         
+#          |               (SPIN-ECHO)       (GRADIENT ECHO)
+#          -- UNWARP2  -- SEFM_AP_DICOMS (OR) GREFM_MAG_DICOMS
+#          |          
+#          |           -- SEFM_PA_DICOMS (OR) GREFM_PHASE_DICOMS
+#          |
+#          -- DWI -- DICOMS
+#                 |
+#                 -- UNWARP -- B0_PA_DCM
+```
+
+The actual names of the directories can be different from this sample structure, and should be configured accordingly in the **config.sh** script in lines 59 - 93. 
+
+
 #### Specifying the path for Subject input and output data. 
 
 We highly recommend writting all output data onto a separate location from the raw data. The full path to the input (raw) data and output (derivative) data are specified in the configuration file, **config.sh**, in lines 19 and 25, respectively: 
