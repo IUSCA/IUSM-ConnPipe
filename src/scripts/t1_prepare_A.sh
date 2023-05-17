@@ -157,7 +157,7 @@ if ${flags_T1_anat}; then
 		cmd="cp ${file4fslanat}.anat/T1_biascorr.nii.gz ${T1path}/T1_fov_denoised.nii.gz"
 		log $cmd
 		eval $cmd 
-		cmd="gunzip ${T1path}/T1_fov_denoised.nii.gz"
+		cmd="gunzip -f ${T1path}/T1_fov_denoised.nii.gz"
 		log $cmd
 		eval $cmd 
 
@@ -199,6 +199,13 @@ if ${flags_T1_extract_and_mask}; then
 
 		fileTemplate="${pathBrainmaskTemplates}/IXI/T_template0.nii.gz"
 		fileProbability="${pathBrainmaskTemplates}/IXI/T_template_BrainCerebellumProbabilityMask.nii.gz"
+
+	elif [[ ${configs_antsTemplate} == "KBASE" ]]; then
+
+		log "${configs_antsTemplate} brain mask template selected"
+
+		fileTemplate="${pathBrainmaskTemplates}/KBASE/t1template0.nii.gz"
+		fileProbability="${pathBrainmaskTemplates}/KBASE/t1template0_probabilityMask.nii.gz"
 
 
 	elif [[ ${configs_antsTemplate} == "bet" ]]; then

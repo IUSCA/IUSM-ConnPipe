@@ -12,9 +12,9 @@ print("dwifile ",dwifile)
 DWIpath=os.environ['DWIpath']
 print("DWIpath ",DWIpath)
 
-pbval=''.join([DWIpath,'/',dwifile,'.bval'])
+pbval=''.join([dwifile,'.bval'])
 print('pbval',pbval)
-pbvec=''.join([DWIpath,'/',dwifile,'.bvec'])
+pbvec=''.join([dwifile,'.bvec'])
 print('pbvec',pbvec)
 
 bvals, bvecs = read_bvals_bvecs(pbval,pbvec)

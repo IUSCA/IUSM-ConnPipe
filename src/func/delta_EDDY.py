@@ -12,9 +12,9 @@ print('fileOut',fileOut)
 dwifile=sys.argv[2]
 print('dwifile',dwifile)
 
-fname=''.join([DWIpath,'/',dwifile,'.nii.gz'])
-print('DWI file is:', fname)
-DWI=nib.load(fname)  
+#fname=''.join([DWIpath,'/',dwifile,'.nii.gz'])
+print('DWI file is:', dwifile)
+DWI=nib.load(dwifile)  
 DWI_vol = DWI.get_data()
 
 fname=''.join([fileOut,'.nii.gz'])

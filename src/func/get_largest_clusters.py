@@ -35,7 +35,7 @@ for i in range(1,N+1):
     vi = v_vol == i
     vi = vi.astype(bool).astype(int)
     # print("number of non-zero elements",np.count_nonzero(vi))
-    clusters = measure.label(vi,neighbors=8,return_num=True)
+    clusters = measure.label(vi,connectivity=2,return_num=True)
     # print("number of clusters ",clusters[1])
     for j in range(1,clusters[1]+1):
         vj = np.count_nonzero(clusters[0] == j)

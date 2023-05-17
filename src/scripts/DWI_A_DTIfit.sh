@@ -17,13 +17,13 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 function extract_b0_1st() {
-dwifile="$1" python - <<END
+pbval="$1" python - <<END
 import os
 import numpy as np
 
-DWIpath=os.environ['DWIpath']
+#DWIpath=os.environ['DWIpath']
 # print(DWIpath)
-dwifile=os.environ['dwifile']
+pbval=os.environ['pbval']
 #print("dwifile ",dwifile)
 
 def is_empty(any_struct):
@@ -32,12 +32,12 @@ def is_empty(any_struct):
     else:
         return True 
 
-pbval=''.join([DWIpath,'/',dwifile,'.bval'])
+#pbval=''.join([DWIpath,'/',dwifile,'.bval'])
 bval = np.loadtxt(pbval)
 
 B0_index = np.where(bval==0)
 if is_empty(B0_index):    
-    #print("No B0 volumes identified. Check quality of 0_DWI.bval") 
+    #print("No B0 volumes identified. Check quality of .bval") 
     print("err")
 else:   
     b0_1st = np.argmin(bval)
@@ -87,24 +87,24 @@ for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
         # DWI data in (from EDDY)
         fileDWI="${path_DWI_EDDY}/eddy_output.nii.gz"
 
-        if [[ "$nscanmax" -eq "1" ]]; then 
-            dwifile="0_DWI"
+     #   if [[ "$nscanmax" -eq "1" ]]; then 
+           # dwifile="0_DWI"
             #b0file="AP_b0"
-        elif [[ "$nscanmax" -eq "2" ]]; then 
-            dwifile="0_DWI_ph${nscan}"
+      #  elif [[ "$nscanmax" -eq "2" ]]; then 
+           # dwifile="0_DWI_ph${nscan}"
             #b0file=ph${nscan}_b0_
-        fi 
+       # fi 
         # Format Bval file (row format)
-        cmd="python ${EXEDIR}/src/func/format_row_bval.py ${path_DWI_DTIfit} ${dwifile}"
+        cmd="python ${EXEDIR}/src/func/format_row_bval.py ${path_DWI_DTIfit} ${fileBval::-5}"
         log $cmd
         eval $cmd
-        fileBval="${path_DWI_DTIfit}/3_DWI.bval"
+        fileDTIfitBval="${path_DWI_DTIfit}/3_DWI.bval"
 
         # Rotated Bvec from EDDY will be used here.
-        fileBvec="${path_DWI_EDDY}/eddy_output.eddy_rotated_bvecs"
+        fileEddyBvec="${path_DWI_EDDY}/eddy_output.eddy_rotated_bvecs"
 
         # Create a brain mask of EDDY corrected data
-        b0_1st=$(extract_b0_1st ${dwifile})
+        b0_1st=$(extract_b0_1st ${fileDTIfitBval})
         #log "b0_1st is ${b0_1st}"
 
         if [[ "${b0_1st}" == "err" ]]; then
@@ -131,8 +131,8 @@ for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
             cmd="dtifit -k ${fileDWI} \
                 -o ${fileOut} \
                 -m ${fileMask} \
-                -r ${fileBvec} \
-                -b ${fileBval} --save_tensor -V"
+                -r ${fileEddyBvec} \
+                -b ${fileDTIfitBval} --save_tensor -V"
             log $cmd
             eval $cmd > "${path_DWI_DTIfit}/dtifit.log"
 
@@ -148,5 +148,5 @@ done
 echo "QC recommendations:"
 echo "1. Check topup_field.nii.gz in UNWARP"
 echo "2. Check delta_DWI.nii.gz in EDDY"
-echo "   2b. If eddy_correct was ran check eddy_output also"
+echo "2b. If eddy_correct was ran check eddy_output also"
 echo "3. Check 3_DWI_V1.nii.gz in DTIfit, with FSLeyes"

@@ -194,6 +194,13 @@ if ${flags_T1_reg2MNI}; then
     # for every parcellation +1 (Ventricle mask)
     log "TRANSFORM PARCELLATIONS"
 
+	# required parc
+	export PARC0="CSFvent"
+	export PARC0dir="${pathSM}/MNI_templates/MNI152_T1_1mm_VentricleMask.nii.gz"
+	export PARC0pcort=0;
+	export PARC0pnodal=0;
+	export PARC0psubcortonly=0;
+
     for ((i=0; i<=numParcs; i++)); do
 
         parc="PARC$i"
@@ -337,7 +344,7 @@ if ${flags_T1_seg}; then
     log $cmd
     eval $cmd 
 
-    # binarize subcorticla segmentaiton to a mask
+    # binarize subcortical segmentaiton to a mask
     cmd="fslmaths ${T1path}/T1_subcort_seg.nii.gz -bin ${T1path}/T1_subcort_mask.nii.gz"
     log $cmd 
     eval $cmd
@@ -533,11 +540,13 @@ if ${flags_T1_parc}; then
         pnodal="${!pnodal}" 
         psubcortonly="PARC${i}psubcortonly"    
         psubcortonly="${!psubcortonly}"
+	    pcrblmonly="PARC${i}pcrblmonly"
+	    pcrblmonly="${!pcrblmonly}"
 
         fileIn="${T1path}/T1_parc_${parc}.nii.gz"
         checkisfile ${fileIn}
 
-        if [[ "${psubcortonly}" -eq 0 ]]; then # do not do iterative dilation on subcort-only parcellation
+        if [[ "${psubcortonly}" -eq 0 ]] && [[ "${pcrblmonly}" -eq 0 ]]; then # do not do iterative dilation on subcort-only parcellation
             
             echo "${parc} parcellation intersection with GM; pcort is -- ${pcort}"
 
@@ -591,6 +600,8 @@ if ${flags_T1_parc}; then
             eval $cmd 
 
         fi
+
+	 # Intercent any cerebellar parc with cerebellar mask #UNDER CONSTRUCTION - if this is a good idea
 
         if [ "${pcort}" -eq 1 ]; then
 
@@ -748,81 +759,92 @@ if ${flags_T1_parc}; then
             log $cmd
             eval $cmd  
 
-        fi
+        elif [[ "${pcort}" -eq 0 ]]  && [[ "${psubcortonly}" -eq 1 ]]; then
+            log "SUBCORTICAL-PARCELLATION" 
 
-        ## Add subcortical fsl parcellation to cortical parcellations
-        if ${configs_T1_addsubcort} && [[ "${psubcortonly}" -eq 0 ]]; then 
+            log "configs_T1_subcortUser is ${configs_T1_subcortUser} - finding User provided subcortical parcellation "  
 
-            log "NONSUBCORTIICAL PARCELLATION - Adding subcorical parcels"
+            onesubcort=false
 
-            if ! ${configs_T1_subcortUser} ; then  # default FSL subcortical
+            for ((ii=1; ii<=numParcs; ii++)); do  # exclude PARC0 - CSF - here
 
-                log "configs_T1_subcortUser is ${configs_T1_subcortUser} - using FSL default subcortical"
-                fileSubcort="${T1path}/T1_subcort_seg.nii.gz"
+                parcii="PARC${ii}"
+                parcii="${!parcii}"
+                psubcortonlyii="PARC${ii}psubcortonly"    
+                psubcortonlyii="${!psubcortonlyii}"                      
 
-            else
-
-                log "configs_T1_subcortUser is ${configs_T1_subcortUser} - finding User provided subcortical parcellation "  
-
-                onesubcort=false
-
-                for ((ii=1; ii<=numParcs; ii++)); do  # exclude PARC0 - CSF - here
-
-                    parcii="PARC${ii}"
-                    parcii="${!parcii}"
-                    psubcortonlyii="PARC${ii}psubcortonly"    
-                    psubcortonlyii="${!psubcortonlyii}"                      
-
-                    log "Finding Subcortical Parcellation"
-                    log "ii is ${ii} -- ${parcii} parcellation -- psubcortonlyii is -- ${psubcortonlyii}"
+                log "Finding Subcortical Parcellation"
+                log "ii is ${ii} -- ${parcii} parcellation -- psubcortonlyii is -- ${psubcortonlyii}"
 
 
-                    if [[ "${psubcortonlyii}" -eq 1 ]]; then  # find subcortical-only parcellation
+                if [[ "${psubcortonlyii}" -eq 1 ]]; then  # find subcortical-only parcellation
 
-                        log "SUBCORTICAL parcellation found: ${parcii}"
+                    log "SUBCORTICAL parcellation found: ${parcii}"
 
-                        if ! ${onesubcort} ; then
-                            # check that parcellation is available in T1 space
-                            fileSubcortUser="T1_GM_parc_${parcii}.nii.gz"
+                    if ! ${onesubcort} ; then
+                        # check that parcellation is available in T1 space
+                        fileSubcortUser="T1_GM_parc_${parcii}.nii.gz"
 
-                            if [[ -f "${T1path}/${fileSubcortUser}" ]]; then
+                        if [[ -f "${T1path}/${fileSubcortUser}" ]]; then
 
-                                log "SUBCORTICAL parcellation is available in T1 space: ${T1path}/${fileSubcortUser}"
+                            log "SUBCORTICAL parcellation is available in T1 space: ${T1path}/${fileSubcortUser}"
 
-                                fileSubcort="${T1path}/${fileSubcortUser}"
-                                onesubcort=true  # allow only one subcortical-only parcellation
+                            fileSubcort="${T1path}/${fileSubcortUser}"
+                            onesubcort=true  # allow only one subcortical-only parcellation
 
-                            fi
                         fi
-                    fi 
-                done
+                    fi
+                fi 
+            done
 
-                if ! ${onesubcort} ; then   # for-loop conditions not met so default to FSL subcortical 
-                    fileSubcort="${T1path}/T1_subcort_seg.nii.gz"
-                fi
+        elif [[ "${pcort}" -eq 0 ]]  && [[ "${pcrblmonly}" -eq 1 ]]; then
+            log "CEREBELLAR-PARCELLATION"  
 
-            fi
+            onecrblm=false
 
-            log "fileSubcort is ${fileSubcort}"
-            
-            FileIn="${T1path}/T1_GM_parc_${parc}.nii.gz"
-            
-            log "ADD_SUBCORT_PARC using ${FileIn} and ${fileSubcort}"
-            # call python script
-            cmd="python ${EXEDIR}/src/func/add_subcort_parc.py \
-                ${FileIn} ${pnodal} \
-                ${fileSubcort}"
-            log $cmd
-            eval $cmd
+            for ((ii=1; ii<=numParcs; ii++)); do  # exclude PARC0 - CSF - here
 
-        fi 
+                parcii="PARC${ii}"
+                parcii="${!parcii}"
+                pcrblmonlyii="PARC${ii}pcrblmonly"    
+                pcrblmonlyii="${!pcrblmonlyii}"                      
 
+                log "Finding Cerebellar Parcellation"
+                log "ii is ${ii} -- ${parcii} parcellation -- pcrblmonlyii is -- ${pcrblmonlyii}"
+
+                if [[ "${pcrblmonlyii}" -eq 1 ]]; then  # find cerbellum-only parcellation
+
+                    log "CEREBELLAR parcellation found: ${parcii}"
+
+                    if ! ${onecrblm} ; then
+                        # check that parcellation is available in T1 space
+                        fileCrblmUser="T1_parc_${parcii}.nii.gz"
+
+                        if [[ -f "${T1path}/${fileCrblmUser}" ]]; then
+
+                            log "CEREBELLAR parcellation is available in T1 space: ${T1path}/${fileCrblmUser}"
+
+                            fileCrblm="${T1path}/${fileCrblmUser}"
+                            FileCereb_bin="${T1reg}/Cerebellum_bin.nii.gz"
+
+                            # Mask parcellation by mask
+                            cmd="fslmaths ${fileCrblm} -mas ${FileCereb_bin} ${fileCrblm}"
+                            log $cmd
+                            eval $cmd
+
+                            onecrblm=true  # allow only one cerebellar-only parcellation
+
+                        fi
+                    fi
+                fi 
+            done
+        fi
 
         # 07.26.2017 EJC Dilate the final GM parcellations. 
         # NOTE: They will be used by f_functiona_connectivity
         #  to bring parcellations into epi space.
 
-        if [[ ${psubcortonly} -ne 1 ]]; then
+        if [[ ${psubcortonly} -ne 1 ]] && [[ ${pcrblmonly} -ne 1 ]]; then
 
             fileOut4="${T1path}/T1_GM_parc_${parc}_dil.nii.gz"
             cmd="fslmaths ${fileOut2} -dilD ${fileOut4}"
@@ -836,4 +858,13 @@ if ${flags_T1_parc}; then
             fi  
         fi 
     done
+
+    if ${configs_T1_addsubcort} && ! ${configs_T1_subcortUser}; then  # default FSL subcortical
+            log "configs_T1_subcortUser is ${configs_T1_subcortUser} - using FSL default subcortical"
+            fileSubcort="${T1path}/T1_subcort_seg.nii.gz"
+
+            cmd="cp ${fileSubcort} ${T1path}/T1_GM_parc_FSLsubcort.nii.gz"
+            log $cmd
+            eval $cmd 
+        fi
 fi

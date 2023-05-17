@@ -18,52 +18,53 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 log "fMRI_A"
 
 # Generate list of EPI scan directories
-declare -a epiList
-while IFS= read -r -d $'\0' REPLY; do 
-    epiList+=( "$REPLY" )
-done < $(find ${path2data}/${SUBJ} -maxdepth 1 -type d -iname "${configs_epiFolder}*" -print0 | sort -z)
+#declare -a epiList
+#while IFS= read -r -d $'\0' REPLY; do 
+#    epiList+=( "$REPLY" )
+#done < $(find ${path2data}/${SUBJ}/${configs_session} -maxdepth 1 -type d -iname "${configs_epiFolder}" -print0 | sort -z)
 
 
-if [ ${#epiList[@]} -eq 0 ]; then 
-    echo "No EPI directories found for subject $SUBJ. Check consistency of naming convention."
-    exit 1
-else
-    echo "There are ${#epiList[@]} EPI-series "
-fi
+#if [ ${#epiList[@]} -eq 0 ]; then 
+#    echo "No func directories found for subject $SUBJ. Check consistency of naming convention."
+   # exit 1
+#else
+#    echo "There are ${#epiList[@]} EPI-series "
+#fi
 
-for ((i=0; i<${#epiList[@]}; i++)); do
+#for ((i=0; i<${#epiList[@]}; i++)); do
+# MULTISESSION CODING WILL NEED TO CHANGED TO BE BIDS COMPLIANT
+# RIGHT NOW I AM JUST MAKING IT WORK FOR 1 SCAN
+#    ind=`echo ${epiList[$i]} | sed 's/.*\func//'`
+#    re='^[0-9]+$'
 
-    ind=`echo ${epiList[$i]} | sed 's/.*\EPI//'`
-    re='^[0-9]+$'
+  #  if [[ ! -d "${epiList}" ]]; then
+  #      echo "${epiList} directory not found"
+  #      exit 1
 
-    if [[ ! -d "${epiList[$i]}" ]]; then
-        echo "${epiList[$i]} directory not found"
-        exit 1
-
-    elif ! [[ $ind =~ $re ]] ; then  # if EPI dir has no session number
-        echo "EPI directory ${epiList[$i]} has no session number"
-        echo "Running f_MRI_A on ${epiList[$i]}"
+   # elif ! [[ $ind =~ $re ]] ; then  # if EPI dir has no session number
+   #     echo "EPI directory ${epiList[$i]} has no session number"
+   #     echo "Running f_MRI_A on ${epiList[$i]}"
     
-    elif [[ $ind =~ $re ]] ; then
+   # elif [[ $ind =~ $re ]] ; then
 
-        if [ $ind -lt "${configs_EPI_epiMin}" ] || [ $ind -gt "${configs_EPI_epiMax}" ]; then
-            log "WARNING Skipping f_MRI_A processing on ${epiList[$i]}. Scan session is not within the epiMin and epiMax configuration settings."
-            break
-        fi
-    fi
+  #      if [ $ind -lt "${configs_EPI_epiMin}" ] || [ $ind -gt "${configs_EPI_epiMax}" ]; then
+   #         log "WARNING Skipping f_MRI_A processing on ${epiList[$i]}. Scan session is not within the epiMin and epiMax configuration settings."
+   #         break
+   #     fi
+   # fi
 
     # Operating on the scans set in configs
-    export EPIpath="${epiList[$i]}"
+  #  export EPIpath="${epiList}"
     
-    echo "Setting EPInum variable to ${ind}"
-    export EPInum=${ind}
+   # echo "Setting EPInum variable to ${ind}"
+   # export EPInum=${ind}
 
     log "fMRI_A on subject ${SUBJ}"
     log "EPI-series ${EPIpath}"
-    log "EPI session number ${EPInum}"
+   # log "EPI session number ${EPInum}"
 
     ## functional connectivity
-
+# SKIPPING THIS FOR NOW FOR KBASE WILL NEED TO RECODE LATER FOR BIDS
     # ### Convert dcm2nii
     if ${flags_EPI_dcm2niix}; then
 
@@ -127,7 +128,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 
     fi
 
-
+# SKIPPING THIS FOR NOW FOR KBASE WILL NEED TO RECODE LATER FOR BIDS
     if ${flags_EPI_SpinEchoUnwarp}; then 
     
         cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_SpinEchoUnwarp.sh"
@@ -141,7 +142,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
         fi
         
     fi 
-
+# SKIPPING THIS FOR NOW FOR KBASE WILL NEED TO RECODE LATER FOR BIDS
     if ${flags_EPI_GREFMUnwarp}; then 
         
         cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_GREFMUnwarp.sh"
@@ -438,7 +439,5 @@ for ((i=0; i<${#epiList[@]}; i++)); do
         fi  
     fi 
 
-
-done
 
 

@@ -77,16 +77,25 @@ for pc in range(0,len(resid)):
     [sizeX,sizeY,sizeZ,numTimePoints] = resid[pc].shape
     print("resid shape is ",sizeX,sizeY,sizeZ,numTimePoints)
 
-    for k in range(0,numParcs+1):
+
+    print(numParcs)
+
+
+    for k in range(1,numParcs+1):
         parc_label=os.environ["PARC%d" % k]
         parc_nodal=os.environ["PARC%dpnodal" % k]
         parc_subcortonly=os.environ["PARC%dpsubcortonly" % k]
+        parc_crblmonly=os.environ["PARC%dpcrblmonly" % k]
 
-        if parc_nodal == "1" and parc_subcortonly == "0":
+        if parc_nodal == "1":
             print(" Processing nodes for %s parcellation" % parc_label)
             flog.write("\n Processing nodes for %s parcellation"+ parc_label)
 
-            parcGM_file = ''.join([EPIpath,'/rT1_GM_parc_',parc_label,'_clean.nii.gz'])
+            if parc_crblmonly == "1":
+                parcGM_file = ''.join([EPIpath,'/rT1_parc_',parc_label,'_clean.nii.gz'])
+            else:
+                parcGM_file = ''.join([EPIpath,'/rT1_GM_parc_',parc_label,'_clean.nii.gz'])
+
             parcGM = nib.load(parcGM_file).get_data()
             parcGM = parcGM * volWM_mask * volCSF_mask * volBrain_mask
 
@@ -100,7 +109,7 @@ for pc in range(0,len(resid)):
             ROIs_numNans = np.empty((numROIs,numTimePoints))
             ROIs_numNans[:] = np.NaN
 
-            tic = time.clock()
+            tic = time.perf_counter()
             for roi in range(0,numROIs): 
                 voxelsROI = (parcGM == (roi+1))
                 ROIs_numVoxels[roi] = np.count_nonzero(voxelsROI)
@@ -122,7 +131,7 @@ for pc in range(0,len(resid)):
                 else:
                     fqc.write("\n WARNING ROI "+str(roi)+ " has zero voxels")
                     
-            toc = time.clock()
+            toc = time.perf_counter()
             print(toc-tic)
 
 

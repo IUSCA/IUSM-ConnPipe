@@ -29,7 +29,7 @@ echo "=================================="
 log "path_DWI_EDDY is ${path_DWI_EDDY}"
 log "path_DWI_DTIfit is ${path_DWI_DTIfit}"
 
-# down-sample FA image
+# up-sample FA image
 fileFA2mm="${path_DWI_DTIfit}/3_DWI_FA.nii.gz"
 fileFA1mm="${path_DWI_DTIfit}/3_DWI_FA_1mm.nii.gz"
 
@@ -40,7 +40,7 @@ cmd="flirt -in ${fileFA2mm} \
 log $cmd
 eval $cmd
 
-# rigid body of T1 to b0
+# rigid body of T1 to FA
 log "DWI_B: rigid body dof 6 to T1"
 fileIn="${T1path}/T1_brain.nii.gz"
 fileMat1="${DWIpath}/T1_2_FA_dof6.mat"
@@ -55,7 +55,7 @@ cmd="flirt -in ${fileIn} \
 log $cmd
 eval $cmd
 
-
+# remove negatives due to interpolation
 cmd="fslmaths ${fileOut} -thr 0 ${fileOut}"
 log $cmd
 eval $cmd
@@ -76,6 +76,20 @@ cmd="fslmaths ${fileOut} -mas ${fileMaskDWI} ${fileOut}"
 log $cmd
 eval $cmd
 
+# for white matter seeding register WM mask to DWI
+if [[ ${configs_DWI_seeding} == "wm" ]]; then
+    fileWM="${T1path}/T1_WM_mask.nii.gz"
+    fileWMdwi="${DWIpath}/rT1_WM_mask.nii.gz"
+    cmd="flirt -in ${fileWM} \
+        -ref ${fileFA1mm} \
+        -applyxfm \
+        -init ${fileMat1} \
+        -out ${fileWMdwi} \
+        -interp nearestneighbour"
+    log $cmd
+    eval $cmd
+fi
+
 # apply to GM nodal parcellation images
 log "DWI_B: apply to GM nodal parcellation images"
 
@@ -83,19 +97,24 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
 
     parc="PARC$p"
     parc="${!parc}"
-    pcort="PARC${p}pcort"
-    pcort="${!pcort}"  
+    pcrblm="PARC${p}pcrblmonly"
+    pcrblm="${!pcrblm}"  
     pnodal="PARC${p}pnodal"  
     pnodal="${!pnodal}"                        
 
     echo "${p}) ${parc} parcellation"
 
-    if [ ${pnodal} -eq 1 ]; then  
-        echo " -- Nodal parcellation: ${pnodal}" 
+    if [[ "${pnodal}" -eq 1 ]]; then  
+        echo " -- Nodal parcellation: ${pnodal}"  
         
-        # transformation from T1 to epi space
-        fileGMparc="${T1path}/T1_GM_parc_${parc}.nii.gz"
-        fileOut="${DWIpath}/rT1_GM_parc_${parc}.nii.gz"
+        # transformation from T1 to dwi space
+        if [[ "${pcrblm}" -eq 1 ]]; then
+            fileGMparc="${T1path}/T1_parc_${parc}.nii.gz"
+            fileOut="${DWIpath}/rT1_parc_${parc}.nii.gz"
+        else
+            fileGMparc="${T1path}/T1_GM_parc_${parc}.nii.gz"
+            fileOut="${DWIpath}/rT1_GM_parc_${parc}.nii.gz"
+        fi
 
         cmd="flirt -in ${fileGMparc} \
             -ref ${fileFA1mm} \
@@ -106,6 +125,28 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
         log $cmd
         eval $cmd
     else
-        echo " -- Not a nodal parcellation"
+        echo " -- Not a nodal OR cortical parcellation"
     fi
 done
+
+# add FSLsubcort
+
+if $configs_DWI_addFSLsubcort; then
+    echo "Registering FSLsubcort to DWI"
+    fileGMparc="${T1path}/T1_GM_parc_FSLsubcort.nii.gz"
+    if [[ -e ${fileGMparc} ]]; then
+        # transformation from T1 to dwi space
+        fileOut="${DWIpath}/rT1_GM_parc_FSLsubcort.nii.gz"
+
+        cmd="flirt -in ${fileGMparc} \
+            -ref ${fileFA1mm} \
+            -applyxfm \
+            -init ${fileMat1} \
+            -out ${fileOut} \
+            -interp nearestneighbour"
+        log $cmd
+        eval $cmd
+    else
+        echo " GM_parc_FSLsubcort -- Does Not Exist"
+    fi
+fi

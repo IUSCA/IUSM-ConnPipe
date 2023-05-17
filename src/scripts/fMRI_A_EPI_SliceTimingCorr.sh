@@ -25,16 +25,18 @@ if (( $(echo "${TR} > $configs_EPI_minTR" |bc -l) )); then
     if [[ -e "${EPIpath}/0_epi_unwarped.nii.gz" ]]; then  
         fileIn="${EPIpath}/0_epi_unwarped.nii.gz"
         log "Processing: 0_epi_unwarped.nii.gz"
-    elif [[ -e "${EPIpath}/0_epi.nii.gz" ]]; then  
-        fileIn="${EPIpath}/0_epi.nii.gz"
-        log "Processing: 0_epi.nii.gz"
     else
-        log "WARNIGN file 0_epi not found. Exiting..."   
-        exit 1 
+        fileIn=`ls ${EPIpath_raw}/*rest.nii*`
+        if [[ -e "${fileIn}" ]]; then          
+            log "Processing: raw nifti"
+        else
+            log "WARNIGN file 0_epi not found. Exiting..."   
+            exit 1
+        fi 
     fi 
 
-
-    cmd="fslreorient2std ${fileIn} ${fileIn}"
+    fileOut="${EPIpath}/0_epi.nii.gz"
+    cmd="fslreorient2std ${fileIn} ${fileOut}"
     log $cmd 
     eval $cmd  
 

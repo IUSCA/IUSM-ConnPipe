@@ -52,10 +52,11 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
 
     echo "${p}) ${parc} parcellation"
 
-    if [ ${pnodal} -eq 1 ]; then  
+    if [ ${pnodal} -eq 1 ] && [${pcort} -eq 1]; then  
         echo " -- Nodal parcellation: ${pnodal}" 
+        echo " -- Cortical parcellation: ${pcort}" 
         
-        # transformation from T1 to epi space
+        # 
         fileparc="${DWIpath}/rT1_GM_parc_${parc}.nii.gz"
         fileConnMatrix="${path_DWI_matrices}/1M_2radial_density_${parc}.csv"
 

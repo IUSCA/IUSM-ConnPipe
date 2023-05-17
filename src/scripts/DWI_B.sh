@@ -19,31 +19,31 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 if [[ -d ${DWIpath} ]]; then
 
     log "DWI_B processing for subject ${SUBJ}"
-
+# DONT NEED THIS 2 DIR SET UP FOR BIDS
     # if two DICOM directories exist 
-    if [[ ! -z "${configs_DWI_dcmFolder1}" ]] && [[ ! -z "${configs_DWI_dcmFolder2}" ]]; then
+  #  if [[ ! -z "${configs_DWI_dcmFolder1}" ]] && [[ ! -z "${configs_DWI_dcmFolder2}" ]]; then
 
-        DWIdir1="${DWIpath}/${configs_DWI_dcmFolder1}"
-        DWIdir2="${DWIpath}/${configs_DWI_dcmFolder2}"
+  #      DWIdir1="${DWIpath}/${configs_DWI_dcmFolder1}"
+  #      DWIdir2="${DWIpath}/${configs_DWI_dcmFolder2}"
 
-        if [[ -d "${DWIdir1}" ]] && [[ -d "${DWIdir2}" ]]; then
-            export nscanmax=2 # DWI acquired in two phase directions (e.g., AP and PA)
-        else
-            log "WARNING ${DWIdir1} and/or ${DWIdir2} not found!. Exiting..."
-            exit 1
-        fi 
-    else
-        DWIdir1="${DWIpath}/${configs_DWI_dcmFolder}"
+  #      if [[ -d "${DWIdir1}" ]] && [[ -d "${DWIdir2}" ]]; then
+  #          export nscanmax=2 # DWI acquired in two phase directions (e.g., AP and PA)
+   #     else
+   #         log "WARNING ${DWIdir1} and/or ${DWIdir2} not found!. Exiting..."
+   #         exit 1
+   #     fi 
+   # else
+   #     DWIdir1="${DWIpath}/${configs_DWI_dcmFolder}"
 
-        if [[ -d "${DWIdir1}" ]]; then
+   #     if [[ -d "${DWIdir1}" ]]; then
             export nscanmax=1 
-        else
-            log "WARNING ${DWIdir1} not found!. Exiting..."
-            exit 1
-        fi 
-    fi 
+   #     else
+   #         log "WARNING ${DWIdir1} not found!. Exiting..."
+   #         exit 1
+   #     fi 
+   # fi 
 
-    log "Number of scans is ${nscanmax}"
+   # log "Number of scans is ${nscanmax}"
 
     for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
     

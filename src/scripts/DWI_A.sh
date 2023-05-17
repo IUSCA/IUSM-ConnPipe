@@ -31,10 +31,10 @@ fileBvec = os.environ['fileBvec']
 fileNifti = os.environ['fileNifti']
 # print("fileNifti is ",fileNifti)
 
-pbval = ''.join([p,'/',fileBval])
-pbvec = ''.join([p,'/',fileBvec])
+pbval = ''.join([p,'/0_DWI.bval'])
+pbvec = ''.join([p,'/0_DWI.bvec'])
 
-bvals, bvecs = read_bvals_bvecs(pbval,pbvec)
+bvals, bvecs = read_bvals_bvecs(fileBval,fileBvec)
 # print("bvals size", bvals.shape)
 # print("bvecs size", bvecs.shape)
 
@@ -48,8 +48,8 @@ if bvecs.shape[0] > 3:
     bvecs = bvecs.T 
     # print("bvecs size", bvecs.shape)
 
-DWIp=''.join([p,'/',fileNifti,'.gz'])
-DWI=nib.load(DWIp)  
+#DWIp=''.join([p,'/',fileNifti,'.gz'])
+DWI=nib.load(fileNifti)  
 
 # print('bvals.shape[1] ',bvals.shape[1])
 # print('bvecs.shape[1] ',bvecs.shape[1])
@@ -67,93 +67,84 @@ END
 
 ###############################################################################
 
-if [[ -d ${DWIpath} ]]; then
+if [[ -d ${DWIpath_raw} ]]; then
 
     log "DWI_A processing for subject ${SUBJ}"
+    log "${DWIpath_raw} has been defined by user"
+
+    # count the number of nii images in dir
+    export nscanmax=`ls ${DWIpath_raw}/*nii* | wc -l`
 
     # Calculate readout time
-    if [[ ! -z "${configs_DWI_readout}" ]]; then
-        # if two DICOM directories exist 
-        if [[ ! -z "${configs_DWI_dcmFolder1}" ]] && [[ ! -z "${configs_DWI_dcmFolder2}" ]]; then
-
-            DWIdir1="${DWIpath}/${configs_DWI_dcmFolder1}"
-            DWIdir2="${DWIpath}/${configs_DWI_dcmFolder2}"
-
-            log "${configs_DWI_dcmFolder1} and ${configs_DWI_dcmFolder2} have been defined by user"
-
-            if [[ -d "${DWIdir1}" ]] && [[ -d "${DWIdir2}" ]]; then
-
-                export nscanmax=2 # DWI acquired in two phase directions (e.g., AP and PA)
-                
-                jsonfile="null"
-
-                cmd="${EXEDIR}/src/scripts/get_readout.sh ${jsonfile} ${DWIdir1} DWI" 
-                log $cmd
-                DWIreadout1=`$cmd`
-                log "DWIreadout1 = ${DWIreadout1}"
-
-                cmd="${EXEDIR}/src/scripts/get_readout.sh ${jsonfile} ${DWIdir2} DWI" 
-                log $cmd
-                DWIreadout2=`$cmd`
-                log "DWIreadout2 = ${DWIreadout2}"
-
-                if (( $(echo "${DWIreadout1} == ${DWIreadout2}" |bc -l) )) ; then
-                    export configs_DWI_readout=${DWIreadout1}
-                    echo "configs_DWI_readout -- ${configs_DWI_readout}"                    
-                    DWI1dcm_niifile="0_DWI_ph1"
-                    DWI2dcm_niifile="0_DWI_ph2"
-
-                else
-                    log "WARNING DWI readout values do not match! Exiting..."
-                    exit 1
-                fi
-            else
-                log "WARNING ${DWIdir1} and/or ${DWIdir2} not found!. Exiting..."
-                exit 1
-            fi 
-
+    if [[ ! -z "${configs_DWI_readout}" ]]
+    then  
+        if [[ -d "${DWIpath_raw}" ]]
+		then
+	    	if [[ "$nscanmax" -eq 1 ]]
+	    	then
+				jsonfile=`ls ${DWIpath_raw}/*json`
+                # find TotalReadoutTime
+    			export configs_DWI_readout=`cat ${jsonfile} | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TotalReadoutTime}`
+	    	elif [[ "$nscanmax" > 1 ]]
+	    	then
+				jsonfile1=`ls ${DWIpath_raw}/*run-1_dwi.json`
+				SEreadOutTime1=`cat ${jsonfile1} | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TotalReadoutTime}`
+				jsonfile2=`ls ${DWIpath_raw}/*run-1_dwi.json`
+				SEreadOutTime2=`cat ${jsonfile2} | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TotalReadoutTime}`
+				# ADD THE CHECK IF TWO ARE EQUAL, IF THEY ARE NOT ITS NOT A DEALBRACKER, THEY JUST BOTH NEED TO BE
+				# CARRIED FORWARD INTO TOPUP
+				# RIGHT NOW DEFAULTING TO FIRST VALUE
+				export configs_DWI_readout=${SEreadOutTime1}  		
+	    	else
+				log "WARNING: No *nii* files in: ${DWIpath_raw}"
+				exit 1 
+	    	fi          
         else
-
-            DWIdir1="${DWIpath}/${configs_DWI_dcmFolder}"
-
-            log "${DWIdir1} has been defined by user"
-
-            export nscanmax=1  # DWI acquired in one phase direction (b0's non-withstanding)
-          
-            if [[ -d "${DWIdir1}" ]]; then 
-            
-                jsonfile="null"
-
-                cmd="${EXEDIR}/src/scripts/get_readout.sh ${jsonfile} ${DWIdir1} DWI" 
-                log $cmd
-                export configs_DWI_readout=`$cmd`
-                echo "configs_DWI_readout -- ${configs_DWI_readout}"
-                DWI1dcm_niifile="0_DWI"
-
-            else 
-                log "WARNING ${DWIdir1} not found!. Exiting..."
-                exit 1    
-            fi 
-        fi 
-    fi
+			log "WARNING ${DWIpath_raw} not found!. Exiting..."
+			exit 1 
+		fi
+    else
+ 		echo "configs_DWI_readout -- ${configs_DWI_readout}"     
+    fi 
+                
 
     for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
+#-------------------------------------------------------------------------------------------#
+# THIS WHOLE SECTION WILL NEED TO BE RE-DONE TO BE BIDS FORMAT
+# DICOMS WILL BE IN A 'SOURCE' DIRECTORY WITHIN THE PROJECT DIRECTORY
+# DICMOS WILL BE READ FROM THERE AND COPIED INTO THE 'RAW' DIRECTORY IN BIDS FORMAT 
+# OR SOMETHING LIKE THAT
 
-        if [[ "$nscan" -eq 1 ]]; then 
-            path_DWIdcm=${DWIdir1}
-            fileNii=${DWI1dcm_niifile}
-        elif [[ "$nscan" -eq 2 ]]; then 
-            path_DWIdcm=${DWIdir2}
-            fileNii=${DWI2dcm_niifile}
-        fi 
+       # if [[ "$nscan" -eq 1 ]]; then 
+           # path_DWIdcm=${DWIpath_raw}
+        #    fileNii=${DWI1dcm_niifile}
+       # elif [[ "$nscan" -eq 2 ]]; then 
+           # path_DWIdcm=${DWIdir2}
+        #    fileNii=${DWI2dcm_niifile}
+       # fi 
             
-        log "path_DWIdcm is -- ${path_DWIdcm}"
-
-        export fileNifti="${fileNii}.nii"
-        export fileJson="${fileNii}.json"
-        export fileBval="${fileNii}.bval"
-        export fileBvec="${fileNii}.bvec"
-
+      #  log "path_DWIdcm is -- ${path_DWIdcm}"
+		if [[ "$nscanmax" -eq 1 ]]
+    	then
+			export fileNifti=`ls ${DWIpath_raw}/*_dwi.nii*`
+		    export fileJson=`ls ${DWIpath_raw}/*_dwi.json`
+		    export fileBval=`ls ${DWIpath_raw}/*_dwi.bval`
+		    export fileBvec=`ls ${DWIpath_raw}/*_dwi.bvec`
+		else
+			if [[ "$nscan" -eq 1 ]]
+			then 
+				export fileNifti=`ls ${DWIpath_raw}/*run-1_dwi.nii*`
+				export fileJson=`ls ${DWIpath_raw}/*run-1_dwi.json`
+				export fileBval=`ls ${DWIpath_raw}/*run-1_dwi.bval`
+				export fileBvec=`ls ${DWIpath_raw}/*run-1_dwi.bvec`
+			elif [[ "$nscan" -eq 2 ]]
+			then 
+				export fileNifti=`ls ${DWIpath_raw}/*run-2_dwi.nii*`
+				export fileJson=`ls ${DWIpath_raw}/*run-2_dwi.json`
+				export fileBval=`ls ${DWIpath_raw}/*run-2_dwi.bval`
+				export fileBvec=`ls ${DWIpath_raw}/*run-2_dwi.bvec`
+			fi
+		fi 
 
         #### Convert dcm2nii
         if ${flags_DWI_dcm2niix}; then
@@ -193,34 +184,36 @@ if [[ -d ${DWIpath} ]]; then
                 eval $cmd 
             fi
         fi
-
-
+# END OF DICOM IMPORT
+#--------------------------------------------------------------------------------------------------------#
+# THIS STUFF WILL ALSO BE REDONE, WITH SIEMENS ITS SAFE TO TRUST DCM2NIIX READOUT 
+# THIS WILL NEED TO BE CONFIRMED FOR ge
         # Check if the readout time is consistent with the readout-time contained in the json file
-        dcm2niix_json="${DWIpath}/${fileJson}"
+  #      dcm2niix_json="${DWIpath}/${fileJson}"
 
-        if [[ -e ${dcm2niix_json} ]]; then
-
-            TotalReadoutTime=`cat ${dcm2niix_json} | ${EXEDIR}/src/func/jq-linux64 '.TotalReadoutTime'`            
-            echo "TotalReadoutTime from ${dcm2niix_json} is ${TotalReadoutTime}"
-            AccF=`cat ${dcm2niix_json} | ${EXEDIR}/src/func/jq-linux64 '.ParallelReductionFactorInPlane'`
-            echo "ParallelReductionFactorInPlane from ${dcm2niix_json} is ${AccF}"
-            if [ -z "${AccF}" ] || [[ "${AccF}" -eq "null" ]]; then
-                AccF=1
-            fi 
-            TotalReadoutTime=$(bc <<< "scale=8 ; ${TotalReadoutTime} / ${AccF}")
-            echo "TotalReadoutTime/AccF = ${TotalReadoutTime}"
-
-            diff=$(echo "$TotalReadoutTime - $configs_DWI_readout" | bc)
-
-            echo "diff = TotalReadoutTime - configs_DWI_readout = $diff"
-
-            if [[ $(bc <<< "$diff >= 0.1") -eq 1 ]] || [[ $(bc <<< "$diff <= -0.1") -eq 1 ]]; then
-                log "ERROR Calculated readout time not consistent with readout time provided by dcm2niix"
-                exit 1
-            fi 
-
-            PhaseEncodingDirection=`cat ${dcm2niix_json} | ${EXEDIR}/src/func/jq-linux64 '.PhaseEncodingDirection'`
-            echo "PhaseEncodingDirection from ${dcm2niix_json} is ${PhaseEncodingDirection}"            
+        if [[ -e ${fileJson} ]]; then
+#
+#           TotalReadoutTime=`cat ${dcm2niix_json} | ${EXEDIR}/src/func/jq-linux64 '.TotalReadoutTime'`            
+#            echo "TotalReadoutTime from ${dcm2niix_json} is ${TotalReadoutTime}"
+#            AccF=`cat ${dcm2niix_json} | ${EXEDIR}/src/func/jq-linux64 '.ParallelReductionFactorInPlane'`
+#            echo "ParallelReductionFactorInPlane from ${dcm2niix_json} is ${AccF}"
+#            if [ -z "${AccF}" ] || [[ "${AccF}" -eq "null" ]]; then
+#                AccF=1
+#            fi 
+#            TotalReadoutTime=$(bc <<< "scale=8 ; ${TotalReadoutTime} / ${AccF}")
+#            echo "TotalReadoutTime/AccF = ${TotalReadoutTime}"
+#
+#            diff=$(echo "$TotalReadoutTime - $configs_DWI_readout" | bc)
+#
+#            echo "diff = TotalReadoutTime - configs_DWI_readout = $diff"
+#
+#            if [[ $(bc <<< "$diff >= 0.1") -eq 1 ]] || [[ $(bc <<< "$diff <= -0.1") -eq 1 ]]; then
+#                log "ERROR Calculated readout time not consistent with readout time provided by dcm2niix"
+#                exit 1
+#            fi 
+#
+            PhaseEncodingDirection=`cat ${fileJson} | ${EXEDIR}/src/func/jq-linux64 '.PhaseEncodingDirection'`
+            echo "PhaseEncodingDirection from ${fileJson} is ${PhaseEncodingDirection}"            
 
             if [[ "${PhaseEncodingDirection}" == '"j-"' ]]; then
                 if [[ "${nscan}" -eq "1" ]]; then 
@@ -246,9 +239,9 @@ if [[ -d ${DWIpath} ]]; then
             export DWIdcm_phase_2
 
 
-            DWIdcm_SliceTiming=`cat ${dcm2niix_json} | ${EXEDIR}/src/func/jq-linux64 '.SliceTiming'`
+           DWIdcm_SliceTiming=`cat ${fileJson} | ${EXEDIR}/src/func/jq-linux64 '.SliceTiming'`
             
-            echo "SliceTiming from ${dcm2niix_json} is ${DWIdcm_SliceTiming}"            
+            echo "SliceTiming from ${fileJson} is ${DWIdcm_SliceTiming}"            
 
         fi  
 
@@ -280,16 +273,19 @@ if [[ -d ${DWIpath} ]]; then
 
         else  
 
-            if [[ ! -e "${DWIpath}/${fileBval}" ]] && [[ ! -e "${DWIpath}/${fileBvec}" ]]; then
+            if [[ ! -e "${fileBval}" ]] && [[ ! -e "${fileBvec}" ]]; then
                 log "WARNING Bvec and/or Bval files do not exist. Skipping further analyses"
                 exit 1
             else
                 out=$(read_bvals_bvecs ${DWIpath})
                 log "out is ${out}"
+				export fileBval="${DWIpath}/0_DWI.bval"
+				export fileBvec="${DWIpath}/0_DWI.bvec"
                 if [[ $out -eq 1 ]]; then
                     log "# Bvec and Bval files written in column format with tab delimiter"
                 else
                     log "#WARNING Bvec and/or Bval values do not match number of volumes. Exiting Analysis"
+					exit 1
                 fi 
             fi 
 
@@ -320,7 +316,7 @@ if [[ -d ${DWIpath} ]]; then
     fi 
 
     if ${flags_DWI_topup}; then
-
+# TOPUP NEEDS TO BE EDITED FOR BIDS
         cmd="${EXEDIR}/src/scripts/DWI_A_topup.sh"
         echo $cmd
         eval $cmd
@@ -334,7 +330,7 @@ if [[ -d ${DWIpath} ]]; then
 
     #### FSL Eddy
     if ${flags_DWI_eddy}; then
-
+# WILL NEED SOME UPDATES FOR TWO SCAN RUNS AND RUNS WITH TOPUP TO RUN BIDS DATA 
         cmd="${EXEDIR}/src/scripts/DWI_A_eddy.sh"
         echo $cmd
         eval $cmd

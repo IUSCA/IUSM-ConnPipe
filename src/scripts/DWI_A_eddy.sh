@@ -18,12 +18,12 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 ############################################################################### 
 
 function extract_b0_images() {
-path="$1" dwifile="$2" python - <<END
+path="$1" pbval="$2" python - <<END
 import os
 import numpy as np
 
 DWIpath=os.environ['path']
-dwifile=os.environ['dwifile']
+pbval=os.environ['pbval']
 configs_DWI_b0cut = int(os.environ['configs_DWI_b0cut'])
 
 # print(DWIpath)
@@ -34,7 +34,7 @@ def is_empty(any_struct):
     else:
         return True 
 
-pbval=''.join([DWIpath,'/',dwifile,'.bval'])
+#pbval=''.join([DWIpath,'/',dwifile,'.bval'])
 bval = np.loadtxt(pbval)
 # print(bval)
 
@@ -112,14 +112,14 @@ for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
             # if topup distortion not available
             log "WARNING Topup data not found; Will run EDDY without topup field"
             # Extract B0 volumes from dataset
-            res=$(extract_b0_images ${DWIpath} ${dwifile})
+            res=$(extract_b0_images ${DWIpath} ${fileBval})
 
             if [[ ${res} -ne "1" ]]; then
-                log "WARNING: No b0 volumes identified. Check quality of ${dwifile}.bval"
+                log "WARNING: No b0 volumes identified. Check quality of ${fileBval}"
             else
                 log "B0 indices identified: "
                 B0_indices="${DWIpath}/b0file.txt"
-                fileIn="${DWIpath}/0_DWI.nii.gz"
+                fileIn="${fileNifti}"
                 nB0=0
 
                 while IFS= read -r b0_index
@@ -168,7 +168,7 @@ for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
 
         # find location of b0 volumes in dataset
         ## Extract b0 volumes from dataset
-        res=$(extract_b0_images ${DWIpath} ${dwifile})
+        res=$(extract_b0_images ${DWIpath} ${fileBval})
         echo "res is ${res}"
 
         if [[ ${res} -ne "1" ]]; then
@@ -196,15 +196,15 @@ for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
         done
 
         # Index file
-        cmd="python ${EXEDIR}/src/func/get_B0_temporal_info.py ${dwifile}"
+        cmd="python ${EXEDIR}/src/func/get_B0_temporal_info.py ${fileNifti}"
         log $cmd
         eval $cmd
 
         # State EDDY inputs
-        fileIn="${DWIpath}/${dwifile}.nii.gz"
-        fileBvec="${DWIpath}/${dwifile}.bvec"
-        fileBval="${DWIpath}/${dwifile}.bval"
-        fileJson="${DWIpath}/${dwifile}.json"
+        fileIn="${fileNifti}"
+        fileBvec="${fileBvec}"
+        fileBval="${fileBval}"
+        fileJson="${fileJson}"
 
         fileMask="${path_DWI_EDDY}/b0_brain_mask.nii.gz"
 
@@ -302,7 +302,7 @@ for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
             exit 1
         else
             log "Computing Delta Eddy image"
-            cmd="python ${EXEDIR}/src/func/delta_EDDY.py ${fileOut} ${dwifile}"
+            cmd="python ${EXEDIR}/src/func/delta_EDDY.py ${fileOut} ${fileNifti}"
             log $cmd
             eval $cmd
             log "Delta Eddy saved"

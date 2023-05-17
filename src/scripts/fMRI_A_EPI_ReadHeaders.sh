@@ -32,32 +32,32 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         # create the file and make it executable
         touch ${EPIpath}/0_param_dcm_hdr.sh
         chmod +x ${EPIpath}/0_param_dcm_hdr.sh                      
+        echo ${EPIpath_raw} 
+        json_loc=`ls ${EPIpath_raw}/*rest.json`
 
-        dcm2niix_json_loc="${EPIpath}/0_epi.json"
-
-        EPI_slice_fractimes=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_slice_fractimes}`
+        EPI_slice_fractimes=`cat ${json_loc} | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_slice_fractimes}`
         # echo "export EPI_slice_fractimes=${EPI_slice_fractimes}" >> ${EPIpath}/0_param_dcm_hdr.sh
         log "SliceTiming extracted from header is $EPI_slice_fractimes"
-        TR=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TR}`
+        TR=`cat ${json_loc} | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TR}`
         log "RepetitionTime extracted from header is $TR"
         echo "export TR=${TR}" >> ${EPIpath}/0_param_dcm_hdr.sh
-        TE=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TE}`
+        TE=`cat ${json_loc} | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TE}`
         log "EchoTime extracted from header is $TE"
         echo "export TE=${TE}" >> ${EPIpath}/0_param_dcm_hdr.sh
-        EPI_FlipAngle=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_FlipAngle}`
+        EPI_FlipAngle=`cat ${json_loc} | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_FlipAngle}`
         log "FlipAngle extracted from header is $EPI_FlipAngle"
         echo "export EPI_FlipAngle=${EPI_FlipAngle}" >> ${EPIpath}/0_param_dcm_hdr.sh
-        EPI_EffectiveEchoSpacing=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_EffectiveEchoSpacing}`
+        EPI_EffectiveEchoSpacing=`cat ${json_loc} | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_EffectiveEchoSpacing}`
         log "EffectiveEchoSpacing extracted from header is $EPI_EffectiveEchoSpacing"    
         echo "export EPI_EffectiveEchoSpacing=${EPI_EffectiveEchoSpacing}" >> ${EPIpath}/0_param_dcm_hdr.sh                                                        
-        EPI_BandwidthPerPixelPhaseEncode=`cat ${EPIpath}/0_epi.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_BandwidthPerPixelPhaseEncode}`
+        EPI_BandwidthPerPixelPhaseEncode=`cat ${json_loc} | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_BandwidthPerPixelPhaseEncode}`
         log "BandwidthPerPixelPhaseEncode extracted from header is $EPI_BandwidthPerPixelPhaseEncode"
         echo "export EPI_BandwidthPerPixelPhaseEncode=${EPI_BandwidthPerPixelPhaseEncode}" >> ${EPIpath}/0_param_dcm_hdr.sh
         # find TotalReadoutTime
 
         log "THIS IS EPIpath ${EPIpath}"
 
-        cmd="${EXEDIR}/src/scripts/get_readout.sh ${EPIpath}/0_epi.json ${EPIpath}/DICOMS EPI" 
+        cmd="${EXEDIR}/src/scripts/get_readout.sh ${json_loc} ${EPIpath}/DICOMS EPI" 
         log $cmd
         EPI_SEreadOutTime=`$cmd`
         log "EPI_SEreadOutTime = ${EPI_SEreadOutTime}"
@@ -96,7 +96,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         # exitcode=$?
 
     else   ## if not using JSON file, extract info from DICOMs
-
+#THIS WILL NEED TO BE UPDATED FOR BIDS
         path_EPIdcm=${EPIpath}/${configs_dcmFolder}
 
         # Identify DICOMs
