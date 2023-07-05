@@ -610,6 +610,14 @@ for i=1:length(subjectList)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% FC PLOTS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     parcCount = 0;
+            
+    % store correlation matrices in a cell array
+    fcMatrix = cell(2,3,checkParcs);
+    % create a cell array with names of each corr matrix
+    fcMatrixDescription = cell(2,3);
+    
+    figNames = {'Pearson','Spearman','Zcore'};
+    tsNames = {'First Half','Second Half','Full'};
 
     for parc = checkParcs
         parcCount = parcCount + 1;
@@ -627,23 +635,18 @@ for i=1:length(subjectList)
         halftS = floor(size(parcSeries,2)/2);
         parcSeries1 = parcSeries(:,1:halftS);
         parcSeries2 = parcSeries(:,halftS+1:end);
+
+        fcMatrix{1,1,parcCount} = corr(parcSeries1','Type','Pearson');
+        fcMatrix{2,1,parcCount} = corr(parcSeries1','Type','Spearman');
+        fcMatrix{3,1,parcCount} = corr(zscore(parcSeries1,[],2)','Type','Pearson');
         
-        fcMatrix = cell(2,3);
+        fcMatrix{1,2,parcCount} = corr(parcSeries2','Type','Pearson');
+        fcMatrix{2,2,parcCount} = corr(parcSeries2','Type','Spearman');
+        fcMatrix{3,2,parcCount} = corr(zscore(parcSeries2,[],2)','Type','Pearson');
 
-        fcMatrix{1,1} = corr(parcSeries1','Type','Pearson');
-        fcMatrix{2,1} = corr(parcSeries1','Type','Spearman');
-        fcMatrix{3,1} = corr(zscore(parcSeries1,[],2)','Type','Pearson');
-        
-        fcMatrix{1,2} = corr(parcSeries2','Type','Pearson');
-        fcMatrix{2,2} = corr(parcSeries2','Type','Spearman');
-        fcMatrix{3,2} = corr(zscore(parcSeries2,[],2)','Type','Pearson');
-
-        fcMatrix{1,3} = corr(parcSeries','Type','Pearson');
-        fcMatrix{2,3} = corr(parcSeries','Type','Spearman');
-        fcMatrix{3,3} = corr(zscore(parcSeries,[],2)','Type','Pearson');
-
-        figNames = {'Pearson','Spearman','Zcore'};
-        tsNames = {'First Half','Second Half','Full'};
+        fcMatrix{1,3,parcCount} = corr(parcSeries','Type','Pearson');
+        fcMatrix{2,3,parcCount} = corr(parcSeries','Type','Spearman');
+        fcMatrix{3,3,parcCount} = corr(zscore(parcSeries,[],2)','Type','Pearson');
         
         for fig = 1:length(figNames)
             
@@ -652,8 +655,11 @@ for i=1:length(subjectList)
             sgtitle({sprintf('%s',subjID)})
 
             for ts = 1:length(tsNames)
+                
+                % fill the names of the matrix descriptions
+                fcMatrixDescription{fig,ts} = strcat(figNames{fig},' - ',tsNames{ts});
 
-                fcMatrixU = reshape(triu(fcMatrix{fig,ts},1),[],1);
+                fcMatrixU = reshape(triu(fcMatrix{fig,ts,parcCount},1),[],1);
                 fcMatrixU = fcMatrixU(abs(fcMatrixU)>0.000001);
 
                 subplot(3,3,ts)
@@ -704,8 +710,8 @@ for i=1:length(subjectList)
                 xlabel(strcat(figNames{fig},'-',tsNames{ts}))
 
                 fcmatfile = strcat(tsNames{ts},'-fc',figNames{fig},'Mat-',num2str(parcCount),'.txt');
-                % write correlation matrices
-                writematrix(fcMatrix{ts},fullfile(path2figures,fcmatfile))
+                % write correlation matrices as txt
+                writematrix(fcMatrix{fig,ts,parcCount},fullfile(path2figures,fcmatfile))                
                 
                 subplot(3,3,ts+(2*length(tsNames)))
                 numRois = size(fcMatrix{fig,ts},2);
@@ -718,6 +724,9 @@ for i=1:length(subjectList)
             end
 
             saveas(figure6,fullfile(path2figures,figTitle), 'png')
+            % write correlation matrices as a .mat file
+            save(fullfile(path2figures,'fcMatrices.mat'),'fcMatrixDescription','fcMatrix')
+            
 
             pause(3)
         end
