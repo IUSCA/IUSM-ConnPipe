@@ -502,16 +502,18 @@ export DWI_B=true
 
 if $DWI_B; then
 
-	export flags_DWI_regT1_2DWI=true
-	
+	export flags_DWI_regT1_2DWI=false
+		export configs_DWI_addFSLsubcort=true # set with T1B was ran with FSL subcort 
 	export flags_DWI_MRtrix=false
         # Number of threads must be <= --ntasks-per-node of your Slurm jobs
-        export configs_DWI_nthreads='4' # for mrtrix tckgen
+        export configs_DWI_nthreads='8' # for mrtrix tckgen
 		export configs_DWI_seeding="wm" # 'wm'-white matter OR 'dyn'-dynamic
 			# For WM seeding option, specify number of seeds/voxel
-		    export configs_DWI_Nseeds="2M"
+		    export configs_DWI_Nseeds="1M"
         # tracking options
-        export configs_DWI_step_sizes=(0.625 1.25 1.875 2.5 )
-        export configs_DWI_max_angles=(30 45 60) # fine coverage if you ask me! 
-	export flags_DWI_connMatrix=false # generate connectivity matrices  
+		# I am hard coding these inside DWI_B_MRtrix, because array exporting
+		# is apparently a nightmare in bash. 
+        # export configs_DWI_step_sizes=(0.625 1.25 1.875 2.5 )
+        # export configs_DWI_max_angles=(30 45 60) # fine coverage if you ask me! 
+	export flags_DWI_connMatrix=true # generate connectivity matrices  
 fi 

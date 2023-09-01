@@ -40,7 +40,11 @@ log "path_DWI_matrices is ${path_DWI_matrices}"
 
 fileFiltStreamlines="${path_DWI_mrtrix}/1m_sift_streamlines.tck"
 
-
+cntcort=0
+cntsubc=0
+cntcrblm=0
+ echo "Concatenating Parcellation Images..."
+ pcname=""
 for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
 
     parc="PARC$p"
@@ -48,30 +52,71 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
     pcort="PARC${p}pcort"
     pcort="${!pcort}"  
     pnodal="PARC${p}pnodal"  
-    pnodal="${!pnodal}"                        
+    pnodal="${!pnodal}"   
+    pcrblm="PARC${p}pcrblmonly"
+    pcrblm="${!pcrblm}"  
+    psubc="PARC${p}psubcortonly"
+    psubc="${!psubc}" 
 
-    echo "${p}) ${parc} parcellation"
-
-    if [ ${pnodal} -eq 1 ] && [${pcort} -eq 1]; then  
-        echo " -- Nodal parcellation: ${pnodal}" 
-        echo " -- Cortical parcellation: ${pcort}" 
-        
-        # 
-        fileparc="${DWIpath}/rT1_GM_parc_${parc}.nii.gz"
-        fileConnMatrix="${path_DWI_matrices}/1M_2radial_density_${parc}.csv"
-
-        # CONFIG assignment_radial_search can be user set
-        # CONFIG scale_invnodevol: other options are available for edge assignment
-        # CONFIG symmetric could be optional, but its good practive to have it
-        # CONFIG: zero_diagonal can be optional
-
-        cmd="tck2connectome -assignment_radial_search 2 \
-            -scale_invnodevol -symmetric \
-            -zero_diagonal \
-            -force ${fileFiltStreamlines} ${fileparc} ${fileConnMatrix}"
-        log $cmd
-        eval $cmd
+    if [[ "${pnodal}" -eq 1 ]]; then
+        if [[ "${pcort}" -eq 1 ]] && [[ $cntcort -eq 0 ]]; then   
+            echo " -- Cortical parcellation: ${parc}"
+            pcname="${pcname}_${parc}"
+            # 
+            fileparcCORT="${DWIpath}/rT1_GM_parc_${parc}.nii.gz"
+            ((cntcort++))
+        elif [[ "${psubc}" -eq 1 ]] && [[ $cntsubc -eq 0 ]]; then
+            echo " -- Subcortical parcellation: ${parc}" 
+            pcname="${pcname}_${parc}"
+            # 
+            fileparcSUBC="${DWIpath}/rT1_GM_parc_${parc}.nii.gz"
+            ((cntsubc++))
+        elif [[ "${pcrblm}" -eq 1 ]] && [[ $cntcrblm -eq 0 ]]; then
+            echo " -- Cerebellar parcellation: ${parc}" 
+            pcname="${pcname}_${parc}"
+            # 
+            fileparcCRBLM="${DWIpath}/rT1_parc_${parc}.nii.gz"
+            ((cntcrblm++))
+        fi
     else
         echo " -- Not a nodal parcellation"
     fi
 done
+
+if [[ "${cntsubc}" -eq 0 ]] && [[ $configs_DWI_addFSLsubcort == true ]]; then
+    echo " -- Subcortical parcellation: FSLsubcort" 
+    pcname="${pcname}_FSLsubcort"
+    # 
+    fileparcSUBC="${DWIpath}/rT1_GM_parc_FSLsubcort.nii.gz"
+    ((cntsubc++))
+fi
+
+FileIn="${path_DWI_matrices}/rT1${pcname}.nii.gz"
+cmd="cp ${fileparcCORT} ${FileIn}"
+log $cmd
+eval $cmd 
+# call python script
+cmd="python ${EXEDIR}/src/func/add_parc.py \
+    ${FileIn} 1 \
+    ${fileparcSUBC}"
+log $cmd
+eval $cmd
+cmd="python ${EXEDIR}/src/func/add_parc.py \
+    ${FileIn} 0 \
+    ${fileparcCRBLM}"
+log $cmd
+eval $cmd
+
+fileConnMatrix="${path_DWI_matrices}/1M_2radial_density_${pcname}.csv"
+
+# CONFIG assignment_radial_search can be user set
+# CONFIG scale_invnodevol: other options are available for edge assignment
+# CONFIG symmetric could be optional, but its good practive to have it
+# CONFIG: zero_diagonal can be optional
+
+cmd="tck2connectome -assignment_radial_search 2 \
+    -scale_invnodevol -symmetric \
+    -zero_diagonal \
+    -force ${fileFiltStreamlines} ${FileIn} ${fileConnMatrix}"
+log $cmd
+eval $cmd

@@ -45,7 +45,7 @@ if ${flags_T1_dcm2niix}; then
 			
 			# Converting DICOM to Nifti
 			log "DICOM->NIFTI"
-			cmd="dcm2niix -f T1 -o $T1path -v y -x y -b y $T1path/${configs_dcmFolder} > $T1path/dcm2niix.log"
+			cmd=".${EXEDIR}/src/scripts/dcm2niix -f T1 -o $T1path -v y -x y -b y $T1path/${configs_dcmFolder} > $T1path/dcm2niix.log"
 			log $cmd
 			eval $cmd 
 			if [[ $? != 0 ]];  then

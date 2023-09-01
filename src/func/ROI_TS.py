@@ -44,17 +44,17 @@ else:
 ### read nifti data
  # find the correct WM mask
 fname = ''.join([EPIpath,'/rT1_WM_mask_eroded.nii.gz'])
-volWM_vol = nib.load(fname).get_data()
+volWM_vol = np.asanyarray(nib.load(fname).dataobj)
 numVoxels = np.count_nonzero(volWM_vol);
 
 volWM_mask = np.logical_not(volWM_vol).astype(np.int) ## negate array and make int
 
 fname = ''.join([EPIpath,'/rT1_CSF_mask_eroded.nii.gz'])
-volCSF_vol = nib.load(fname).get_data()
+volCSF_vol = np.asanyarray(nib.load(fname).dataobj)
 volCSF_mask = np.logical_not(volCSF_vol).astype(np.int) ## negate array and make int
 
 fname = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
-volBrain_vol = nib.load(fname).get_data()
+volBrain_vol = np.asanyarray(nib.load(fname).dataobj)
 volBrain_mask = (volBrain_vol != 0).astype(np.int)
 
 for pc in range(0,len(resid)):
@@ -96,7 +96,7 @@ for pc in range(0,len(resid)):
             else:
                 parcGM_file = ''.join([EPIpath,'/rT1_GM_parc_',parc_label,'_clean.nii.gz'])
 
-            parcGM = nib.load(parcGM_file).get_data()
+            parcGM = np.asanyarray(nib.load(parcGM_file).dataobj)
             parcGM = parcGM * volWM_mask * volCSF_mask * volBrain_mask
 
             numROIs = int(np.amax(parcGM))

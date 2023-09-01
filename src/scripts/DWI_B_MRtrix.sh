@@ -85,7 +85,7 @@ eval $cmd
 ## generate streamlines
 echo "2.4 Generating Streamlines"
 #configs_DWI_step_sizes=(0.625 1.25 1.875 2.5 )
-configs_DWI_step_sizes=(1.875 2.5 )
+configs_DWI_step_sizes=(1 1.5 2)
 configs_DWI_max_angles=(30 45 60)
 fileStreamlines="${path_DWI_mrtrix}/combo_streamlines.tck"
 
@@ -94,10 +94,9 @@ if [[ ! -e ${fileStreamlines} ]] ; then
     echo $fileStreamlines
 
     for (( sDx=0 ; sDx<${#configs_DWI_step_sizes[@]} ; sDx++ )) ; do
-        echo ${configs_DWI_step_sizes[sDx]}
+       # echo ${configs_DWI_step_sizes[sDx]}
         for (( mDx=0 ; mDx<${#configs_DWI_max_angles[@]} ; mDx++ )) ; do  
-            echo ${configs_DWI_max_angles[mDx]}  
-            echo "tacos1"
+          #  echo ${configs_DWI_max_angles[mDx]}  
             l_step=${configs_DWI_step_sizes[$sDx]}
             l_angle=${configs_DWI_max_angles[$mDx]}
 
@@ -109,7 +108,6 @@ if [[ ! -e ${fileStreamlines} ]] ; then
             
             trk_start=`date +%s`
             if [[ ${configs_DWI_seeding} == "dyn" ]]; then
-            echo"tacos2"
                 cmd="tckgen ${fileFOD} ${outFile} \
                     -act ${file5tt} \
                     -seed_dynamic ${fileFOD} \
@@ -123,7 +121,7 @@ if [[ ! -e ${fileStreamlines} ]] ; then
                     -max_attempts_per_seed 150 \
                     -downsample 2 \
                     -algorithm iFOD2 \
-                    -select 2M \
+                    -select 1M \
                     -nthreads ${configs_DWI_nthreads}"
             elif [[ ${configs_DWI_seeding} == "wm" ]]; then
                 seedImage="${DWIpath}/rT1_WM_mask.nii.gz"
@@ -151,7 +149,7 @@ if [[ ! -e ${fileStreamlines} ]] ; then
             trk_end=$(date +%s)
             lt="loop time: $(( trk_end - trk_start ))"
 			log $lt
-			eval $lt
+			#eval $lt
 
         done # angle
     done # step
@@ -170,7 +168,9 @@ if [[ ! -e ${fileStreamlines} ]] ; then
 else
     echo "combo_streamlines.tck exists. No tractography done."
 fi
-
+## purge the intermediate tracking files
+log "rm ${combo_list}"
+eval "rm ${combo_list}"
 
 ## filter streamlines
 echo "2.5 Running SIFT Filtering"
@@ -182,6 +182,7 @@ cmd="tcksift \
      -force \
      -act ${file5tt} \
      -nthreads ${configs_DWI_nthreads} \
+	 -term_number 1M \
     ${fileStreamlines} ${fileFOD} ${fileFiltStreamlines}"
 log $cmd
 eval $cmd 

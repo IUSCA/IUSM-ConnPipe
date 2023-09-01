@@ -267,14 +267,14 @@ flog.write("\n 2. Applying motion/physicological regression")
 
 # load resting vol
 resting = nib.load(resting_file)
-resting_vol = resting.get_data()
+resting_vol = np.asanyarray(resting.dataobj)
 [sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
 print("resting_vol.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 
 # load GS mask
 volBrain_file = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
 volBrain = nib.load(volBrain_file)
-volBrain_vol = volBrain.get_data()
+volBrain_vol = np.asanyarray(volBrain.dataobj)
 
 for i in range(0,numTimePoints):
     rv = resting_vol[:,:,:,i]

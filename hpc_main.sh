@@ -14,14 +14,15 @@ subj2run=$2
 module unload fsl 
 module load fsl/6.0.5.1
 # AFNI
-module load afni/22.0.04
-module load afni
+#module load afni/22.0.04
+#module load afni
 # ANTS
 module unload ants
 module load ants/2.3.1
 # PYTHON
-module unload python 
-module load python/3.10.5
+#module unload python 
+#module load python/3.9.8
+#module load python/3.10.5
 # MRTRIX
 module unload mrtrix
 module load mrtrix/3.0.4
@@ -29,6 +30,8 @@ module load mrtrix/3.0.4
 # Not sure if these are needed (jenya 5/13/23):
 #module load singularity
 #module load ica-aroma/0.4.4
+
+module list
 
 # FSL
 # set FSL env vars for fsl_sub.IU or fsl_sub.orig

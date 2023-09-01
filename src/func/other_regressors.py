@@ -37,7 +37,7 @@ flog.write("\n configs_EPI_dctfMin "+ str(configs_EPI_dctfMin))
 
 ### load data and masks
 resting = nib.load(fileIN)
-resting_vol = resting.get_data()
+resting_vol = np.asanyarray(resting.dataobj)
 [sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
 print("resting_vol.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 
@@ -45,7 +45,7 @@ print("resting_vol.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 if 0 < configs_EPI_numGS < 5:
     fname = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
     volGS = nib.load(fname)
-    volGS_vol = volGS.get_data()
+    volGS_vol = np.asanyarray(volGS.dataobj)
     [GSts,GSmask] = get_ts(volGS_vol,numTimePoints,resting_vol)
     GSavg = np.mean(GSts,axis=0)
     GSderiv = np.append(0,np.diff(GSavg))

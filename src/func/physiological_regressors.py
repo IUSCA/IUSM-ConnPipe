@@ -55,16 +55,16 @@ def get_pca(data, n_comp):
 
 ### load data and masks
 resting = nib.load(fileIN)
-resting_vol = resting.get_data()
+resting_vol = np.asanyarray(resting.dataobj)
 [sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
 print("resting_vol.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 
 fname = ''.join([EPIpath,'/rT1_CSFvent_mask_eroded.nii.gz'])
-volCSFvent_vol = nib.load(fname).get_data()
+volCSFvent_vol = np.asanyarray(nib.load(fname).dataobj)
 numVoxels = np.count_nonzero(volCSFvent_vol);
 
 fname = ''.join([EPIpath,'/rT1_WM_mask_eroded.nii.gz'])
-volWM_vol = nib.load(fname).get_data()
+volWM_vol = np.asanyarray(nib.load(fname).dataobj)
 numVoxels = np.count_nonzero(volWM_vol);
 
 ### CSFvent time-series
