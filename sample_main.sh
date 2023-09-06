@@ -25,7 +25,7 @@ export EXEDIR=$(dirname "$(readlink -f "$0")")
 source ${EXEDIR}/src/func/bash_funcs.sh
 
 ################################################################################
-# USER INSTRUCTIONS- PLEASE SET THE NAME OF THE CONFIG FILE TO READ
+# USER INSTRUCTIONS- PLEASE SET THE NAME OF THE CONFIG FILE TO BE USED
 source ${EXEDIR}/sample_config.sh
 ################################################################################
 
@@ -55,7 +55,7 @@ export PYpck="${pathSM}/python-pkgs"
 
 
 # # Setting denoising option
-# #===========================================================================================					
+# #================================================================================				
 if [[ "${configs_T1_denoised}" == "ANTS" ]]; then 
 	export configs_fslanat="T1_denoised_ANTS"
 	echo "USING ANTS FOR DENOISING"
@@ -103,7 +103,7 @@ if ${fMRI_A}; then
     fi
 
     # Nuisance Regression
-    # #===========================================================================================
+    # #=============================================================================
 
     if [[ ${flags_NuisanceReg} == "AROMA" ]]; then # if using ICA-AROMA
 
@@ -112,8 +112,12 @@ if ${fMRI_A}; then
         # Use the ICA-AROMA package contained in the ConnPipe-SuppMaterials
         ICA_AROMA_path="${PYpck}/ICA-AROMA" 
         export run_ICA_AROMA="python ${ICA_AROMA_path}/ICA_AROMA.py"
+
+        #==================================================
         ## UNCOMMENT FOLLOWING LINE **ONLY** IF USING HPC ica-aroma MODULE:
+        # module load ica-aroma/0.4.4
         # export run_ICA_AROMA="ICA_AROMA.py"
+        #==================================================
 
         export configs_EPI_resting_file='/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'
 
@@ -138,8 +142,11 @@ if ${fMRI_A}; then
         # Use the ICA-AROMA package contained in the ConnPipe-SuppMaterials
         ICA_AROMA_path="${PYpck}/ICA-AROMA" 
         export run_ICA_AROMA="python ${ICA_AROMA_path}/ICA_AROMA.py"
+        #==================================================
         ## UNCOMMENT FOLLOWING LINE **ONLY** IF USING HPC ica-aroma MODULE:
+        # module load ica-aroma/0.4.4
         # export run_ICA_AROMA="ICA_AROMA.py"
+        #==================================================
 
         export configs_EPI_resting_file='/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'
         
@@ -156,7 +163,7 @@ if ${fMRI_A}; then
 
 
     # Pyhsiological Regression
-    # #===========================================================================================
+    # #===========================================================================
 
     if [[ ${flags_PhysiolReg} == "aCompCor" ]]; then  ### if using aCompCorr
 
@@ -182,7 +189,7 @@ if ${fMRI_A}; then
     export regPath=${flags_NuisanceReg}/${flags_PhysiolReg}
 
     # Other regressors and file name settings
-    # #===========================================================================================
+    # #=============================================================================
 
     if ${flags_EPI_GS}; then
         nR="${nR}_Gs${configs_EPI_numGS}"
@@ -217,10 +224,13 @@ fi
 
 #################################################################################
 ####################### DEFINE SUBJECTS TO RUN  ###################################
-	
+
+# if running all subjects, make a list of subject ID's	
 if ${runAll}; then
+    today=$(date +"%m_%d_%Y_%H_%M")
+    export subj2run="subj2run_${today}.txt"
 	find ${path2data} -maxdepth 1 -mindepth 1 -type d -printf '%f\n' \
-	| sort > ${path2data}/${subj2run}	
+	| sort > ${path2derivs}/${subj2run}	
 fi 
 
 #################################################################################
@@ -232,12 +242,12 @@ main() {
 
 log "START running Connectivity Pipeline on the following subjects:"
 
-IFS=$'\r\n' GLOBIGNORE='*' command eval 'SUBJECTS=($(cat ${path2data}/${subj2run}))'
+IFS=$'\r\n' GLOBIGNORE='*' command eval 'SUBJECTS=($(cat ${path2derivs}/${subj2run}))'
 log "subjects: ${SUBJECTS[@]}"
 
-echo "##################"
+echo "####################################"
 
-# #### START PROCESSING SUBJECTS ###############
+# #### START PROCESSING SUBJECTS ####
 
 for SUBJdir in "${SUBJECTS[@]}"; do
 
@@ -247,23 +257,29 @@ for SUBJdir in "${SUBJECTS[@]}"; do
     
     log "Subject ${SUBJ}"
 
-    export T1path="${path2data}/${SUBJ}/${configs_T1}"
-    export DWIpath="${path2data}/${SUBJ}/${configs_DWI}"
-    echo "============== T1path is ${T1path} =============="
-    # echo "============== EXEDIR is ${EXEDIR} =============="
-
-    # specify name of logfile written inside each subjects dir
+    # specify name of logfiles written inside each subjects dir
     today=$(date +"%m_%d_%Y_%H_%M")
-    export logfile_name="${path2data}/${SUBJ}/out_${today}"
-    export QCfile_name="${path2data}/${SUBJ}/qc"
-    export ERRfile_name="${path2data}/error_report"
- 
+    export logfile_name="${path2derivs}/${SUBJ}/out_${today}"
+    export QCfile_name="${path2derivs}/${SUBJ}/qc"
+    export ERRfile_name="${path2derivs}/error_report"
+    
+    #####################################################################
+    ################################ T1 #################################
+    # specify paths to raw T1 data (RD) and T1 derivatives
+    export RD_T1path="${path2data}/${SUBJ}/${configs_T1}"
+    export T1path="${path2derivs}/${SUBJ}/${configs_T1}"
+    if [[ ! -d "${T1path}" ]]; then
+        mkdir -p ${T1path}
+    fi    
+    
+    echo "============== T1path is ${T1path} =============="
 
-    log "# ############################ T1_PREPARE_A #####################################"
+    #########################################################################
+    log "# ###################### T1_PREPARE_A ###########################"
 
         if $T1_PREPARE_A; then
 
-            cmd="${EXEDIR}/src/scripts/t1_prepare_A.sh" # -d ${PWD}/inputdata/dwi.nii.gz \
+            cmd="${EXEDIR}/src/scripts/t1_prepare_A.sh" 
             echo $cmd
             eval $cmd
             exitcode=$?
@@ -280,9 +296,8 @@ for SUBJdir in "${SUBJECTS[@]}"; do
             log "SKIP T1_PREPARE_A for subject $SUBJ"
         fi 
 
-    ######################################################################################
-    log "# ############################ T1_PREPARE_B #####################################"
-
+    #########################################################################
+    log "# ###################### T1_PREPARE_B ###########################"
 
         if $T1_PREPARE_B; then
 
@@ -309,8 +324,10 @@ for SUBJdir in "${SUBJECTS[@]}"; do
             log "SKIP T1_PREPARE_B for subject $SUBJ"
         fi 
 
-    ######################################################################################
-    log "# ############################ fMRI_A ###########################################"
+    #####################################################################
+    ################################ fMRI ###############################
+    
+       log "# ###################### fMRI_A ###########################"
 
 
         if $fMRI_A; then

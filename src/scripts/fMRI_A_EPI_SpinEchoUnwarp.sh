@@ -22,30 +22,38 @@ source ${EXEDIR}/src/func/bash_funcs.sh
     # set up direcotry paths
     if ! ${configs_EPI_multiSEfieldmaps}; then  # Assume single pair of SE fieldmaps within EPI folder
         echo "SINGLE SE FIELDMAP FOLDER ${EPIpath}/${configs_sefmFolder}"
+        RD_path_EPI_SEFM="${RD_EPIpath}/${configs_sefmFolder}"
         path_EPI_SEFM="${EPIpath}/${configs_sefmFolder}"
     else  # Allows multiple UNWARP folders at the subject level (UNWARP1, UNWARP2,...)
         echo "MULTIPLE SE FIELDMAP FOLDERS"
         if ${configs_EPI_match}; then
             # match UNWARPi with EPIi
             echo "MATCH EPI AND UNWARP INDEX"
-            path_EPI_SEFM="${path2data}/${SUBJ}/${configs_sefmFolder}${EPInum}"
-            echo "FIELDMAP FOLDER: ${path_EPI_SEFM}"
+            RD_path_EPI_SEFM="${path2data}/${SUBJ}/${configs_sefmFolder}${EPInum}"
+            path_EPI_SEFM="${path2derivs}/${SUBJ}/${configs_sefmFolder}${EPInum}"
         else
             # use single UNWARP foler (configs_sefmFolder) for all EPIi sessions
             echo "USING SINGLE ${configs_sefmFolder} FOR ALL EPI SESSIONS"
-            path_EPI_SEFM="${path2data}/${SUBJ}/${configs_sefmFolder}"
-            echo "FIELDMAP FOLDER: ${path_EPI_SEFM}"       
+            RD_path_EPI_SEFM="${path2data}/${SUBJ}/${configs_sefmFolder}"
+            path_EPI_SEFM="${path2derivs}/${SUBJ}/${configs_sefmFolder}"
         fi
     fi 
 
-    if [[ ! -d ${path_EPI_SEFM} ]]; then
-        log "WARNING ${path_EPI_SEFM} doesn't exist. Field map correction must be skipped."
+    echo "Raw Data FIELDMAP FOLDER: ${RD_path_EPI_SEFM}"
+    echo "Derivatives FIELDMAP FOLDER: ${path_EPI_SEFM}"
+
+    if [[ ! -d ${RD_path_EPI_SEFM} ]]; then
+        log "WARNING ${RD_path_EPI_SEFM} doesn't exist. Field map correction must be skipped."
         exit 1
     fi
 
-    path_EPI_APdcm="${path_EPI_SEFM}/${configs_APdcm}"
+    if [[ ! -d "${path_EPI_SEFM}" ]]; then
+        mkdir -p ${path_EPI_SEFM}
+    fi  
+
+    path_EPI_APdcm="${RD_path_EPI_SEFM}/${configs_APdcm}"
     echo "APdcm path is ${path_EPI_APdcm}"
-    path_EPI_PAdcm="${path_EPI_SEFM}/${configs_PAdcm}"
+    path_EPI_PAdcm="${RD_path_EPI_SEFM}/${configs_PAdcm}"
     echo "PAdcm path is ${path_EPI_PAdcm}"
 
     fileInAP="${path_EPI_SEFM}/AP.nii.gz"

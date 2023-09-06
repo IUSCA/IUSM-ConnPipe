@@ -21,7 +21,7 @@ echo "# ==========================================="
 echo "# 2. Motion Correction"
 echo "# ==========================================="
 
-echo "**** ${EPIpath}/1_epi.nii.gz"
+# echo "**** ${EPIpath}/1_epi.nii.gz"
 
 if [[ ! -e "${EPIpath}/1_epi.nii.gz" ]]; then  
     log "-No slice time corrected 1_epi output found"

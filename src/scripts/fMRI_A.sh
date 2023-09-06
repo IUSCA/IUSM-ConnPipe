@@ -57,17 +57,24 @@ for ((i=0; i<${#epiList[@]}; i++)); do
         fi
     fi
 
-    # Operating on the scans set in configs
-    export EPIpath="${epiList[$i]}"
-    
+    ################################################################
+    # specify paths to raw EPI data (RD) and EPI derivatives
+
     echo "Setting EPInum variable to ${ind}"
     export EPInum=${ind}
 
-    log "fMRI_A on subject ${SUBJ}"
-    log "EPI-series ${EPIpath}"
+    export RD_EPIpath="${epiList[$i]}"
+    epi_dir="$(basename -- ${RD_EPIpath})"
+    export EPIpath="${path2derivs}/${SUBJ}/${epi_dir}"
+    if [[ ! -d "${EPIpath}" ]]; then
+        mkdir -p ${EPIpath}
+    fi    
+    
+    log "Runnin fMRI_A on subject ${SUBJ}"
+    log "Working on EPI-series ${RD_EPIpath}"
+    log "Writing output to ${EPIpath}"
     log "EPI session number ${EPInum}"
     
-    ## functional connectivity
 
     # ### Convert dcm2nii
     if ${flags_EPI_dcm2niix}; then
@@ -76,7 +83,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
         echo "0. Dicom to NIFTI conversion"
         echo "=================================="
 
-        path_EPIdcm=${EPIpath}/${configs_dcmFolder}
+        path_EPIdcm=${RD_EPIpath}/${configs_dcmFolder}
         echo "path_EPIdcm is -- ${path_EPIdcm}"
         epifile="0_epi"
         fileNii="${EPIpath}/${epifile}.nii"
@@ -302,7 +309,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 
 
     if ${flags_EPI_regressOthers}; then  
-        ### Always run regressOthers - it computes Global signal for QC purposes, but won't be applied ot regression
+        ### Always run regressOthers - it computes Global signal for QC purposes, but won't be applied to regression
         echo "Other Regressors"
 
         cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_regressOthers.sh"

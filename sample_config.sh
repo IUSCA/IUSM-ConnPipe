@@ -10,41 +10,45 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ## Path to Supplementary Materials. Please download from: 
 # https://drive.google.com/drive/folders/1b7S9UcWDeDXVx3NUjuO8NJxxmChgNQ1G?usp=sharing 
-export pathSM="/N/project/ConnPipelineSM"
+export pathSM="/N/slate/aiavenak/ConnPipelineSM"
 
 ################################################################################
-############################  PATH TO DATA  ###################################
+############################  PATH TO RAW DATA  ################################
 
 # USER INSTRUCTIONS- PLEASE SET THIS PATH TO POINT TO YOUR DATA DIRECTORY
-export path2data="/N/project/DataDir"
+export path2data="/N/project/KarekenLab/NetFlex/Datadir"
+
+################################################################################
+############################  PATH TO DATA DERIVATIVES #########################
+
+# USER INSTRUCTIONS- PLEASE SET THIS PATH TO POINT TO YOUR OUTPUT DIRECTORY
+export path2derivs="/N/slate/aiavenak/ADNI-connpipe-test/Batch1_Deriv"	
 
     ## USER: if running all subjects in the path2data directory, set this flag to true; 
     ## set to false if you'd like to process a subset of subjects 
     export runAll=false 
 
-    ## USER -- if running a subset of subjects, a list of subject ID's can be read from 
-    ## a text file located in path2data; user can name the file here:
-    # export subj2run="subj2run_AAK.txt"
-    export subj2run="subj2run.txt"
+    ## USER: if running a subset of subjects, a list of subject ID's can be read from a text file that shoudl be located at path2derivs; indicate the file name here:
+    export subj2run="subj2run_AAK.txt"
 
 ################################################################################
 #####################  SET UP DIRECTORY STRUCTURE  #############################
 
-# USER INSTRUCTIONS - The following diagram is a sample directory tree for a single subject.
+# USER INSTRUCTIONS - The following diagram is a sample directory tree for a single subject. The pipeline expects each subject's raw data to be organized according to this structure. All output files will be organized following the same directory structure, saved at the path2derivs location defined above. 
 # Following that are configs you can use to set your own names if different
 # from sample structure.
 
 # SUBJECT1 -- T1 -- DICOMS
 #          |
-#          -- EPI(#) -- DICOMS (May have multiple EPI scans)
+#          -- EPI_i -- DICOMS (May have multiple EPI scans)
 #          |         
 #          |               (SPIN-ECHO)       (GRADIENT ECHO)
-#          -- UNWARP1 -- SEFM_AP_DICOMS (OR) GREFM_MAG_DICOMS
+#          -- UNWARP_j -- SEFM_AP_DICOMS (OR) GREFM_MAG_DICOMS
 #          |         
 #          |          -- SEFM_PA_DICOMS (OR) GREFM_PHASE_DICOMS
 #          |         
 #          |               (SPIN-ECHO)       (GRADIENT ECHO)
-#          -- UNWARP2 -- SEFM_AP_DICOMS (OR) GREFM_MAG_DICOMS
+#          -- UNWARP_k -- SEFM_AP_DICOMS (OR) GREFM_MAG_DICOMS
 #          |          
 #          |          -- SEFM_PA_DICOMS (OR) GREFM_PHASE_DICOMS
 #          |
@@ -54,8 +58,8 @@ export path2data="/N/project/DataDir"
 
 export configs_T1="T1"
 # for multiple EPI sessions, specify only the base name of folder
-# i.e. if there are EPI1, EPI2, EPI3, set configs_epiFolder="EPI"
-# for a single EPI session, specify the exact name of the folder
+# i.e. if there are EPI1, EPI2, EPI3, set configs_epiFolder="EPI".
+# For a single EPI session, specify the exact name of the folder
 # i.e. if the folder is EPI1, set configs_epiFolder="EPI1"
 export configs_epiFolder="EPI" 
 	export configs_dcmFolder="DICOMS"
@@ -63,8 +67,8 @@ export configs_epiFolder="EPI"
 	export configs_niiFiles="nii" # Nifti-1 file extension
 
 # for multiple EPI & UNWARP folders, specify only the base name of folder
-# i.e. if there are UNWARP1, UNWARP2, UNWARP3, set configs_sefmFolder="UNWARP"
-# for a single UNWARP folder, specify the exact name of the folder
+# i.e. if there are UNWARP1, UNWARP2, UNWARP3, set configs_sefmFolder="UNWARP".
+# For a single UNWARP folder, specify the exact name of the folder
 # i.e. if the folder is UNWARP1, set configs_sefmFolder="UNWARP1"
 # if using a single UNWARPi folder with multiple EPIj sessions, then
 # spcify the exact name of the UNWARPi folder. 
@@ -134,7 +138,7 @@ export PARC4psubcortonly=0;
 ## THE NAMING FORMAT. NOTE THAT PARCELLATIONS ARE RUN IN THE ORDER IN WHICH THEY ARE 
 ## LISTED ABOVE. FOR EXAMPLE IF numParcs is set to 1, ONLY CSF AND PARC1="shen_278"
 ## WILL BE USED
-export numParcs=4  # CSF doesn't count; numParcs cannot be less than 1. Schaefer is the defailt parc
+export numParcs=2  # CSF doesn't count; numParcs cannot be less than 1. Schaefer is the defailt parc
 
 
 ############################# T1 DENOISING #####################################
@@ -150,7 +154,7 @@ configs_T1_denoised="ANTS"
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export T1_PREPARE_A=true
+export T1_PREPARE_A=false
 
 if $T1_PREPARE_A; then
 
@@ -159,7 +163,7 @@ if $T1_PREPARE_A; then
 
     # Alternative T1 crop. May improve brain masking, in particular with ants.
 	# We do not recommend using robustfov together with dcm2niix cropping. 
-	export flags_T1_robustfov=false	
+	export flags_T1_robustfov=true	
 
 	#### SET flags_T1_applyDenoising=true AND configs_T1_denoised="NONE" IF NO DENOSING IS REQUIRED
 	#### SET flags_T1_applyDenoising=FALSE AND configs_T1_denoised="ANTS"/"SUSAN" 
@@ -224,12 +228,12 @@ if $T1_PREPARE_B; then
 fi 
 
 
-################################################################################
-############################# fMRI_A #####################################
+####################################################################################
+############################# fMRI_A ###############################################
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export fMRI_A=false 
+export fMRI_A=true 
 
 if $fMRI_A; then
 
@@ -238,12 +242,12 @@ if $fMRI_A; then
 
 	# # set number of EPI sessions/scans
 	export configs_EPI_epiMin=1 # minimum scan index to be processed
-	export configs_EPI_epiMax=3 # maximum scan index to be processed
+	export configs_EPI_epiMax=1 # maximum scan index to be processed
 
 	# dicom import
-	export flags_EPI_dcm2niix=true
+	export flags_EPI_dcm2niix=false
 	# obtain pertinent scan information
-	export flags_EPI_ReadHeaders=true 
+	export flags_EPI_ReadHeaders=false 
 	
 		# obtain pertinent scan information through json files generated by dcm2niix
 		export flags_EPI_UseJson=true  # if set to false, information will be extracted from DICOM 
@@ -269,7 +273,7 @@ if $fMRI_A; then
 	#    with i in the range specified by configs_EPI_epiMin & configs_EPI_epiMax
 	
 	#============================ OPTION 1: SPIN ECO UNWARP =======================#
-	export flags_EPI_SpinEchoUnwarp=true # Requires UNWARP directory and approporiate dicoms.
+	export flags_EPI_SpinEchoUnwarp=false # Requires UNWARP directory and approporiate dicoms.
 
     	export configs_EPI_multiSEfieldmaps=true # false - single pair of SE fieldmaps within EPI folder
 												 # true -  One or multiple UNWARP folders at the subject level (UNWARP1, UNWARP2,...)
@@ -310,20 +314,20 @@ if $fMRI_A; then
 	#==================================================================================#
 	#==================================================================================#
 
-	export flags_EPI_SliceTimingCorr=true		
+	export flags_EPI_SliceTimingCorr=false		
 		export configs_EPI_minTR=1.6   # perform Slice Timing correction only if TR > configs_EPI_minTR
 		export configs_EPI_UseTcustom=1   # 1: use header-extracted times (suggested)
 
-	export flags_EPI_MotionCorr=true   # head motion estimation with FSL's mcflirt; generates 6 motion param for each BOLD image
+	export flags_EPI_MotionCorr=false   # head motion estimation with FSL's mcflirt; generates 6 motion param for each BOLD image
 
-	export flags_EPI_RegT1=true
+	export flags_EPI_RegT1=false
 		export configs_EPI_epibetF=0.3000;
 
-	export flags_EPI_RegOthers=true 
+	export flags_EPI_RegOthers=false 
 		export configs_EPI_GMprobthr=0.2 # Threshold the GM probability image; change from 0.25 to 0.2 or 0.15										
 		export configs_EPI_minVoxelsClust=8 
 
-	export flags_EPI_IntNorm4D=true # Intensity normalization to global 4D mean of 1000
+	export flags_EPI_IntNorm4D=false # Intensity normalization to global 4D mean of 1000
 
 	#============================== MOTION AND OUTLIER CORRECTION ============================#
 	export flags_EPI_NuisanceReg=true
@@ -332,7 +336,7 @@ if $fMRI_A; then
 	# 2) flags_NuisanceReg="HMPreg": Head Motion Parameter Regression.  
 	# 3) flags_NuisanceReg="AROMA_HMP": apply ICA-AROMA followed by HMPreg. 
 
-		export flags_NuisanceReg="AROMA_HMP"
+		export flags_NuisanceReg="HMPreg"
 
 			# if using ICA-AROMA or ICA-AROMA followed by HMP 
 			if [[ ${flags_NuisanceReg} == "AROMA" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then 

@@ -20,64 +20,59 @@ log "T1_PREPARE_A"
 ##### DICOM 2 nifti ######
 if ${flags_T1_dcm2niix}; then
 
-	if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
-
-		if [[ "$(ls -A ${T1path}/${configs_dcmFolder})" ]]; then 
-
-			log "###### DICOM 2 nifti ######" 
-			# if .IMA or .IMA.dcm or .dcm files exis inside T1/DICOMS
-			dicomfiles=`find $T1path/${configs_dcmFolder}/ -maxdepth 1 -name "*.${configs_dcmFiles}*" | wc -l`
-			if [[ $dicomfiles -eq 0 ]]; then 
-				echo "No dicom (.${configs_dcmFiles}) images found."
-				echo "Please specify the correct file extension of dicom files by setting the configs_dcmFiles flag in the config file"
-				echo "Skipping further analysis"
-				exit 1				
-			fi
+	if [[ -d "$RD_T1path/${configs_dcmFolder}" ]]; then
 
 
-			niifiles=`find $T1path -maxdepth 1 -name "*.nii*" | wc -l`
-			if [[ $niifiles != 0 ]]; then 
-				# Remove existing nifti images.
-				log "rm -f $T1path/.${configs_niiFiles}"
-				rm -f $T1path/*.${configs_niiFiles}*			
-			fi
-			
-			# Converting DICOM to Nifti
-			log "DICOM->NIFTI"
-			cmd="dcm2niix -f T1 -o $T1path -v y -x y -b y $T1path/${configs_dcmFolder} > $T1path/dcm2niix.log"
+		log "###### DICOM 2 nifti ######" 
+		# if .IMA or .IMA.dcm or .dcm files exis inside T1/DICOMS
+		dicomfiles=`find $RD_T1path/${configs_dcmFolder}/ -maxdepth 1 -name "*.${configs_dcmFiles}*" | wc -l`
+		if [[ $dicomfiles -eq 0 ]]; then 
+			echo "No dicom (.${configs_dcmFiles}) images found for subject $SUBJ."
+			echo "Please specify the correct file extension of dicom files by setting the configs_dcmFiles flag in the config file"
+			echo "Skipping further analysis for subject $SUBJ."
+			exit 1				
+		fi
+
+
+		niifiles=`find $T1path -maxdepth 1 -name "*.nii*" | wc -l`
+		if [[ $niifiles != 0 ]]; then 
+			# Remove existing nifti images.
+			log "rm -f $T1path/.${configs_niiFiles}"
+			rm -f $T1path/*.${configs_niiFiles}*			
+		fi
+		
+		# Converting DICOM to Nifti
+		log "DICOM->NIFTI"
+		cmd="dcm2niix -f T1 -o $T1path -v y -x y -b y $RD_T1path/${configs_dcmFolder} > $T1path/dcm2niix.log"
+		log $cmd
+		eval $cmd 
+		if [[ $? != 0 ]];  then
+			echoerr "dcm2nii exit status not zero. exiting."
+			exit 1
+		else
+			cmd="mv $T1path/${configs_T1}.nii $T1path/${configs_T1}_orig.nii"
 			log $cmd
 			eval $cmd 
-			if [[ $? != 0 ]];  then
-				echoerr "dcm2nii exit status not zero. exiting."
-				exit 1
-			else
-				cmd="mv $T1path/${configs_T1}.nii $T1path/${configs_T1}_orig.nii"
+			if ${configs_T1_useCropped}; then
+				log "Using cropped field-of-view output of dcm2niix"
+				cmd="gzip -f $T1path/${configs_T1}_Crop_1.nii"
 				log $cmd
 				eval $cmd 
-				if ${configs_T1_useCropped}; then
-					log "Using cropped field-of-view output of dcm2niix"
-					cmd="gzip -f $T1path/${configs_T1}_Crop_1.nii"
-					log $cmd
-					eval $cmd 
-					cmd="mv $T1path/${configs_T1}_Crop_1.nii.gz $T1path/${configs_T1}.nii.gz"
-					log $cmd
-					eval $cmd 
-				else
-					cmd="gzip -f $T1path/${configs_T1}_orig.nii"
-					log $cmd
-					eval $cmd
-					cmd="mv $T1path/${configs_T1}_orig.nii.gz $T1path/${configs_T1}.nii.gz"
-					log $cmd
-					eval $cmd
-				fi
+				cmd="mv $T1path/${configs_T1}_Crop_1.nii.gz $T1path/${configs_T1}.nii.gz"
+				log $cmd
+				eval $cmd 
+			else
+				cmd="gzip -f $T1path/${configs_T1}_orig.nii"
+				log $cmd
+				eval $cmd
+				cmd="mv $T1path/${configs_T1}_orig.nii.gz $T1path/${configs_T1}.nii.gz"
+				log $cmd
+				eval $cmd
 			fi
-		else
-			msg="WARNING T1 directory is empty; skipping subject $SUBJ"
-			log $msg
-			exit 1
 		fi
+
 	else
-		msg="WARNING $T1path/${configs_dcmFolder} directory doesn't exist; skipping T1_prepare_A for subject $SUBJ"
+		msg="WARNING $RD_T1path/${configs_dcmFolder} directory doesn't exist; skipping T1_prepare_A for subject $SUBJ"
 		log $msg
 		exit 1
 	fi 

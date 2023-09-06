@@ -57,7 +57,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
         log "THIS IS EPIpath ${EPIpath}"
 
-        cmd="${EXEDIR}/src/scripts/get_readout.sh ${EPIpath}/0_epi.json ${EPIpath}/DICOMS EPI" 
+        cmd="${EXEDIR}/src/scripts/get_readout.sh ${EPIpath}/0_epi.json ${RD_EPIpath}/DICOMS EPI" 
         log $cmd
         EPI_SEreadOutTime=`$cmd`
         log "EPI_SEreadOutTime = ${EPI_SEreadOutTime}"
@@ -97,7 +97,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
     else   ## if not using JSON file, extract info from DICOMs
 
-        path_EPIdcm=${EPIpath}/${configs_dcmFolder}
+        path_EPIdcm=${RD_EPIpath}/${configs_dcmFolder}
 
         # Identify DICOMs
         declare -a dicom_files
@@ -157,7 +157,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
         rm -vf "${EPIpath}/temp.txt"
 
-        cmd="${EXEDIR}/src/scripts/extract_slice_time.sh $EPIpath ${starr[@]}" # -d ${PWD}/inputdata/dwi.nii.gz \
+        cmd="${EXEDIR}/src/scripts/extract_slice_time.sh $EPIpath ${starr[@]}" 
         echo $cmd
         eval $cmd
 
