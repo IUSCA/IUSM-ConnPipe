@@ -1,9 +1,7 @@
-
 #!/bin/bash
 #
 # Script: f_preproc_DWI.m adaptaion from Matlab script 
 #
-
 ###############################################################################
 #
 # Environment set up
@@ -16,18 +14,13 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ############################################################################### 
 
-
-
-############################################################################### 
-
-
-echo "=================================="
-echo "1. Registration of T1 to b0"
-echo "=================================="
+msg2file "=================================="
+msg2file "1. Registration of T1 to b0"
+msg2file "=================================="
 
 # check paths
-log "path_DWI_EDDY is ${path_DWI_EDDY}"
-log "path_DWI_DTIfit is ${path_DWI_DTIfit}"
+log --no-datetime "path_DWI_EDDY is ${path_DWI_EDDY}"
+log --no-datetime "path_DWI_DTIfit is ${path_DWI_DTIfit}"
 
 # up-sample FA image
 fileFA2mm="${path_DWI_DTIfit}/3_DWI_FA.nii.gz"
@@ -41,7 +34,7 @@ log $cmd
 eval $cmd
 
 # rigid body of T1 to FA
-log "DWI_B: rigid body dof 6 to T1"
+log "DWI_B: rigid body dof6 T1 -> FA_1mm"
 fileIn="${T1path}/T1_brain.nii.gz"
 fileMat1="${DWIpath}/T1_2_FA_dof6.mat"
 fileOut="${DWIpath}/rT1_dof6.nii.gz"
@@ -52,7 +45,7 @@ cmd="flirt -in ${fileIn} \
     -dof 6 \
     -interp spline \
     -out ${fileOut}"
-log $cmd
+log --no-datetime $cmd
 eval $cmd
 
 # remove negatives due to interpolation
@@ -131,7 +124,7 @@ done
 
 # add FSLsubcort
 
-if $configs_DWI_addFSLsubcort; then
+if ! ${configs_T1_subcortUser}; then
     echo "Registering FSLsubcort to DWI"
     fileGMparc="${T1path}/T1_GM_parc_FSLsubcort.nii.gz"
     if [[ -e ${fileGMparc} ]]; then

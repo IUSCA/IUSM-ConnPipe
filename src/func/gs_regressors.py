@@ -25,7 +25,7 @@ def get_ts(vol,numTP,rest):
 
 
 flog.write("\n *** python time_series **** ")
-EPIpath=os.environ['EPIpath']
+EPIpath=os.environ['EPIrun_out']
 fileIN=sys.argv[1]
 flog.write("\n"+"fileIN "+ fileIN)
 PhReg_path=sys.argv[2]
@@ -62,38 +62,5 @@ if 0 < configs_EPI_numGS < 5:
     print("saved global signal regressors")    
 
 
-if 0 < configs_EPI_dctfMin:
-
-    TR= float(os.environ['TR'])
-    print("TR ",TR)
-
-    # compute K for kDCT bases to filter fMin Hertz -- k = fMin * 2 * TR * numTimePoints
-    numDCT = int(np.ceil(configs_EPI_dctfMin * 2 * TR * numTimePoints))
-    print("numDCT is ",numDCT)
-    flog.write("\n numDCT "+ str(numDCT))
-    actualFmin = numDCT/(2*TR*numTimePoints)
-    print("actualFmin is ",actualFmin)
-    flog.write("\n actualFmin "+ str(actualFmin)+"\n")
-
-    dct = np.zeros((numTimePoints,numDCT))
-    print("dct shape is ",dct.shape)
-    idx = np.arange(0,numTimePoints)/(numTimePoints - 1)
-
-    for n in range(0,numDCT):
-        dct[:,n] = np.cos(idx * np.pi * (n+1))
-
-
-    # save the data
-    fname = ''.join([PhReg_path,'/dataDCT.npz'])
-    np.savez(fname,dct=dct,numDCT=numDCT,actualFmin=actualFmin)
-    fname = ''.join([PhReg_path,'/dataDCT.mat'])
-    print("savign MATLAB file ", fname)
-    mdic = {"dct" : dct, "numDCT":numDCT,"actualFmin":actualFmin}
-    savemat(fname, mdic)
-    print("saved DCT bases") 
-
-
 fqc.close()
 flog.close()
-
-

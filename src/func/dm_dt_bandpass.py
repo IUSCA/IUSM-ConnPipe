@@ -3,6 +3,7 @@ import os
 import sys
 import nibabel as nib
 import numpy as np
+from scipy import stats
 from scipy import signal
 from scipy.io import savemat
 
@@ -12,33 +13,50 @@ flog=open(logfile_name, "a+")
 flog.write("\n *** python apply_bandpass **** ")
 
 
-EPIpath=os.environ['EPIpath']
+EPIpath=os.environ['EPIrun_out']
 print("EPIpath ",EPIpath)
+
 fileIn=sys.argv[1]
 print("fileIn ",fileIn)
 fileOut=sys.argv[2]
 print("fileOut ",fileOut)
-regPath=os.environ['regPath']
-print("regPath ",regPath)
-dvars_scrub=os.environ['flags_EPI_DVARS']
-print("dvars_scrub ", dvars_scrub)
+PhReg_path=sys.argv[3]
+print("PhReg_path ",PhReg_path)
+TR= float(sys.argv[4])
+print("TR ",TR)
 nR=os.environ['nR']
 print("nR ",nR)
 resting_file=os.environ['configs_EPI_resting_file']
 print("resting_file ",resting_file)
 
-postfix = ''.join([nR,'_dmdt'])
-
-data = np.load(fileIn)
-resid=data['resid']
 print("loading resid_DVARS for Demean and Detrend")
+data = np.load(fileIn)
 
+resid=data['resid']
 volBrain_vol=data['volBrain_vol']
-
 resting_vol=data['resting_vol']
+zRegressMat=data['zRegressMat']
 print("resting_vol.shape: ",resting_vol.shape)
 [sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
 
+# bandpass prep
+fmin= float(os.environ['configs_EPI_fMin'])
+print("fmin ",fmin)
+fmax= float(os.environ['configs_EPI_fMax'])
+print("fmax ",fmax)
+
+order = 2  
+f1 = fmin*2*TR
+f2 = fmax*2*TR
+print("order is ",order)
+print("f1 is ",f1)
+print("f2 is ",f2)
+
+# create mask-array with non-zero indices
+GSmask = np.nonzero(volBrain_vol != 0)
+
+numVoxels = np.count_nonzero(volBrain_vol)
+print("numVoxels - ",numVoxels)
 
 # load resting vol image to use header for saving new image.    
 resting_file = ''.join([EPIpath,resting_file])   
@@ -69,12 +87,37 @@ for pc in range(0,len(resid)):
         rv[volBrain_vol==0]=0
         resid[pc][:,:,:,i] = rv
 
-    if len(resid)==1:
-        fileNii = "/8_epi_%s.nii.gz" % postfix 
-    else:
-        fileNii = "/8_epi_%s%d.nii.gz" % (postfix,pc)
 
-    fileNii = ''.join([EPIpath,'/',regPath,fileNii])
+    rr = resid[pc]
+
+    GSts_resid = np.zeros((numTimePoints,numVoxels))
+    print("GSts_resid shape is ",GSts_resid.shape)
+    
+    for ind in range(0,numTimePoints):
+        rrvol = rr[:,:,:,ind]
+        rvals = rrvol[GSmask[0],GSmask[1],GSmask[2]]
+        GSts_resid[ind,:] = rvals
+    
+    b, a = signal.butter(order, [fmin, fmax], btype='bandpass', analog=False)
+
+    GSts_resid=GSts_resid.T
+
+    tsf = signal.filtfilt(b, a, GSts_resid, padtype='even', padlen=100)  # 3 * (max(len(b), len(a))-1)
+
+    tsf=tsf.T
+    
+    for ind in range(0,numTimePoints):
+        rr[GSmask[0],GSmask[1],GSmask[2],ind] = tsf[ind,:]
+
+    resid[pc] = rr
+
+
+    if len(resid)==1:
+        fileNii = "/8_epi_%s.nii.gz" % nR 
+    else:
+        fileNii = "/8_epi_%s%d.nii.gz" % (nR,pc)
+
+    fileNii = ''.join([PhReg_path,fileNii])
     print("Nifti file to be saved is: ",fileNii)
 
     # save new resting file
@@ -84,11 +127,12 @@ for pc in range(0,len(resid)):
 
 ## save data 
 ff = ''.join([fileOut,'.npz'])
-np.savez(ff,resid=resid)
-print("Saved demeaned and detrended residuals")
 
-ff = ''.join([fileOut,'.mat'])
-print("savign MATLAB file ", ff)
-mdic = {"resid" : resid}
-savemat(ff, mdic)
+# np.savez(ff,resid=resid)
+# JENYA: added more stuff to safe for the scrubbing
+np.savez(ff,resting_vol=resting_vol,volBrain_vol=volBrain_vol, \
+zRegressMat=zRegressMat,resid=resid,nR=nR)
 
+print("Saved bandpass filtered residuals")
+
+flog.close()

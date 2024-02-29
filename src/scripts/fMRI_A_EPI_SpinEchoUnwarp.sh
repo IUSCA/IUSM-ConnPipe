@@ -13,214 +13,171 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
-###############################################################################    
+###############################################################################
+
+echo "# =================================="
+echo "# 0. Spin Echo Field Map Correction"
+echo "# =================================="
+
+# Look for raw fieldmap directory
+FMAPpath_raw="${EPIpath_raw::-4}fmap"
+if [[ -d "$FMAPpath_raw" ]]; then 
     
-    echo "# =================================="
-    echo "# 0. Spin Echo Field Map Correction"
-    echo "# =================================="
+    ## Path to raw data
+    FMAPpath="${EPIpath::-4}fmap"
+    if [[ ! -d "${FMAPpath}" ]]; then
+        mkdir -p ${FMAPpath}
+    fi
 
-    # set up direcotry paths
-    if ! ${configs_EPI_multiSEfieldmaps}; then  # Assume single pair of SE fieldmaps within EPI folder
-        echo "SINGLE SE FIELDMAP FOLDER ${EPIpath}/${configs_sefmFolder}"
-        path_EPI_SEFM="${EPIpath}/${configs_sefmFolder}"
-    else  # Allows multiple UNWARP folders at the subject level (UNWARP1, UNWARP2,...)
-        # SEdir="${configs_sefmFolder}${configs_EPI_SEindex}"
-        # path_EPI_SEFM="${path2data}/${SUBJ}/${SEdir}"
-        path_EPI_SEFM="${path2data}/${SUBJ}/${configs_sefmFolder}"
-        #path_EPI_SEFM="${path2data}/${SUBJ}/${configs_sefmFolder}${EPInum}"
-        echo "MULTIPLE SE FIELDMAP FOLDERS ${path_EPI_SEFM}"
-    fi 
+else
+    log "No raw fieldmap directory: ${FMAPpath_raw}"
+    exit 1
+fi 
 
-    path_EPI_APdcm="${path_EPI_SEFM}/${configs_APdcm}"
-    echo "APdcm path is ${path_EPI_APdcm}"
-    path_EPI_PAdcm="${path_EPI_SEFM}/${configs_PAdcm}"
-    echo "PAdcm path is ${path_EPI_PAdcm}"
+if ${flags_EPI_RunTopup}; then
 
-    if [[ -d ${path_EPI_SEFM} ]]; then
+    # Lets find the json files in the fmap directory 
+    json_files=$(find "$FMAPpath_raw" -type f -name "*.json")
+    intfTag="${EPIfile#*raw/}" # epi file name so it can be matched to the intended for tag
 
-        if [[ -z "${EPInum}" ]] || [[ ${EPInum} -le ${configs_EPI_skipFMcalc4EPI} ]]; then  # if EPInum is unset or smaller than the predefined skip threshold
-
-            fileInAP="${path_EPI_SEFM}/AP.nii.gz"
-            fileInPA="${path_EPI_SEFM}/PA.nii.gz"
-        
-            if [ ! -f "${fileInAP}" ] && [ ! -f "${fileInPA}" ]; then
-
-                log "IMPORT AP and PA fieldmaps from DICOM"
-
-                fileNiiAP="AP"
-                rm -fr ${path_EPI_SEFM}/${fileNiiAP}.nii*  # remove any existing .nii images
-                log "rm -fr ${path_EPI_SEFM}/${fileNiiAP}.nii"
-                
-
-                # import AP fieldmaps
-                fileLog="${path_EPI_SEFM}/dcm2niix_AP.log"
-                cmd="dcm2niix -f $fileNiiAP -o ${path_EPI_SEFM} -v y -x y ${path_EPI_APdcm} > ${fileLog}"
-                log $cmd
-                eval $cmd
-
-                fileNiiPA="PA"
-                rm -fr ${path_EPI_SEFM}/${fileNiiPA}.nii*  # remove any existing .nii images
-                log "rm -fr ${path_EPI_SEFM}/${fileNiiPA}.nii"
-
-                # import PA fieldmaps
-                fileLog="${path_EPI_SEFM}/dcm2niix_PA.log"
-                cmd="dcm2niix -f $fileNiiPA -o ${path_EPI_SEFM} -v y -x y ${path_EPI_PAdcm} > ${fileLog}"
-                log $cmd
-                eval $cmd      
-
-                # gzip fieldmap volumes                  
-                cmd="gzip -f ${path_EPI_SEFM}/AP.nii ${path_EPI_SEFM}/PA.nii"
-                log $cmd
-                eval $cmd 
-
-            fi
-
-            if [ -f "${fileInAP}" ] && [ -f "${fileInPA}" ]; then
-
-                log "Concatenate the AP then PA into single 4D image"
-                
-                # Concatenate the AP then PA into single 4D image
-                fileOut="${path_EPI_SEFM}/sefield.nii.gz"
-                if [ -e "${fileOut}" ]; then
-                    cmd="rm -fr ${fileOut}"
-                    log $cmdn
-                    eval $cmd 
-                fi 
-
-                cmd="fslmerge -tr ${fileOut} ${fileInAP} ${fileInPA} ${TR}"
-                log $cmd
-                eval $cmd                 
-
-                # Generate an acqparams text file based on number of field maps.
-                path_EPIdcm=${EPIpath}/${configs_dcmFolder}
-
-                echo "EPI_SEreadOutTime -- ${EPI_SEreadOutTime}"
-
-                APstr=`echo -e '0 \t -1 \t  0 \t' ${EPI_SEreadOutTime}`   
-                PAstr=`echo -e '0 \t 1 \t  0 \t' ${EPI_SEreadOutTime}`
-
-                cmd="fslinfo ${fileOut}"
-                log $cmd
-                out=`$cmd` 
-                d4vol=$(echo $out | \
-                awk '{split($0,a,"dim4"); {print a[2]}}' | \
-                awk '{split($0,a," "); {print a[1]}}')   
-                exitcode=$?   # extract number of volumes from sefield.nii.gz
-                echo "d4vol is $d4vol"
-
-                if [[ ${exitcode} -eq 0 ]]; then 
-
-                    if [[ $(bc <<< "$d4vol % 2 == 0") ]]; then
-                        SEnumMaps=$(bc <<< "scale=0 ; $d4vol / 2")   #convert number of volumes to a number
-                        log "SEnumMaps extracted from sefield.nii.gz: ${SEnumMaps}"
-                    else
-                        log "sefile.nii.gz file must contain even number of volumes. Exiting..."
-                        exit 1
-                    fi                             
-                else
-                    SEnumMaps=${configs_EPI_SEnumMaps}  #  trust the user input if SEnumMaps failed
-                    log "SEnumMaps from user-specified parameter: ${SEnumMaps}"
-                fi            
-
-                acqparams="${path_EPI_SEFM}/acqparams.txt"
-                if [[ -e ${acqparams} ]]; then
-                    echo "removing ${acqparams}"
-                    cmd="rm ${acqparams}"
-                    log $cmd
-                    eval $cmd
-                fi 
-
-                for ((k=0; k<${SEnumMaps}; k++)); do
-                    echo ${APstr} >> ${acqparams}
-                done
-                for ((k=0; k<${SEnumMaps}; k++)); do
-                    echo ${PAstr} >> ${acqparams}
-                done
-
-                # Generate (topup) and apply (applytopup) spin echo field map
-                # correction to 0_epi image.
-
-                if ${flags_EPI_RunTopup}; then
-
-                    fileIn="${path_EPI_SEFM}/sefield.nii.gz"
-
-                    if [[ -e "${fileIn}" ]] && [[ -e ${acqparams} ]]; then
-                        fileOutName="${path_EPI_SEFM}/topup_results"
-                        fileOutField="${path_EPI_SEFM}/topup_field"
-                        fileOutUnwarped="${path_EPI_SEFM}/topup_unwarped"
-                    
-                        log "topup: Starting topup on sefiled.nii.gz  --  This might take a wile... "
-                        cmd="topup --imain=${fileIn} \
-                        --datain=${acqparams} \
-                        --out=${fileOutName} \
-                        --fout=${fileOutField} \
-                        --iout=${fileOutUnwarped}"
-                        log $cmd
-                        eval $cmd 
-                        echo $?
-
-                        if [[ ! -e "${fileOutUnwarped}.nii.gz" ]]; then  # check that topup has been completed
-                            log "ERROR Topup output not created. Exiting... "
-                            exit 1
-                        fi
-
-                        fileIn="${EPIpath}/0_epi.nii.gz"
-                        acqparams="${path_EPI_SEFM}/acqparams.txt"
-                        fileOutName="${path_EPI_SEFM}/topup_results"
-                        fileOutCoefName="${fileOutName}_fieldcoef.nii.gz"
-
-                        if [[ -f "${fileIn}" ]] && [[ -f "${acqparams}" ]] && [[ -f "${fileOutCoefName}" ]]; then 
-
-                            fileOut="${path_EPI_SEFM}/0_epi_unwarped.nii.gz"
-
-                            log "applytopup -- starting applytopup on 0_epi.nii.gz"
-
-                            cmd="applytopup --imain=${fileIn} \
-                            --datain=${acqparams} \
-                            --inindex=1 \
-                            --topup=${fileOutName} \
-                            --out=${fileOut} --method=jac"
-
-                            log $cmd 
-                            eval $cmd  
-                        else
-                            log "WARNING 0_epi.nii.gz not found or topup outputs do not exist. Exiting..."
-                            exit 1 
-                        fi
-
-                        if [[ -e "${fileOut}" ]]; then  
-                            cmd="mv ${fileOut} ${EPIpath}/0_epi_unwarped.nii.gz"
-                            log $cmd 
-                            eval $cmd 
-                            exitcode=$?
-
-                            if [[ $exitcode -eq 0 ]]; then
-                                log "- -------------EPI volume unwarping completed---------------"
-                            fi
-
-                        fi                  
-                    else 
-                        log " WARNING ${fileIn} or ${acqparams} are missing. topup not started"
-                        exit 1
-                    fi 
-                fi 
+    # Looping through the files
+    for jsf in $json_files; do
+        log "${jsf}"
+        # Now lets see if we can find the session being processed as intended for
+        if grep -q "${intfTag}" "${jsf}"; then
+            # if file name match (presumably under the intended for tag cause where else would it be)
+            # check endoding direction
+            log --no-datetime "Matched intended for tag found."
+            PE=`cat ${jsf} | ${EXEDIR}/src/func/jq-linux64 ."PhaseEncodingDirection"`
+            PE="${PE#?}"
+            PE="${PE%?}"
+            log --no-datetime "Phase Encoding: ${PE}"
+            if [[ $PE == "j" ]]; then
+                fileInPA="${jsf::-4}nii.gz"
+                dim4PA=`fslnvols "${fileInPA}"` 
+                log --no-datetime "Intended for PA fmap found (${dim4PA} volumes): ${fileInPA}"
+            elif [[ "$PE" == "j-" ]]; then
+                fileInAP="${jsf::-4}nii.gz"
+                dim4AP=`fslnvols "${fileInAP}"`
+                log --no-datetime "Intended for AP fmap found (${dim4AP} volumes): ${fileInAP}" 
             else
-                log "WARNING ${fileInAP} and/or ${fileInPA} files not found. Exiting..."
-                exit 1 
+                log "Unknown Phase Encoding: ${PE}"
+            fi
+        else
+            log "Not a match: ${jsf}"
+        fi
+    done
+
+    if [ -f "${fileInAP}" ] && [ -f "${fileInPA}" ]; then # do both files exist
+        if [ "$dim4AP" -eq "$dim4PA" ]; then # do they have the same number of volumes
+
+            log "Concatenate the AP then PA into single 4D image"
+                    
+            # Concatenate the AP then PA into single 4D image
+            fileOut="${FMAPpath}/func_sefield.nii.gz"
+            if [ -e "${fileOut}" ]; then
+                cmd="rm -fr ${fileOut}"
+                log --no-datetime $cmd
+                eval $cmd 
             fi 
 
-        elif [[ ${EPInum} -gt ${configs_EPI_skipFMcalc4EPI} ]]; then
+            cmd="fslmerge -tr ${fileOut} ${fileInAP} ${fileInPA} ${TR}"
+            log $cmd
+            eval $cmd                 
 
-            log "USER-PARAM configs_EPI_skipFMcalc4EPI > EPInum -- skipping topup for EPI${EPInum}"
+            log "Generate acqparams file"
+            echo "EPI_TotalReadoutTime -- ${EPI_TotalReadoutTime}"
 
+            APstr=`echo -e '0 \t -1 \t  0 \t' ${EPI_TotalReadoutTime}`   
+            PAstr=`echo -e '0 \t 1 \t  0 \t' ${EPI_TotalReadoutTime}`
+
+            cmd="fslnvols ${fileOut}"
+            log --no-datetime $cmd
+            d4vol=`$cmd`
+            echo "d4vol is $d4vol"
+
+            SEnumMaps=$dim4AP
+
+            acqparams="${FMAPpath}/func_acqparams.txt"
+            if [[ -e ${acqparams} ]]; then
+                echo "removing ${acqparams}"
+                cmd="rm ${acqparams}"
+                log $cmd
+                eval $cmd
+            fi 
+
+            for ((k=0; k<${SEnumMaps}; k++)); do
+                echo ${APstr} >> ${acqparams}
+            done
+            for ((k=0; k<${SEnumMaps}; k++)); do
+                echo ${PAstr} >> ${acqparams}
+            done
+
+            fileIn="${FMAPpath}/func_sefield.nii.gz"
+
+            # Generate (topup) and apply (applytopup) spin echo field map correction to 0_epi image.
+
+            if [[ -e "${fileIn}" ]] && [[ -e ${acqparams} ]]; then
+                fileOutName="${FMAPpath}/func_topup_results"
+                fileOutField="${FMAPpath}/func_topup_field"
+                fileOutUnwarped="${FMAPpath}/func_topup_unwarped"
+                    
+                log "topup: Starting topup on func_sefiled.nii.gz  --  This might take a wile... "
+                cmd="topup --imain=${fileIn} \
+                --datain=${acqparams} \
+                --out=${fileOutName} \
+                --fout=${fileOutField} \
+                --iout=${fileOutUnwarped}"
+                log $cmd
+                eval $cmd 
+                echo $?
+
+                if [[ ! -e "${fileOutUnwarped}.nii.gz" ]]; then  # check that topup has been completed
+                    log "ERROR Topup output not created. Exiting... "
+                    exit 1
+                fi
+            else 
+                log " WARNING ${fileIn} or ${acqparams} are missing. topup not started"
+                exit 1
+            fi
         else
-
-            log "WARNING topup output does not exist or SE map calculation has been skipped!"
+            log "AP and PA maps contain unequal number of volumes. Check that fmaps are correct."
             exit 1
-
         fi
-
     else
-        log "WARNING ${path_EPI_SEFM} doesn't exist. Field map correction must be skipped."
+        log "WARNING fileInAP and/or fileInPA files not found. Exiting..."
+        exit 1 
     fi
-    
+else
+    log "flags_EPI_RunTopup=false. Field map estimation will be skipped."
+fi
+
+acqparams="${FMAPpath}/func_acqparams.txt"
+fileOutName="${FMAPpath}/func_topup_results"
+fileOutCoefName="${fileOutName}_fieldcoef.nii.gz"
+
+log "flags_EPI_RunTopup=false. Checking for existing topup output for applytopup..."
+if [[ -f "${EPIfile}" ]] && [[ -f "${acqparams}" ]] && [[ -f "${fileOutCoefName}" ]]; then 
+
+    fileOut="${EPIrun_out}/0_epi_unwarped.nii.gz"
+
+    log "applytopup -- starting applytopup on 0_epi.nii.gz"
+
+    cmd="applytopup --imain=${EPIfile} \
+    --datain=${acqparams} \
+    --inindex=1 \
+    --topup=${fileOutName} \
+    --out=${fileOut} --method=jac"
+
+    log --no-datetime $cmd 
+    eval $cmd 
+    exitcode=$?
+
+    if [[ $exitcode -eq 0 ]]; then
+        log "- -------------EPI volume unwarping completed---------------"
+    fi
+
+else
+    log "APPYTOPUP FAILED: MISSING AT LEAST ONE OF THE INPUT FILES."
+    exit 1 
+fi

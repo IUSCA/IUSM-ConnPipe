@@ -12,7 +12,7 @@ logfile_name = ''.join([os.environ['logfile_name'],'.log'])
 flog=open(logfile_name, "a+")
 
 flog.write("\n *** python time_series **** ")
-EPIpath=os.environ['EPIpath']
+EPIpath=os.environ['EPIrun_out']
 fileIN=sys.argv[1]
 flog.write("\n"+"fileIN "+ fileIN)
 physReg=sys.argv[2]

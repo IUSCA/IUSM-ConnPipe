@@ -7,7 +7,7 @@ import numpy as np
 import nibabel as nib
 from skimage import measure 
 
-EPIpath=os.environ['EPIpath']
+EPIpath=os.environ['EPIrun_out']
 print("EPIpath is: ",EPIpath)
 
 fIn=sys.argv[1]

@@ -6,15 +6,15 @@ import numpy as np
 
 DWIpath=os.environ['DWIpath']
 dwifile=sys.argv[1]
-path_DWI_EDDY=os.environ['path_DWI_EDDY']
+path_DWI_EDDY=os.environ['EDDYpath']
 
 # read in DWI data and find number of volumes
 #fname=''.join([DWIpath,'/',dwifile,'.nii.gz'])
 DWI=nib.load(dwifile)  
 ss=DWI.shape
-numVols=ss[3];
+numVols=ss[3]
 
-b0file = ''.join([DWIpath,"/b0file.txt"])
+b0file = sys.argv[2]
 
 ff = open(b0file,"r")
 ffl = ff.readlines()

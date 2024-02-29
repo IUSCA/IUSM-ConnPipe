@@ -1,5 +1,5 @@
-
-
+#!/bin/bash
+#
 ##############################################################################
 source ${EXEDIR}/src/func/bash_funcs.sh
 
@@ -13,7 +13,8 @@ echo "numTimePoints is -- ${numTimePoints}"
 
 # ------------------------------------------------------------------------- #
 ## Frame Displacement regressor
-echo "# Computing DF regressor"
+echo "fsl_motion_outliers - Will use box-plot cutoff = P75 + 1.5 x IQR"
+echo "# Computing Frame Displacement regressor"
 
 fileOut1="${EPIpath}/motionRegressor_fd.txt"
 fileMetric="${EPIpath}/motionMetric_fd.txt"
@@ -31,27 +32,11 @@ if [[ -e ${fileMetric} ]]; then
     eval $cmd 
 fi
 
-if [ -z ${configs_EPI_FDcut+x} ]; then  # if the variable ${configs_EPI_FDcut} is unset
-
-    echo "fsl_motion_outliers - Will use box-plot cutoff = P75 + 1.5 x IQR"
-
-    cmd="fsl_motion_outliers -i ${fIn} \
-        -o ${fileOut1} \
-        -s ${fileMetric} \
-        -p ${filePlot} \
-        --fd"
-
-else   # if the variable ${configs_EPI_FDcut} exists and is different from empty 
-    
-    echo " configs_EPI_FDcut is set to ${configs_EPI_FDcut}"
-
-   cmd="fsl_motion_outliers -i ${fIn} \
+cmd="fsl_motion_outliers -i ${fIn} \
     -o ${fileOut1} \
     -s ${fileMetric} \
     -p ${filePlot} \
-    --fd --thresh=${configs_EPI_FDcut}" 
-
-fi 
+    --fd"
 
 log $cmd
 eval $cmd 
@@ -77,39 +62,22 @@ if [[ -e ${fileMetric} ]]; then
     eval $cmd 
 fi
 
-if [ -z ${configs_EPI_DVARScut+x} ]; then
-
-    log "fsl_motion_outliers - Will use box-plot cutoff = P75 + 1.5 x IQR"
-
-    cmd="fsl_motion_outliers -i ${fIn} \
-        -o ${fileOut} \
-        -s ${fileMetric} \
-        -p ${filePlot} \
-        --dvars"
-
-else
-    
-    echo " configs_EPI_DVARScut is set to ${configs_EPI_DVARScut}"
-
-   cmd="fsl_motion_outliers -i ${fIn} \
+cmd="fsl_motion_outliers -i ${fIn} \
     -o ${fileOut} \
     -s ${fileMetric} \
     -p ${filePlot} \
-    --dvars --thresh=${configs_EPI_DVARScut}" 
-
-fi 
+    --nomoco --dvars"
 
 log $cmd
 eval $cmd 
 out=$?
 
 if [[ ! $out -eq 0 ]]; then
-    log "Dvars exit code"
+    log "DVARS exit code"
     log "$out"
 fi
 
-
 log "calling python script get_motion_outliers:"
 cmd="python ${EXEDIR}/src/func/get_motion_outliers.py ${EPIpath} ${numTimePoints}"
-log $cmd
+log --no-datetime $cmd
 eval $cmd

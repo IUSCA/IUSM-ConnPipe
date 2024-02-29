@@ -59,7 +59,7 @@ def CleanNIFTI(V,\
 
         filename =  os.path.expandvars(V)
         imobj = nib.load(filename, mmap=False)
-        imdat = imobj.get_data().astype(float)
+        imdat = imobj.get_fdata()
 
         T = imdat.shape[3]
         I = np.prod(imdat.shape[0:3])

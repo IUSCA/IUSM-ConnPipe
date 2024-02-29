@@ -39,7 +39,7 @@ parc2_vol = np.asanyarray(parc2.dataobj)
 
 if psubc == 1:
     subcortUser=os.environ['configs_T1_subcortUser']
-    print("subcortUser is: ",subcortUser)
+    print("add subcortUser is: ",subcortUser)
     print(type(subcortUser))
 
     if subcortUser == "false":  # FSL-provided subcortical

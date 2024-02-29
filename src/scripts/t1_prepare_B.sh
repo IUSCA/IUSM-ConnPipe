@@ -1,4 +1,3 @@
-
 #!/bin/bash
 #
 # Script: T1_PREPARE_B adaptaion from Matlab script 
@@ -10,10 +9,32 @@
 #
 ###############################################################################
 
-
 shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
+
+module load fsl/6.0.5.2
+
+# FSL
+# set FSL env vars for fsl_sub.IU or fsl_sub.orig
+if [[ -z ${FSLDIR} ]] ; then
+	echoerr "FSLDIR not set"
+	exit 1
+fi
+
+export pathFSLstandard="${FSLDIR}/data/standard"
+
+if [[ -e "${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz" ]]; then
+    fileMNI2mm="${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz"
+else
+    fileMNI2mm="${pathMNItmplates}/MNI152_T1_2mm_brain.nii.gz"
+fi
+
+if ${configs_T1_useMNIbrain}; then
+    export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm_brain.nii.gz"
+else
+    export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm.nii.gz"
+fi
 
 ###################################################################################
 
@@ -22,11 +43,9 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 # Set registration dir path and remove any existing reg directories
 T1reg="${T1path}/registration"
 
-
 if ${flags_T1_reg2MNI}; then
-
 ## Transform subject T1 into MNI space, then using inverse matrices
-## transform yeo7, yeo17, shen parcellations and MNI vertricles mask into subject native space
+## transform parcellations back to subject native space
 
     log "==== Registration between Native t1 and MNI space ==== "
 
@@ -43,16 +62,15 @@ if ${flags_T1_reg2MNI}; then
         checkcode=$?	
 
         if [[ $checkcode -eq 1 ]]; then
-            log "MISSING required transformation matrices: running reg2MNI"
+            log --no-datetime "MISSING required transformation matrices: running reg2MNI"
             configs_T1_useExistingMats=false
-            log "useExistingMats is ${configs_T1_useExistingMats}"
+            log --no-datetime "useExistingMats is ${configs_T1_useExistingMats}"
         fi
     else
-        log "WARNING ${T1reg} not found. Running reg2MNI"
+        log --no-datetime "WARNING ${T1reg} not found. Running reg2MNI"
         configs_T1_useExistingMats=false
-        log "Resetting useExistingMats = ${configs_T1_useExistingMats}"    
+        log --no-datetime "Resetting useExistingMats = ${configs_T1_useExistingMats}"    
     fi
-    
 
     ## If transformation matrices don't exist, create them
     ## Register T1 to MNI and obtain inverse transformations
@@ -84,7 +102,7 @@ if ${flags_T1_reg2MNI}; then
                 -out ${T1reg}/T1_dof6 \
                 -cost ${configs_T1_flirtdof6cost} \
                 -dof 6 -interp spline"
-            log $cmd
+            log --no-datetime $cmd
             eval $cmd 
             exitcode=$?
             echo $exitcode
@@ -123,7 +141,7 @@ if ${flags_T1_reg2MNI}; then
                 -omat ${dof12} \
                 -out ${T1reg}/T1_dof12 \
                 -dof 12 -interp spline"
-            log $cmd
+            log --no-datetime $cmd
             eval $cmd 
             exitcode=$?
             echo $exitcode
@@ -150,7 +168,7 @@ if ${flags_T1_reg2MNI}; then
             log "MISSING files - ${T1reg}/T1_dof6.nii.gz ${path2MNIref} "
         fi 
 
-        log "fnirt"
+        log "fnirt -- T1 -> MNI152"
         if [[ -e "${T1reg}/T1_dof12.nii.gz" ]] && [[ -e ${path2MNIref} ]]; then
 
             # Nonlinear warp of T1 to MNI
@@ -159,9 +177,10 @@ if ${flags_T1_reg2MNI}; then
             cmd="fnirt --ref=${path2MNIref} \
                 --in=${T1reg}/T1_dof12.nii.gz \
                 --cout=${warp} \
+                --regmod=membrane_energy\
                 --iout=${T1reg}/T1_warped \
                 --subsamp=${configs_T1_fnirtSubSamp}"
-            log $cmd
+            log --no-datetime $cmd
             eval $cmd 
             exitcode=$?
             echo $exitcode
@@ -189,10 +208,33 @@ if ${flags_T1_reg2MNI}; then
             log "MISSING files - ${T1reg}/T1_dof12.nii.gz   ${path2MNIref} "
         fi 				
     fi
+fi
 
+if ${flags_T1_regParc}; then
     # Transform parcellations from MNI to native subject space
     # for every parcellation +1 (Ventricle mask)
-    log "TRANSFORM PARCELLATIONS"
+    log "==== Apply Registrations to MNI Parcellations ==== "
+
+    if [[ -d ${T1reg} ]]; then  # check for existing transformation matrices
+        
+        dof6="${T1reg}/T12MNI_dof6.mat"
+        dof6_inv="${T1reg}/MNI2T1_dof6.mat"
+        dof12="${T1reg}/T12MNI_dof12.mat"
+        dof12_inv="${T1reg}/MNI2T1_dof12.mat"	
+        warp="${T1reg}/T12MNI_warp.nii.gz"
+        warp_inv="${T1reg}/MNI2T1_warp.nii.gz"	
+
+        check_inputs "dof6"	"dof6_inv" "dof12" "dof12_inv" "warp" "warp_inv"	
+        checkcode=$?	
+
+        if [[ $checkcode -eq 1 ]]; then
+            log --no-datetime "MISSING required transformation matrices. PLEASE RUN: flags_T1_reg2MNI"
+            exit 1
+        fi
+    else
+        log --no-datetime "WARNING ${T1reg} not found. PLEASE RUN: flags_T1_reg2MNI"
+        exit 1
+    fi
 
 	# required parc
 	export PARC0="CSFvent"
@@ -205,6 +247,7 @@ if ${flags_T1_reg2MNI}; then
 
         parc="PARC$i"
         parc="${!parc}"
+        echo "======================="
         echo ${parc}
         parcdir="PARC${i}dir"
         
@@ -232,7 +275,7 @@ if ${flags_T1_reg2MNI}; then
                 --warp=${warp_inv} \
                 --out=${fileOut} --interp=nn"
 
-            log $cmd    
+            log --no-datetime $cmd    
             eval $cmd
             exitcode=$?
 
@@ -319,7 +362,7 @@ if ${flags_T1_seg}; then
 
     # FSL fast tissue-type segmentation (GM, WM, CSF)
     cmd="fast -H ${configs_T1_segfastH} ${fileIn}"
-    log $cmd 
+    log --no-datetime $cmd 
     eval $cmd
 
     ## CSF masks
@@ -328,11 +371,11 @@ if ${flags_T1_seg}; then
     checkisfile ${fileIn}
 
     cmd="fslmaths ${fileIn} -thr ${configs_T1_masklowthr} -uthr 1 ${fileOut}"
-    log $cmd 
+    log --no-datetime $cmd 
     eval $cmd
 
     cmd="fslmaths ${T1path}/T1_CSF_mask.nii.gz -mul -1 -add 1 ${T1path}/T1_CSF_mask_inv.nii.gz"
-    log $cmd 
+    log --no-datetime $cmd 
     eval $cmd
 
     ## Subcortical masks
@@ -346,7 +389,7 @@ if ${flags_T1_seg}; then
 
     # binarize subcortical segmentaiton to a mask
     cmd="fslmaths ${T1path}/T1_subcort_seg.nii.gz -bin ${T1path}/T1_subcort_mask.nii.gz"
-    log $cmd 
+    log --no-datetime $cmd 
     eval $cmd
 
     # remove CSF contamination
@@ -355,12 +398,12 @@ if ${flags_T1_seg}; then
     fileOut=${fileIn}  
 
     cmd="fslmaths ${fileIn} -mas ${fileMas} ${fileOut}"
-    log $cmd 
+    log --no-datetime $cmd 
     eval $cmd
 
     # Inverse of subcortical mask
     cmd="fslmaths ${fileIn} -mul -1 -add 1 ${T1path}/T1_subcort_mask_inv.nii.gz"
-    log $cmd 
+    log --no-datetime $cmd 
     eval $cmd
 
     ## Adding FIRST subcortical into tissue segmentation
@@ -369,11 +412,11 @@ if ${flags_T1_seg}; then
     eval $cmd 
 
     cmd="fslmaths ${T1path}/T1_subcort_mask -mul 2 ${T1path}/T1_subcort_seg_add"
-    log $cmd 
+    log --no-datetime $cmd 
     eval $cmd
 
     cmd="fslmaths ${T1path}/T1_brain_seg_best -add ${T1path}/T1_subcort_seg_add ${T1path}/T1_brain_seg_best"
-    log $cmd 
+    log --no-datetime $cmd 
     eval $cmd    
 
     ## Separating Tissue types
@@ -392,11 +435,12 @@ if ${flags_T1_seg}; then
 
         # erode each tissue mask
         cmd="fslmaths ${fileOut} -ero ${fileOut}_eroded"
-        log $cmd
+        log --no-datetime $cmd
         eval $cmd        
 
         if [ "$i" -eq 2 ]; then  # if WM
 
+            echo "=============================================="
             echo "Performing 2nd and 3rd WM erotion" 
 
             WMeroded_1st="${T1path}/T1_WM_mask_eroded_1st.nii.gz"
@@ -404,7 +448,7 @@ if ${flags_T1_seg}; then
             WMeroded_3rd="${T1path}/T1_WM_mask_eroded.nii.gz"
 
             cmd="mv ${T1path}/T1_WM_mask_eroded.nii.gz ${WMeroded_1st}"
-            log $cmd
+            log --no-datetime $cmd
             eval $cmd 
 
             # 2nd WM erotion
@@ -440,6 +484,7 @@ if ${flags_T1_seg}; then
     eval $cmd    
 
     ## WM CSF sandwich 
+    echo "======================="
     echo "WM/CSF sandwich"   
 
     # Remove any gray matter voxels that are within
@@ -605,8 +650,8 @@ if ${flags_T1_parc}; then
 
         if [ "${pcort}" -eq 1 ]; then
 
-            log "CORTICAL-PARCELLATION removing subcortical and cerebellar gray matter"
-            # -------------------------------------------------------------------------#
+            log --no-datetime "====================================================================="
+            log --no-datetime "CORTICAL-PARCELLATION removing subcortical and cerebellar gray matter"
             # Clean up the cortical parcellation by removing subcortical and
             # cerebellar gray matter.
             
@@ -636,11 +681,9 @@ if ${flags_T1_parc}; then
                 log $cmd
                 eval $cmd 
 
-
                 cmd="fslmaths ${fileOut} -binv ${fileMas2}"
                 log $cmd
                 eval $cmd 
-                
 
             fi 
 
@@ -675,7 +718,6 @@ if ${flags_T1_parc}; then
                 FileRef="${T1reg}/T1_dof6.nii.gz"
                 FileOut="${T1reg}/cerebellum_unwarped_dof12.nii.gz"
                 dof12_inv="${T1reg}/MNI2T1_dof12.mat"
-
 
                 cmd="flirt \
                 -in ${FileIn} \
@@ -724,7 +766,6 @@ if ${flags_T1_parc}; then
                 else
                     FileRef="${T1path}/T1_fov_denoised.nii"
                 fi
-                
 
                 cmd="flirt \
                 -in ${FileIn} \
@@ -798,7 +839,8 @@ if ${flags_T1_parc}; then
             done
 
         elif [[ "${pcort}" -eq 0 ]]  && [[ "${pcrblmonly}" -eq 1 ]]; then
-            log "CEREBELLAR-PARCELLATION"  
+            log "======================="
+            log --no-datetime "CEREBELLAR-PARCELLATION"  
 
             onecrblm=false
 
@@ -809,12 +851,12 @@ if ${flags_T1_parc}; then
                 pcrblmonlyii="PARC${ii}pcrblmonly"    
                 pcrblmonlyii="${!pcrblmonlyii}"                      
 
-                log "Finding Cerebellar Parcellation"
-                log "ii is ${ii} -- ${parcii} parcellation -- pcrblmonlyii is -- ${pcrblmonlyii}"
+                log --no-datetime "Finding Cerebellar Parcellation"
+                log --no-datetime "ii = ${ii} -- ${parcii} parcellation -- pcrblmonlyii is -- ${pcrblmonlyii}"
 
                 if [[ "${pcrblmonlyii}" -eq 1 ]]; then  # find cerbellum-only parcellation
 
-                    log "CEREBELLAR parcellation found: ${parcii}"
+                    log --no-datetime "CEREBELLAR parcellation found: ${parcii}"
 
                     if ! ${onecrblm} ; then
                         # check that parcellation is available in T1 space
@@ -829,7 +871,7 @@ if ${flags_T1_parc}; then
 
                             # Mask parcellation by mask
                             cmd="fslmaths ${fileCrblm} -mas ${FileCereb_bin} ${fileCrblm}"
-                            log $cmd
+                            log --no-datetime $cmd
                             eval $cmd
 
                             onecrblm=true  # allow only one cerebellar-only parcellation
@@ -864,7 +906,9 @@ if ${flags_T1_parc}; then
             fileSubcort="${T1path}/T1_subcort_seg.nii.gz"
 
             cmd="cp ${fileSubcort} ${T1path}/T1_GM_parc_FSLsubcort.nii.gz"
-            log $cmd
+            log --no-datetime $cmd
             eval $cmd 
         fi
 fi
+
+module unload fsl

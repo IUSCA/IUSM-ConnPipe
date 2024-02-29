@@ -5,27 +5,31 @@ import numpy as np
 import nibabel as nib
 from scipy.io import savemat
 
+###### print to log files #######
 logfile_name = ''.join([os.environ['logfile_name'],'.log'])
 flog=open(logfile_name, "a+")
 
-EPIpath=os.environ['EPIpath']
+EPIpath=os.environ['EPIrun_out']
 print("EPIpath ",EPIpath)
 PhReg_path=sys.argv[1]
 print("PhReg_path ",PhReg_path)
-post_nR=sys.argv[2]
-print("post_nR ",post_nR)
+
 nR=os.environ['nR']
 print("nR ",nR)
 resting_file=os.environ['configs_EPI_resting_file']
 print("resting_file ",resting_file)
-dvars_scrub=os.environ['flags_EPI_DVARS']
+dvars_scrub=os.environ['configs_EPI_despiked']
 flog.write("\n dvars_scrub "+ dvars_scrub)
 
-# load resting vol image to use header for saving new image.    
-resting_file = ''.join([EPIpath,resting_file])   
+resting_file=os.environ['configs_EPI_resting_file']
+flog.write("\n resting_file "+ resting_file)
+
+# load resting vol image to use header for saving new image. 
+resting_file = ''.join([EPIpath,resting_file])    
 resting = nib.load(resting_file)
 
-fname = ''.join([PhReg_path,'/NuisanceRegression_',post_nR,'.npz'])
+
+fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.npz'])
 data = np.load(fname) 
 resid=data['resid']
 
@@ -33,14 +37,14 @@ resid=data['resid']
 print("resid[0].shape ", sizeX,sizeY,sizeZ,numTimePoints)
 
 # load DVARS / FD
-if dvars_scrub == 'true': 
-    fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.npz'])
-    scrubdata = np.load(fname) 
-    dvars=scrubdata['DVARS_Inference_Hprac']
+if 'DVARS_Inference_Hprac' in data:
+    flog.write("\n *** python dvars-based scrubbbing **** ")
+    dvars=data['DVARS_Inference_Hprac']
     print("DVARS: ",dvars)
     goodvols = np.ones(numTimePoints, dtype=int)
     goodvols[dvars]=0
 else:
+    flog.write("\n *** fsl based scrubbing using dvars and fd *** ")
     fname=''.join([EPIpath,'/scrubbing_goodvols.npz'])  
     goodvols = np.load(fname) 
     goodvols = goodvols['good_vols'] 
@@ -54,9 +58,9 @@ print("shape resid after scrubbing ", resid.shape)
 for pc in range(0,len(resid)):
 
     if len(resid)==1:
-        fileNii = "/8_epi_%s_scrubbed.nii.gz" % post_nR 
+        fileNii = "/8_epi_%s_scrubbed.nii.gz" % nR 
     else:
-        fileNii = "/8_epi_%s%d_scrubbed.nii.gz" % (post_nR,pc)
+        fileNii = "/8_epi_%s%d_scrubbed.nii.gz" % (nR,pc)
 
     fileNii = ''.join([PhReg_path,fileNii])
     print("Nifti file to be saved is: ",fileNii)
@@ -66,14 +70,13 @@ for pc in range(0,len(resid)):
     nib.save(resting_new,fileNii) 
 
 ## save data 
-fileOut = ''.join([PhReg_path,'/NuisanceRegression_',post_nR,'_scrubbed.npz'])
+fileOut = ''.join([PhReg_path,'/NuisanceRegression_',nR,'_scrubbed.npz'])
 np.savez(fileOut,resid=resid)
 print("Saved Scrubbed residuals")
 
-fileOut = ''.join([PhReg_path,'/NuisanceRegression_',post_nR,'_scrubbed.mat'])
+fileOut = ''.join([PhReg_path,'/NuisanceRegression_',nR,'_scrubbed.mat'])
 print("savign MATLAB file ", fileOut)
 mdic = {"resid" : resid[0]}
 savemat(fileOut, mdic)
 
 flog.close()
-

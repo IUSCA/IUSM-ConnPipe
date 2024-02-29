@@ -1,9 +1,7 @@
-
 #!/bin/bash
 #
 # Script: fMRI_A adaptaion from Matlab script 
 #
-
 ###############################################################################
 #
 # Environment set up
@@ -14,121 +12,135 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
+###############################################################################
+# Load IU Quartz supercomuter modules
+module load fsl/6.0.5.2
+module load python/3.11.4 
 
-log "fMRI_A"
+# FSL
+# set FSL env vars for fsl_sub.IU or fsl_sub.orig
+if [[ -z ${FSLDIR} ]] ; then
+	echoerr "FSLDIR not set"
+	exit 1
+fi
+############################################################################### 
 
-# Generate list of EPI scan directories
-#declare -a epiList
-#while IFS= read -r -d $'\0' REPLY; do 
-#    epiList+=( "$REPLY" )
-#done < $(find ${path2data}/${SUBJ}/${configs_session} -maxdepth 1 -type d -iname "${configs_epiFolder}" -print0 | sort -z)
+log --no-datetime "fMRI_A"
 
-
-#if [ ${#epiList[@]} -eq 0 ]; then 
-#    echo "No func directories found for subject $SUBJ. Check consistency of naming convention."
-   # exit 1
-#else
-#    echo "There are ${#epiList[@]} EPI-series "
-#fi
-
-#for ((i=0; i<${#epiList[@]}; i++)); do
-# MULTISESSION CODING WILL NEED TO CHANGED TO BE BIDS COMPLIANT
-# RIGHT NOW I AM JUST MAKING IT WORK FOR 1 SCAN
-#    ind=`echo ${epiList[$i]} | sed 's/.*\func//'`
-#    re='^[0-9]+$'
-
-  #  if [[ ! -d "${epiList}" ]]; then
-  #      echo "${epiList} directory not found"
-  #      exit 1
-
-   # elif ! [[ $ind =~ $re ]] ; then  # if EPI dir has no session number
-   #     echo "EPI directory ${epiList[$i]} has no session number"
-   #     echo "Running f_MRI_A on ${epiList[$i]}"
+# If multi-run is set:
+if [ -n "$configs_EPI_runMin" ]; then
+    echo "Non-empty configs_EPI_runMin. Checking for _run- tag..."
+    # Generate list of EPI scan directories
+    declare -a epiList
+    while IFS= read -r -d $'\0' REPLY; do 
+        epiList+=( "$REPLY" )
+    done < <(find ${EPIpath_raw} -maxdepth 1 -type f -iname "*_task-${configs_EPI_task}*_run-*nii.gz" -print0 | sort -z)
     
-   # elif [[ $ind =~ $re ]] ; then
+    if [ ${#epiList[@]} -eq 0 ]; then 
+        echo "No raw func files with _run- tag found for subject $SUBJ. Check consistency of naming convention."
+        exit 1
+    elif [ ${#epiList[@]} -gt 1 ]; then
+        echo "Multiple raw func runs found for subject $SUBJ."
+        echo "There are ${#epiList[@]} EPI-series "
+    else
+        echo "Single raw func with _run tag found for subject $SUBJ."
+        echo "There are ${#epiList[@]} EPI-series "
+    fi
+    rtag=1
+else # else no run tag assumed
+    declare -a epiList
+    while IFS= read -r -d $'\0' REPLY; do 
+        epiList+=( "$REPLY" )
+    done < <(find ${EPIpath_raw} -maxdepth 1 -type f -iname "*_task-${configs_EPI_task}*nii.gz" -print0 | sort -z)
 
-  #      if [ $ind -lt "${configs_EPI_epiMin}" ] || [ $ind -gt "${configs_EPI_epiMax}" ]; then
-   #         log "WARNING Skipping f_MRI_A processing on ${epiList[$i]}. Scan session is not within the epiMin and epiMax configuration settings."
-   #         break
-   #     fi
-   # fi
+    if [ ${#epiList[@]} -eq 0 ]; then 
+        echo "No raw func files found for subject $SUBJ. Check consistency of naming convention."
+        exit 1
+    elif [ ${#epiList[@]} -gt 1 ]; then
+        echo "Multiple raw func files found for subject $SUBJ. Check for proper naming convention. OR"
+        echo "Include configs_EPI_runMin and Max if _run- tag is used."
+        exit 1
+    else
+        echo "There are ${#epiList[@]} EPI-series "
+    fi
+    rtag=0
+fi
 
-    # Operating on the scans set in configs
-  #  export EPIpath="${epiList}"
-    
-   # echo "Setting EPInum variable to ${ind}"
-   # export EPInum=${ind}
-
+#LOOPING OVER EPI SESSIONS
+for ((i=0; i<${#epiList[@]}; i++)); do
+######################################################################################
+    # Operating on the scans set in configs.
     log "fMRI_A on subject ${SUBJ}"
-    log "EPI-series ${EPIpath}"
-   # log "EPI session number ${EPInum}"
+    log --no-datetime "task - ${configs_EPI_task}"
 
-    ## functional connectivity
-# SKIPPING THIS FOR NOW FOR KBASE WILL NEED TO RECODE LATER FOR BIDS
-    # ### Convert dcm2nii
-    if ${flags_EPI_dcm2niix}; then
-
-        echo "=================================="
-        echo "0. Dicom to NIFTI conversion"
-        echo "=================================="
-
-        path_EPIdcm=${EPIpath}/${configs_dcmFolder}
-        echo "path_EPIdcm is -- ${path_EPIdcm}"
-        epifile="0_epi"
-        fileNii="${EPIpath}/${epifile}.nii"
-        fileNiigz="${EPIpath}/${epifile}.nii.gz"
-
-        if [ -e ${fileNii} ] || [ -e ${fileNiigz} ]; then                 
-            cmd="rm -rf ${fileNii}*"
-            log $cmd
-            rm -rf ${fileNii}* 
-        fi 
-
-        # import dicoms
-        fileLog="${EPIpath}/dcm2niix.log"
-        cmd="dcm2niix -f ${epifile} -o ${EPIpath} -v y -x y ${path_EPIdcm} > ${fileLog}"
-        log $cmd
-        eval $cmd
-
-        cmd="gzip -f ${EPIpath}/${epifile}.nii"
-        log $cmd
-        eval $cmd
-
-        if [[ ! -e "${fileNiigz}" ]]; then
-            log "${fileNiigz} file not created. Exiting... "
-            exit 1
-        fi                 
+    if [ ${rtag} -eq 1 ]; then
+        ind=$(echo ${epiList[$i]} | sed 's/.*run-\(.*\)_.*/\1/')
+        re='^[0-9]+$'
+        
+        if ! [[ $ind =~ $re ]] ; then  # if EPI has no run tag
+            echo "Raw func: ${epiList[$i]} has no numeric run tag."
+            echo "Running f_MRI_A on ${epiList[$i]}"
+            log --no-datetime "run - ${ind}"
+            export EPIfile="${epiList[$i]}"
+            export EPIrun_out="${EPIpath}/task-${configs_EPI_task}_run-${ind}"
+        elif [[ $ind =~ $re ]] ; then
+            if [ $ind -lt ${configs_EPI_runMin} ] || [ $ind -gt ${configs_EPI_runMax} ]; then
+                log "WARNING Skipping f_MRI_A processing on ${epiList[$i]}. Scan run is not within the epiMin and epiMax configuration settings."
+                break
+            else
+                log --no-datetime "run - ${ind}"
+                export EPIfile="${epiList[$i]}"
+                export EPIrun_out="${EPIpath}/task-${configs_EPI_task}_run-${ind}"
+            fi
+        fi
+    else
+        export EPIfile="${epiList[$i]}"
+        export EPIrun_out="${EPIpath}/task-${configs_EPI_task}"
     fi
 
-    #### Read info from the headers of the dicom fMRI volumes
-    if ${flags_EPI_ReadHeaders}; then
+    log --no-datetime "func derivative directory:"
+    log --no-datetime "${EPIrun_out}"
+    if [[ ! -d "${EPIrun_out}" ]]; then
+        mkdir -p ${EPIrun_out}
+    fi
 
-        cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_ReadHeaders.sh"
+######################################################################################
+    #### Read scan info from json
+    if ${flags_EPI_ReadJson}; then
+
+        cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_ReadJson.sh"
         echo $cmd
         eval $cmd
         exitcode=$?
 
         if [[ ${exitcode} -ne 0 ]] ; then
-            echoerr "problem at fMRI_A_EPI_ReadHeaders. exiting."
+            echoerr "Problem at fMRI_A_EPI_ReadJson. exiting."
             exit 1
         fi  
 
-        log "Sourcing parameters read from header and written to ${EPIpath}/0_param_dcm_hdr.sh"
-        source ${EPIpath}/0_param_dcm_hdr.sh   
+        # Source the scan info saved by ReadJson.
+        log "Sourcing parameters read from json and written to ${EPIrun_out}/0_param_dcm_hdr.sh"
+        if [[ -f "${EPIrun_out}/0_param_dcm_hdr.sh" ]]; then
+            source ${EPIrun_out}/0_param_dcm_hdr.sh   
+        else
+            log --no-datetime "File ${EPIrun_out}/0_param_dcm_hdr.sh not found. Check that ReadJson succeeded in creating parameter file."
+            exit 1
+        fi
 
     else
-        log "SOURCING header parameters from file ${EPIpath}/0_param_dcm_hdr.sh"
+        log "ReadJson skipped. Checking for existing parameter file."
 
-        if [[ -f "${EPIpath}/0_param_dcm_hdr.sh" ]]; then
-            source ${EPIpath}/0_param_dcm_hdr.sh 
-        else
-            log "File ${EPIpath}/0_param_dcm_hdr.sh not found; Please set flags_EPI_ReadHeaders=true. Exiting..."
+	    if [[ -f "${EPIrun_out}/0_param_dcm_hdr.sh" ]]; then
+            log --no-datetime "Sourcing scan parameters from existing file: ${EPIrun_out}/0_param_dcm_hdr.sh"
+            source ${EPIrun_out}/0_param_dcm_hdr.sh 
+	    else
+            log "File ${EPIrun_out}/0_param_dcm_hdr.sh not found: Please set flags_EPI_ReadJson=true. Exiting..."
             exit 1
-        fi     
-
+	    fi
     fi
 
-# SKIPPING THIS FOR NOW FOR KBASE WILL NEED TO RECODE LATER FOR BIDS
+######################################################################################
+    #### Distortion Correction (Spin Echo or Gradient Echo Unwarping) 
     if ${flags_EPI_SpinEchoUnwarp}; then 
     
         cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_SpinEchoUnwarp.sh"
@@ -142,7 +154,7 @@ log "fMRI_A"
         fi
         
     fi 
-# SKIPPING THIS FOR NOW FOR KBASE WILL NEED TO RECODE LATER FOR BIDS
+# SKIPPING THIS FOR NOW FOR NOW WILL NEED TO RECODE LATER FOR BIDS
     if ${flags_EPI_GREFMUnwarp}; then 
         
         cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_GREFMUnwarp.sh"
@@ -157,6 +169,8 @@ log "fMRI_A"
         
     fi
 
+######################################################################################
+    #### Slice Timing Correction (for longer TR acquisitions) 
     if ${flags_EPI_SliceTimingCorr}; then 
 
         cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_SliceTimingCorr.sh"
@@ -171,7 +185,8 @@ log "fMRI_A"
 
     fi 
 
-
+######################################################################################
+    #### Motion Correction (mcflirt)
     if ${flags_EPI_MotionCorr}; then 
 
         cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_MotionCorr.sh"
@@ -185,11 +200,12 @@ log "fMRI_A"
         fi
 
         # 0_param_dcm_hdr.sh has been modified in MotionCorr, so needs to be sourced again
-        log "Sourcing parameters read from header and written to ${EPIpath}/0_param_dcm_hdr.sh"
-        source ${EPIpath}/0_param_dcm_hdr.sh
+        log "Sourcing parameters read from header and written to ${EPIrun_out}/0_param_dcm_hdr.sh"
+        source ${EPIrun_out}/0_param_dcm_hdr.sh
     fi 
 
-
+######################################################################################
+    #### Registration of T1 to epi space.
     if ${flags_EPI_RegT1}; then 
 
         cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_RegT1.sh"
@@ -202,10 +218,10 @@ log "fMRI_A"
             exit 1
         fi               
     fi 
-
+    
+######################################################################################
+    #### Registration of parcellations to epi space.
     if ${flags_EPI_RegOthers}; then
-
-        #source activate ${path2env}
         
         cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_RegOthers.sh"
         echo $cmd
@@ -216,11 +232,10 @@ log "fMRI_A"
             echoerr "problem at fMRI_A_EPI_RegOthers. exiting."
             exit 1
         fi  
-
-        #source deactivate
     fi 
 
-
+######################################################################################
+    #### Normalization to a global 4D mean of 1000
     if ${flags_EPI_IntNorm4D}; then
 
         cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_IntNorm4D.sh"
@@ -234,16 +249,17 @@ log "fMRI_A"
         fi  
     fi            
 
+######################################################################################
     if ${flags_EPI_NuisanceReg}; then
-        echo "# =========================================================="
-        echo "# 5  Nuisance Regression. "
-        echo "# =========================================================="
+        msg2file "# =========================================================="
+        msg2file "# 5  Nuisance Regression. "
+        msg2file "# =========================================================="
 
         if [[ ${flags_NuisanceReg} == "AROMA" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then
 
             if ${AROMA_exists}; then
 
-                log "WARNING -- Skipping AROMA. User has indicated that AROMA output already exists"
+                log "WARNING -- Skipping AROMA. User has indicated that AROMA output already exists."
 
             else
 
@@ -276,6 +292,7 @@ log "fMRI_A"
         log "WARNING Skipping NuisanceReg. Please set flags_EPI_NuisanceReg=true to run Nuisance Regression"
     fi
 
+######################################################################################
     if ${flags_EPI_PhysiolReg}; then
 
         cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_PhysiolReg.sh"
@@ -292,28 +309,48 @@ log "fMRI_A"
         log "WARNING Skipping Physiological Regressors. Please set flags_EPI_PhysiolReg=true to run Phys Regression"
     fi   
 
+######################################################################################
+    if ${flags_EPI_GS}; then  
 
-
-    if ${flags_EPI_regressOthers}; then  
-        ### Always run regressOthers - it computes Global signal for QC purposes, but won't be applied ot regression
-        echo "Other Regressors"
-
-        cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_regressOthers.sh"
+        cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_regressGS.sh"
         echo $cmd
         eval $cmd
         exitcode=$?
 
         if [[ ${exitcode} -ne 0 ]] ; then
-            echoerr "problem at fMRI_A_EPI_regressOthers. exiting."
+            echoerr "problem at fMRI_A_EPI_regressGS. Exiting."
             exit 1
         fi  
-    fi  
+    fi
+
+######################################################################################
+    if ${flags_EPI_FreqFilt}; then  
 
 
+        if [[ ${flags_FreqFilt} == "DCT" ]]; then
 
+            cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_regressDCT.sh"
+            echo $cmd
+            eval $cmd
+            exitcode=$?
+
+            if [[ ${exitcode} -ne 0 ]] ; then
+                echoerr "problem at fMRI_A_EPI_regressDCT. exiting."
+                exit 1
+            fi                
+            
+        elif [[ ${flags_FreqFilt} == "BPF" ]]; then
+
+            log "Bandpass filter will be applied to residuals in ApplyReg."
+
+        fi 
+
+    else
+        log "WARNING Skipping Frequency Filters. Please set flags_EPI_FreqFilt=true to run frequency filtering"
+    fi
+    
+######################################################################################
     if ${flags_EPI_ApplyReg}; then  
-
-        echo "APPLYING REGRESSORS"
 
         cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_ApplyReg.sh"
         echo $cmd
@@ -325,82 +362,35 @@ log "fMRI_A"
         if [[ ${exitcode} -ne 0 ]] ; then
             echoerr "problem at fMRI_A_EPI_ApplyReg. exiting."
             exit 1
-        fi  
-
-    fi  
-
-    # now we can update nR
-    if ${flags_EPI_DVARS}; then
-        export nR="${nR}_DVARS"
-    fi
-
-
-    if ${flags_EPI_postReg}; then  
-
-        echo "Post Regression Nuisance Removal"
-
-
-        if ${flags_EPI_DemeanDetrend}; then
-
-            cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_DemeanDetrend.sh"
-            echo $cmd
-            eval $cmd
-            exitcode=$?
-
-            if [[ ${exitcode} -ne 0 ]] ; then
-                echoerr "problem at fMRI_A_EPI_DemeanDetrend. exiting."
-                exit 1
-            fi  
-        fi             
-
-        if ${flags_EPI_BandPass}; then
-
-            cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_BandPass.sh"
-            echo $cmd
-            eval $cmd
-            exitcode=$?
-
-            if [[ ${exitcode} -ne 0 ]] ; then
-                echoerr "problem at fMRI_A_EPI_BandPass. exiting."
-                exit 1
-            fi  
         fi 
-
-        if ${configs_EPI_scrub}; then
-
-            cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_Scrub.sh"
-            echo $cmd
-            eval $cmd
-            exitcode=$?
-
-            if [[ ${exitcode} -ne 0 ]] ; then
-                echoerr "problem at fMRI_A_EPI_Scrub. exiting."
-                exit 1
-            fi  
-        fi              
-
-    fi      
-
-    # now we can create a post-reg nR
-    post_nR="${nR}"
-
-    if ${flags_EPI_DemeanDetrend}; then
-        post_nR="${post_nR}_dmdt"
-    fi
-
-    # now we can update post-reg nR
-    if ${flags_EPI_BandPass}; then
-        post_nR="${post_nR}_butter"
-    fi   
-
-    # now we can update post-reg nR
-    if ${configs_EPI_scrub}; then
-        post_nR="${post_nR}_scrubbed"
     fi  
 
-    export post_nR                
+######################################################################################
+     
+    if ${flags_EPI_scrub}; then
 
+        cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_Scrub.sh"
+        echo $cmd
+        eval $cmd
+        exitcode=$?
+
+        if [[ ${exitcode} -ne 0 ]] ; then
+            echoerr "problem at fMRI_A_EPI_Scrub. exiting."
+            exit 1
+        fi  
+    fi 
+
+######################################################################################
     if ${flags_EPI_ROIs}; then
+
+        
+        if ${configs_EPI_despike}; then
+            export post_nR="${nR}_despiked"
+        elif ${flags_EPI_scrub}; then
+            export post_nR="${nR}_scrubbed"
+        else
+            export post_nR="${nR}"
+        fi
 
         cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_ROIs.sh"
         echo $cmd
@@ -413,6 +403,9 @@ log "fMRI_A"
         fi  
     fi 
 
+
+
+######################################################################################
     if ${flags_EPI_ReHo}; then
 
         cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_ReHo.sh"
@@ -439,5 +432,9 @@ log "fMRI_A"
         fi  
     fi 
 
+    export post_nR=""
 
+done
 
+module unload fsl
+module unload python

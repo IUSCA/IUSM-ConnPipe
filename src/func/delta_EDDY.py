@@ -3,7 +3,7 @@ import os
 import nibabel as nib
 import numpy as np
 
-path_DWI_EDDY=os.environ['path_DWI_EDDY']
+path_DWI_EDDY=os.environ['EDDYpath']
 print('path_DWI_EDDY',path_DWI_EDDY)
 DWIpath=os.environ['DWIpath']
 print('DWIpath',DWIpath)
@@ -15,12 +15,12 @@ print('dwifile',dwifile)
 #fname=''.join([DWIpath,'/',dwifile,'.nii.gz'])
 print('DWI file is:', dwifile)
 DWI=nib.load(dwifile)  
-DWI_vol = DWI.get_data()
+DWI_vol = np.asanarray(DWI.dataobj)
 
 fname=''.join([fileOut,'.nii.gz'])
 print('corrDWI file is:', fname)
 corrDWI=nib.load(fname)
-corrDWI_vol = corrDWI.get_data()
+corrDWI_vol = np.asanarry(corrDWI.dataobj)
 
 corrDWI_vol = corrDWI_vol - DWI_vol
 

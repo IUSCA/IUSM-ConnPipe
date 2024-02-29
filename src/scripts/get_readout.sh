@@ -79,7 +79,7 @@ if [[ -f "${jsonfile}" ]]; then
     # find TotalReadoutTime
     SEreadOutTime=`cat ${jsonfile} | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TotalReadoutTime}`
     
-    if [[ ${modality} == "DWI" ]]; then
+    if [[ ${modality} == "dwi" ]]; then
         AccF=`cat ${jsonfile} | ${EXEDIR}/src/func/jq-linux64 '.ParallelReductionFactorInPlane'`
         log2file "ParallelReductionFactorInPlane (AccF) extracted from ${jsonfile} is - ${AccF}"
         if [ -z "${AccF}" ] || [[ "${AccF}" -eq "null" ]]; then
@@ -108,7 +108,7 @@ if [[ -f "${jsonfile}" ]]; then
         if [[ "${modality}" == "DWI" ]]; then
             AccF=`cat ${jsonfile} | ${EXEDIR}/src/func/jq-linux64 '.ParallelReductionFactorInPlane'`
             log2file "ParallelReductionFactorInPlane (AccF) is - ${AccF}"
-        elif [[ "${modality}" == "EPI" ]]; then
+        elif [[ "${modality}" == "func" ]]; then
             AccF=1
             log2file "AccF is - ${AccF}"
         fi 
@@ -169,7 +169,7 @@ if [ -z ${SEreadOutTime} ]; then
             SEreadOutTime=`cat ${temp_dir}/${tempfile}.json | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TotalReadoutTime}`
             log2file "SEreadOutTime extracted from ${temp_dir}/${tempfile}.json file is ${SEreadOutTime}"
             
-            if [[ ${modality} == "DWI" ]]; then
+            if [[ ${modality} == "dwi" ]]; then
                 AccF=`cat ${temp_dir}/${tempfile}.json | ${EXEDIR}/src/func/jq-linux64 '.ParallelReductionFactorInPlane'`
                 log2file "ParallelReductionFactorInPlane (AccF) extracted from ${temp_dir}/${tempfile}.json is - ${AccF}"
                 if [ -z "${AccF}" ] || [[ "${AccF}" -eq "null" ]]; then

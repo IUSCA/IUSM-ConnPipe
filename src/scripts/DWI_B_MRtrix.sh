@@ -2,7 +2,6 @@
 #
 # Script: f_preproc_DWI.m adaptaion from Matlab script 
 #
-
 ###############################################################################
 #
 # Environment set up
@@ -15,14 +14,9 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ############################################################################### 
 
-
-
-############################################################################### 
-
-echo "=================================="
-echo "2. MRtrix Streamline Tractography"
-echo "=================================="
-
+msg2file "=================================="
+msg2file "2. MRtrix Streamline Tractography"
+msg2file "=================================="
 
 if [[ ! -d "${path_DWI_mrtrix}" ]]; then
     cmd="mkdir ${path_DWI_mrtrix}"
@@ -31,12 +25,13 @@ if [[ ! -d "${path_DWI_mrtrix}" ]]; then
 fi 
 
 # check paths
-log "path_DWI_EDDY is ${path_DWI_EDDY}"
-log "path_DWI_DTIfit is ${path_DWI_DTIfit}"
-log "path_DWI_mrtrix is ${path_DWI_mrtrix}"
+log --no-datetime "path_DWI_EDDY is ${path_DWI_EDDY}"
+log --no-datetime "path_DWI_DTIfit is ${path_DWI_DTIfit}"
+log --no-datetime "path_DWI_mrtrix is ${path_DWI_mrtrix}"
 
-## Response Function Estimation
-echo "2.1 Estimating Response function"
+################################################################################
+  ## Response Function Estimation
+log "2.1 Estimating Response function"
 
 voxelsOUT="${path_DWI_mrtrix}/csd_selected_voxels.nii.gz"
 maskIN="${path_DWI_EDDY}/b0_brain_mask.nii.gz"
@@ -53,11 +48,12 @@ cmd="dwi2response tournier \
     -force -mask ${maskIN} \
     -nthreads ${configs_DWI_nthreads} \
     -fslgrad ${bvecIN} ${bvalIN} ${dataIN} ${fileResponse}"
-log $cmd
-eval $cmd 
+log --no-datetime $cmd
+#eval $cmd 
 
-## constrained shperical deconvolution
-echo "2.2 Constrained Spherical Deconvolution"
+################################################################################
+  ## constrained shperical deconvolution
+log "2.2 Constrained Spherical Deconvolution"
 
 fileFOD="${path_DWI_mrtrix}/csd_fod.mif"
     # # !!! CONFIG NEEDS ADDED:
@@ -67,38 +63,54 @@ cmd="dwi2fod csd -force \
     -fslgrad ${bvecIN} ${bvalIN} \
     -nthreads ${configs_DWI_nthreads} \
     -mask ${maskIN} ${dataIN} ${fileResponse} ${fileFOD}"
-log $cmd
-eval $cmd 
+log --no-datetime $cmd
+#eval $cmd 
 
-## ACT tissue-type volume generation
-echo "2.3 Anatomically Constrained Tractography"
+################################################################################
+  ## ACT tissue-type volume generation
+log "2.3 Anatomically Constrained Tractography"
 
 brainIN="${DWIpath}/rT1_dof6.nii.gz"
 file5tt="${path_DWI_mrtrix}/fsl5tt.nii.gz"
-
     # act needs distortion corrected data; should work with no dist corr,
     # but with nonlinear reg, but I havent tried it.
 cmd="5ttgen fsl -force -nthreads ${configs_DWI_nthreads} -premasked ${brainIN} ${file5tt}"
-log $cmd
-eval $cmd 
+log --no-datetime $cmd
+#eval $cmd 
 
-## generate streamlines
-echo "2.4 Generating Streamlines"
+################################################################################
+  ## generate streamlines
+log "2.4 Generating Streamlines"
+
 #configs_DWI_step_sizes=(0.625 1.25 1.875 2.5 )
-configs_DWI_step_sizes=(1 1.5 2)
-configs_DWI_max_angles=(30 45 60)
+#configs_DWI_step_sizes=(1 1.5 2)
+#configs_DWI_max_angles=(30 45 60)
 fileStreamlines="${path_DWI_mrtrix}/combo_streamlines.tck"
+
+#while read -r nmbr; do
+#    step_sizes+=("$nmbr")
+#done <<< "$configs_DWI_step_sizes"
+
+#while read -r nmbr; do
+#    max_angles+=("$nmbr")
+#done <<< "$configs_DWI_max_angles"
+
+IFS=' ' read -r -a step_sizes <<< "$configs_DWI_step_sizes"
+IFS=' ' read -r -a max_angles <<< "$configs_DWI_max_angles"
+
+echo $step_sizes
+echo $max_angles
 
 if [[ ! -e ${fileStreamlines} ]] ; then 
     combo_list="" 
     echo $fileStreamlines
 
-    for (( sDx=0 ; sDx<${#configs_DWI_step_sizes[@]} ; sDx++ )) ; do
+    for (( sDx=0 ; sDx<${#step_sizes[@]} ; sDx++ )) ; do
        # echo ${configs_DWI_step_sizes[sDx]}
-        for (( mDx=0 ; mDx<${#configs_DWI_max_angles[@]} ; mDx++ )) ; do  
+        for (( mDx=0 ; mDx<${#max_angles[@]} ; mDx++ )) ; do  
           #  echo ${configs_DWI_max_angles[mDx]}  
-            l_step=${configs_DWI_step_sizes[$sDx]}
-            l_angle=${configs_DWI_max_angles[$mDx]}
+            l_step="${step_sizes[$sDx]}"
+            l_angle="${max_angles[$mDx]}"
 
             echo "$sDx $mDx"
             echo "running step size: $l_step, angle size: $l_angle"
@@ -175,14 +187,14 @@ eval "rm ${combo_list}"
 ## filter streamlines
 echo "2.5 Running SIFT Filtering"
 
-fileFiltStreamlines="${path_DWI_mrtrix}/1m_sift_streamlines.tck"
+fileFiltStreamlines="${path_DWI_mrtrix}/${configs_DWI_sift_term_number}_sift_streamlines.tck"
     # For SIFT ACT is pretty much a requirement, so if ACT cant be done, then 
     # sift shouldnt be done and tckgen can be done with less streamlines.
 cmd="tcksift \
      -force \
      -act ${file5tt} \
      -nthreads ${configs_DWI_nthreads} \
-	 -term_number 1M \
+	 -term_number ${configs_DWI_sift_term_number} \
     ${fileStreamlines} ${fileFOD} ${fileFiltStreamlines}"
 log $cmd
 eval $cmd 

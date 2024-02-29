@@ -77,33 +77,70 @@ checkisdir() {
 ################################################################################
 ## log message
 log() {
+    local suppressDateTime=false
+    local dateTime=`date`
+    
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            --no-datetime)
+                suppressDateTime=true
+                shift
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
 
     local msg=($(echo "$@"))
-    local dateTime=`date`
-    echo -e ${CYAN_}
-    echo "# "$dateTime " --->"
-    echo -e ${NC_}     
+
+    if [ "$suppressDateTime" = false ]; then
+        echo -e ${CYAN_}
+        echo "# "$dateTime " --->"
+        echo -e ${NC_}
+    fi
+
     echo "${msg[@]}"
     echo -e ${NC_}
 
 	# echo "### $dateTime -" >> ${EXEDIR}/pipeline.log
     # echo "${msg[@]}" >> ${EXEDIR}/pipeline.log
-    echo "### $dateTime --->" >> ${logfile_name}.log
+    if [ "$suppressDateTime" = false ]; then
+        echo "### $dateTime --->" >> ${logfile_name}.log
+    fi
     echo "${msg[@]}" >> ${logfile_name}.log
 }
 
 ## QC messages
 qc() {
-
-    local msg=($(echo "$@"))
+    local suppressDateTime=false
     local dateTime=`date`
-    echo -e ${CYAN_}
-    echo "# "$dateTime "--->"
-    echo -e ${NC_}     
+    
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            --no-datetime)
+                suppressDateTime=true
+                shift
+                ;;
+            *)
+                break
+                ;;
+        esac
+    done
+    local msg=($(echo "$@"))
+    
+    if [ "$suppressDateTime" = false ]; then
+        echo -e ${CYAN_}
+        echo "# "$dateTime " --->"
+        echo -e ${NC_}
+    fi
+
     echo "${msg[@]}"
     echo -e ${NC_}
 
-    echo "### $dateTime -" >> ${QCfile_name}.log
+    if [ "$suppressDateTime" = false ]; then
+        echo "### $dateTime -" >> ${QCfile_name}.log
+    fi
     echo "${msg[@]}" >> ${QCfile_name}.log
 }
 

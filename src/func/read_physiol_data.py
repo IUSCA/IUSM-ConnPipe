@@ -3,7 +3,7 @@ import os
 import numpy as np
 import nibabel as nib
 
-EPIpath=os.environ['EPIpath']
+EPIpath=os.environ['EPIrun_out']
 
 # read brain mask
 fname = ''.join([EPIpath,'/rT1_brain_mask.nii.gz'])

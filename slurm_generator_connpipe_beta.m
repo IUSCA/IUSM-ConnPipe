@@ -9,9 +9,9 @@ email = 'echumin@iu.edu';
 acct = 'r00216'; % this is Jenya's carbonate connproc acct
 
 %% resources requested:
-ppn = '1';
-walltime = '1:00:00';
-vmem = '4G';
+ppn = '8';
+walltime = '6:00:00';
+vmem = '12G';
 
 %% data
 % path to bids project
@@ -19,7 +19,7 @@ path2deriv='/N/project/kbase-imaging/kbase1-bids/derivatives/connpipe';
 % path to raw data
 path2data='/N/project/kbase-imaging/kbase1-bids/raw';
 % number of subjects per job
-nS = 60; 
+nS = 2; 
 
 % where to write job, log, and error files
 batch_path = '/N/project/kbase-imaging/connpipe_job_test';
@@ -29,30 +29,28 @@ batch_path = '/N/project/kbase-imaging/connpipe_job_test';
 connPipe = '/N/project/kbase-imaging/connpipe_job_test/IUSM-ConnPipe';
 
 % config file
-config = '/N/project/kbase-imaging/connpipe_job_test/hpc_config_struct_hmp_acomp_GS_v4.sh';
+config = '/N/project/kbase-imaging/connpipe_job_test/hpc_config_s2_dwiA_REGon.sh';
 
 %% building subject list from raw
-subjALL = struct2cell(dir([path2data '/sub-*']));
-%load('subjfix.mat')
-%subjALL=subjfix';
+% subjALL = struct2cell(dir([path2data '/sub-*']));
+subjALL = subj_runREGon{2}';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% just for me
 % filter to only subjects with specific visit data
-subjV=cell.empty;
-for su=1:length(subjALL)
-    path = [path2deriv '/' subjALL{1,su} '/ses-v4'];
-    %path = [subjALL{2,su} '/' subjALL{1,su} '/ses-v0'];
-    if exist(path,'dir')
-        subjV(1,end+1)=subjALL(1,su);
-    end
-    clear path
-end
-subjALL=subjV; clear subjV
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% subjV=cell.empty;
+% for su=1:length(subjALL)
+%     path = [path2deriv '/' subjALL{1,su} '/ses-v0'];
+%     if exist(path,'dir')
+%         subjV(1,end+1)=subjALL(1,su);
+%     end
+%     clear path
+% end
+% subjALL=subjV; clear subjV
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 tS=length(subjALL); % total subjects
 nJ = ceil(tS/nS);   % number of jobs
-rt='struct-HmpAcGS-v4';
+rt='dwi_regon_v2';
 
 for j = 1:nJ
     sS=(j*nS)-nS+1; % starting subject
@@ -83,7 +81,7 @@ for j = 1:nJ
     fprintf(fidslurm, ['#SBATCH --mem=' vmem '\n']);
 
     fprintf(fidslurm, ['cd ' connPipe '\n\n']);        
-    fprintf(fidslurm, ['./hpc_main.sh ' config ' ' subj2run]);
+    fprintf(fidslurm, ['./hpc_main_kbase.sh ' config ' ' subj2run]); %!!!!!!!!!!!!!!!!
     fclose(fidslurm);
 end
 

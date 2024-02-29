@@ -1,9 +1,7 @@
-
 #!/bin/bash
 #
 # Script: DWI_A adaptaion from Matlab script 
 #
-
 ###############################################################################
 #
 # Environment set up
@@ -15,350 +13,269 @@ shopt -s nullglob # No-match globbing expands to null
 source ${EXEDIR}/src/func/bash_funcs.sh
 
 ###############################################################################
+# Load IU Quartz supercomuter modules
+module load fsl/6.0.5.2
+module load python/3.11.4 
 
-function read_bvals_bvecs() {
-path="$1" python - <<END
-import os
-from dipy.io import read_bvals_bvecs
-import nibabel as nib
-import numpy as np
-
-p=os.environ['path']
-fileBval = os.environ['fileBval']
-# print("fileBval is ",fileBval)
-fileBvec = os.environ['fileBvec']
-# print("fileBvec is ",fileBvec)
-fileNifti = os.environ['fileNifti']
-# print("fileNifti is ",fileNifti)
-
-pbval = ''.join([p,'/0_DWI.bval'])
-pbvec = ''.join([p,'/0_DWI.bvec'])
-
-bvals, bvecs = read_bvals_bvecs(fileBval,fileBvec)
-# print("bvals size", bvals.shape)
-# print("bvecs size", bvecs.shape)
-
-if bvals.shape[0] > 1:
-    # vector is horizontal, needs to be transposed
-    bvals = bvals.reshape((1,bvals.size)) 
-    # print("bvals size", bvals.shape)
-
-if bvecs.shape[0] > 3:
-    # vector is horizontal, needs to be transposed
-    bvecs = bvecs.T 
-    # print("bvecs size", bvecs.shape)
-
-#DWIp=''.join([p,'/',fileNifti,'.gz'])
-DWI=nib.load(fileNifti)  
-
-# print('bvals.shape[1] ',bvals.shape[1])
-# print('bvecs.shape[1] ',bvecs.shape[1])
-# print('DWI.shape[3] ',DWI.shape[3])
-
-if bvals.shape[1] == DWI.shape[3] and bvecs.shape[1] == DWI.shape[3]:
-    np.savetxt(pbval,bvals,delimiter='\n',fmt='%u')
-    np.savetxt(pbvec,bvecs.T,delimiter='\t',fmt='%f')
-    print('1')
-else:
-    print('0')
-
-END
-}
-
-###############################################################################
+# FSL
+# set FSL env vars for fsl_sub.IU or fsl_sub.orig
+if [[ -z ${FSLDIR} ]] ; then
+	echoerr "FSLDIR not set"
+	exit 1
+fi
+############################################################################### 
 
 if [[ -d ${DWIpath_raw} ]]; then
 
     log "DWI_A processing for subject ${SUBJ}"
-    log "${DWIpath_raw} has been defined by user"
+    log "${DWIpath_raw} "
 
-    # count the number of nii images in dir
-    export nscanmax=`ls ${DWIpath_raw}/*nii* | wc -l`
-
-    # Calculate readout time
-    if [[ ! -z "${configs_DWI_readout}" ]]
-    then  
-        if [[ -d "${DWIpath_raw}" ]]
-		then
-	    	if [[ "$nscanmax" -eq 1 ]]
-	    	then
-				jsonfile=`ls ${DWIpath_raw}/*json`
-                # find TotalReadoutTime
-    			export configs_DWI_readout=`cat ${jsonfile} | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TotalReadoutTime}`
-	    	elif [[ "$nscanmax" > 1 ]]
-	    	then
-				jsonfile1=`ls ${DWIpath_raw}/*run-1_dwi.json`
-				SEreadOutTime1=`cat ${jsonfile1} | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TotalReadoutTime}`
-				jsonfile2=`ls ${DWIpath_raw}/*run-1_dwi.json`
-				SEreadOutTime2=`cat ${jsonfile2} | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_TotalReadoutTime}`
-				# ADD THE CHECK IF TWO ARE EQUAL, IF THEY ARE NOT ITS NOT A DEALBRACKER, THEY JUST BOTH NEED TO BE
-				# CARRIED FORWARD INTO TOPUP
-				# RIGHT NOW DEFAULTING TO FIRST VALUE
-				export configs_DWI_readout=${SEreadOutTime1}  		
-	    	else
-				log "WARNING: No *nii* files in: ${DWIpath_raw}"
-				exit 1 
-	    	fi          
-        else
-			log "WARNING ${DWIpath_raw} not found!. Exiting..."
-			exit 1 
-		fi
+    echo "Checking for phase encoding AP-PA series"
+    # Generate list of EPI scan directories
+    declare -a dwiList
+    while IFS= read -r -d $'\0' REPLY; do 
+        dwiList+=( "$REPLY" )
+    done < <(find ${DWIpath_raw} -maxdepth 1 -type f -iname "*_dir-*nii.gz" -print0 | sort -z)
+    
+    if [ ${#dwiList[@]} -eq 0 ]; then 
+        echo "No raw dwi files with _dir- tag found for subject $SUBJ. Check that dir- Phase Encoding is in bids naming."
+        exit 1
+    elif [ ${#dwiList[@]} -gt 1 ]; then
+        echo "Multiple raw dwi runs found for subject $SUBJ."
+        echo "There are ${#dwiList[@]} DWI-series "
     else
- 		echo "configs_DWI_readout -- ${configs_DWI_readout}"     
-    fi 
-                
+        echo "Single raw dwi with _dir tag found for subject $SUBJ."
+        echo "There are ${#dwiList[@]} DWI-series "
+    fi
+   
+    # Check phase encoding and volume counts
+    log "Checking DWI data..."
+    for ((i=0; i<${#dwiList[@]}; i++)); do
+        log --no-datetime "File: ${dwiList[$i]}"
 
-    for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
-#-------------------------------------------------------------------------------------------#
-# THIS WHOLE SECTION WILL NEED TO BE RE-DONE TO BE BIDS FORMAT
-# DICOMS WILL BE IN A 'SOURCE' DIRECTORY WITHIN THE PROJECT DIRECTORY
-# DICMOS WILL BE READ FROM THERE AND COPIED INTO THE 'RAW' DIRECTORY IN BIDS FORMAT 
-# OR SOMETHING LIKE THAT
-
-       # if [[ "$nscan" -eq 1 ]]; then 
-           # path_DWIdcm=${DWIpath_raw}
-        #    fileNii=${DWI1dcm_niifile}
-       # elif [[ "$nscan" -eq 2 ]]; then 
-           # path_DWIdcm=${DWIdir2}
-        #    fileNii=${DWI2dcm_niifile}
-       # fi 
+        if [[ "${dwiList[$i]}" == *"_acq-"* ]]; then
+            acqtype=$(echo "${dwiList[$i]}" | grep -oP '_acq-\K[^_]+')
+            log --no-datetime " acq- tag in file: ${acqtype}"
             
-      #  log "path_DWIdcm is -- ${path_DWIdcm}"
-		if [[ "$nscanmax" -eq 1 ]]
-    	then
-			export fileNifti=`ls ${DWIpath_raw}/*_dwi.nii*`
-		    export fileJson=`ls ${DWIpath_raw}/*_dwi.json`
-		    export fileBval=`ls ${DWIpath_raw}/*_dwi.bval`
-		    export fileBvec=`ls ${DWIpath_raw}/*_dwi.bvec`
-		else
-			if [[ "$nscan" -eq 1 ]]
-			then 
-				export fileNifti=`ls ${DWIpath_raw}/*run-1_dwi.nii*`
-				export fileJson=`ls ${DWIpath_raw}/*run-1_dwi.json`
-				export fileBval=`ls ${DWIpath_raw}/*run-1_dwi.bval`
-				export fileBvec=`ls ${DWIpath_raw}/*run-1_dwi.bvec`
-			elif [[ "$nscan" -eq 2 ]]
-			then 
-				export fileNifti=`ls ${DWIpath_raw}/*run-2_dwi.nii*`
-				export fileJson=`ls ${DWIpath_raw}/*run-2_dwi.json`
-				export fileBval=`ls ${DWIpath_raw}/*run-2_dwi.bval`
-				export fileBvec=`ls ${DWIpath_raw}/*run-2_dwi.bvec`
-			fi
-		fi 
+            pedir=$(echo "${dwiList[$i]}" | grep -oP '_dir-\K[^_]+')
+            log --no-datetime " dir- tag in file: ${pedir}"
 
-        #### Convert dcm2nii
-        if ${flags_DWI_dcm2niix}; then
-
-            echo "=================================="
-            echo "0. Dicom to NIFTI import"
-            echo "=================================="
-
-            # Identify DICOMs
-            declare -a dicom_files
-            while IFS= read -r -d $'\0' dicomfile; do 
-                dicom_files+=( "$dicomfile" )
-            done < $(find ${path_DWIdcm} -iname "*.${configs_dcmFiles}" -print0 | sort -z)
-
-            if [ ${#dicom_files[@]} -eq 0 ]; then 
-
-                echo "No dicom (.${configs_dcmFiles}) images found."
-                echo "Please specify the correct file extension of dicom files by setting the configs_dcmFiles flag in the config file"
-                echo "Skipping further analysis"
-                exit 1
-
+            if [[ "${acqtype}" == "b0" ]] && [[ $pedir == "PA" ]]; then
+                b0PA="${dwiList[$i]}"
+                log --no-datetime "File set as: b0_PA"
+                unset acqtype
+                unset pedir
             else
+                log --no-datetime "File NOT set." 
+                unset acqtype
+                unset pedir
+            fi
 
-                echo "There are ${#dicom_files[@]} dicom files in ${path_DWIdcm} "
+        else
+            log --no-datetime " No acq- tag in file name."
 
-                # Remove any existing .nii/.nii.gz images from dicom directories.
-                rm -rf ${DWIpath}/${fileNii}*
-                log "rm -rf ${fileNii}"
-                # Create nifti bvec and bval files.
-                fileLog="${DWIpath}/dcm2niix.log"
-                cmd="dcm2niix -f ${fileNii} -o ${DWIpath} -v y ${path_DWIdcm} > ${fileLog}"
-                log $cmd
-                eval $cmd 
-                # gzip nifti image
-                cmd="gzip ${DWIpath}/${fileNifti}"
-                log $cmd 
-                eval $cmd 
+            pedir=$(echo "${dwiList[$i]}" | grep -oP '_dir-\K[^_]+')
+            log --no-datetime " dir- tag in file: ${pedir}"
+
+            if [[ $pedir == "PA" ]]; then
+                PA="${dwiList[$i]}"
+                log --no-datetime "File set as: PA"
+                unset acqtype
+                unset pedir
+            elif [[ $pedir == "AP" ]]; then
+                AP="${dwiList[$i]}"
+                log --no-datetime "File set as: AP"
+                unset acqtype
+                unset pedir
+            else
+                log --no-datetime "File NOT set. Unrecognized phase encoding." 
+                unset acqtype
+                unset pedir
             fi
         fi
-# END OF DICOM IMPORT
-#--------------------------------------------------------------------------------------------------------#
-# THIS STUFF WILL ALSO BE REDONE, WITH SIEMENS ITS SAFE TO TRUST DCM2NIIX READOUT 
-# THIS WILL NEED TO BE CONFIRMED FOR ge
-        # Check if the readout time is consistent with the readout-time contained in the json file
-  #      dcm2niix_json="${DWIpath}/${fileJson}"
-
-        if [[ -e ${fileJson} ]]; then
-#
-#           TotalReadoutTime=`cat ${dcm2niix_json} | ${EXEDIR}/src/func/jq-linux64 '.TotalReadoutTime'`            
-#            echo "TotalReadoutTime from ${dcm2niix_json} is ${TotalReadoutTime}"
-#            AccF=`cat ${dcm2niix_json} | ${EXEDIR}/src/func/jq-linux64 '.ParallelReductionFactorInPlane'`
-#            echo "ParallelReductionFactorInPlane from ${dcm2niix_json} is ${AccF}"
-#            if [ -z "${AccF}" ] || [[ "${AccF}" -eq "null" ]]; then
-#                AccF=1
-#            fi 
-#            TotalReadoutTime=$(bc <<< "scale=8 ; ${TotalReadoutTime} / ${AccF}")
-#            echo "TotalReadoutTime/AccF = ${TotalReadoutTime}"
-#
-#            diff=$(echo "$TotalReadoutTime - $configs_DWI_readout" | bc)
-#
-#            echo "diff = TotalReadoutTime - configs_DWI_readout = $diff"
-#
-#            if [[ $(bc <<< "$diff >= 0.1") -eq 1 ]] || [[ $(bc <<< "$diff <= -0.1") -eq 1 ]]; then
-#                log "ERROR Calculated readout time not consistent with readout time provided by dcm2niix"
-#                exit 1
-#            fi 
-#
-            PhaseEncodingDirection=`cat ${fileJson} | ${EXEDIR}/src/func/jq-linux64 '.PhaseEncodingDirection'`
-            echo "PhaseEncodingDirection from ${fileJson} is ${PhaseEncodingDirection}"            
-
-            if [[ "${PhaseEncodingDirection}" == '"j-"' ]]; then
-                if [[ "${nscan}" -eq "1" ]]; then 
-                    DWIdcm_phase_1="0 -1 0 ${configs_DWI_readout}"
-                    log "${DWIdcm_phase_1}"
-                elif [[ "${nscan}" -eq "2" ]]; then 
-                    DWIdcm_phase_2="0 -1 0 ${configs_DWI_readout}"
-                    log "${DWIdcm_phase_2}"
-                fi 
-            elif [[ "${PhaseEncodingDirection}" == '"j"' ]]; then
-                if [[ "${nscan}" -eq "1" ]]; then 
-                    DWIdcm_phase_1="0 1 0 ${configs_DWI_readout}"
-                    log "${DWIdcm_phase_1}"
-                elif [[ "${nscan}" -eq "2" ]]; then 
-                    DWIdcm_phase_2="0 1 0 ${configs_DWI_readout}"
-                    log "${DWIdcm_phase_2}"
-                fi 
-            else 
-                log "WARNING PhaseEncodingDirection not implemented or unknown"
-            fi 
-            
-            export DWIdcm_phase_1
-            export DWIdcm_phase_2
-
-
-           DWIdcm_SliceTiming=`cat ${fileJson} | ${EXEDIR}/src/func/jq-linux64 '.SliceTiming'`
-            
-            echo "SliceTiming from ${fileJson} is ${DWIdcm_SliceTiming}"            
-
-        fi  
-
-        echo "=================================="
-        echo "0.5. Bvec & Bval File Format"
-        echo "=================================="
-
-        if ${configs_DWI_DICOMS2_B0only} && [[ "$nscan" -eq 2 ]]; then
-            # # check that no bvec and bval files were generated for DICOMS2
-            # if [[ ! -e "${DWIpath}/${fileBval}" ]] && [[ ! -e "${DWIpath}/${fileBvec}" ]]; then
-
-                log "Creating dummy Bvec and/or Bval files ${DWIpath}/${fileBval} and ${DWIpath}/${fileBvec}"
-                # find the number of B0's as the 4th dimension
-                numB0=$(fslinfo ${DWIpath}/${fileNifti}.gz | awk '/^dim4/' | awk '{split($0,a," "); {print a[2]}}')
-                log "There is/are ${numB0} B0 in ${DWIpath}/${fileNifti}.gz"
-
-                # create dummy B0 files
-                dummy_bvec=`echo -e '0 \t 0 \t  0 \t'` 
-                for ((k=0; k<${numB0}; k++)); do
-                    echo ${dummy_bvec} >> ${DWIpath}/${fileBvec}
-                    echo "0" >> ${DWIpath}/${fileBval}
-                done
-
-            # else  
-            #     log "WARNING. Bvec and/or Bval files ${DWIpath}/${fileBval} and ${DWIpath}/${fileBvec} already exist."
-            #     log "WARNING. Please check whether thse files need to be delted, or if configs_DWI_DICOMS2_B0only should be set to 'false'. Exiting"   
-            #     exit 1      
-            # fi 
-
-        else  
-
-            if [[ ! -e "${fileBval}" ]] && [[ ! -e "${fileBvec}" ]]; then
-                log "WARNING Bvec and/or Bval files do not exist. Skipping further analyses"
-                exit 1
-            else
-                out=$(read_bvals_bvecs ${DWIpath})
-                log "out is ${out}"
-				export fileBval="${DWIpath}/0_DWI.bval"
-				export fileBvec="${DWIpath}/0_DWI.bvec"
-                if [[ $out -eq 1 ]]; then
-                    log "# Bvec and Bval files written in column format with tab delimiter"
-                else
-                    log "#WARNING Bvec and/or Bval values do not match number of volumes. Exiting Analysis"
-					exit 1
-                fi 
-            fi 
-
-        fi
-
     done
 
-    if [[ "${nscanmax}" -eq "1" ]]; then 
-        log "Single phase direction"
-    elif [[ "${nscanmax}" -eq "2" ]]; then 
-        log "Two phase directions"
-        #### TO BE DEVELOPED LATER #######
-        # fileIn1="${DWIpath}/0_DWI_ph1.nii.gz"
-        # fileIn2="${DWIpath}/0_DWI_ph2.nii.gz"
-        # fileOut="${DWIpath}/0_DWI"
+    if [ -n "$AP" ]; then
+        FileRaw="${AP%???????}"
 
-        # if [[ -f ${fileIn1} ]] && [[ -f ${fileIn2} ]]; then 
-        #     rm -rf ${DWIpath}/0_DWI.nii*
-        #     log="rm -rf ${DWIpath}/0_DWI.nii"
+        PhaseEncodingDirection=`cat ${FileRaw}.json | ${EXEDIR}/src/func/jq-linux64 '.PhaseEncodingDirection'`
+        echo "PhaseEncodingDirection from ${FileRaw}.json is ${PhaseEncodingDirection}"  
 
-        #     cmd="fslmerge -t ${fileOut} ${fileIn1} ${fileIn2}"
-        #     log $cmd
-        #     eval $cmd 
-        # else 
-        #     log "WARNING  ${fileIn1} and/or ${fileIn2} not found. Exiting.."
-        #     exit 1
-        # fi 
-    fi 
+            if [[ "${PhaseEncodingDirection}" == '"j-"' ]]; then
+                TotalReadoutTimeAP=`cat ${FileRaw}.json | ${EXEDIR}/src/func/jq-linux64 '.TotalReadoutTime'`
+                echo "TotalReadoutTime from ${FileRaw}.json is ${TotalReadoutTimeAP}"
+                export APline="0 -1 0 ${TotalReadoutTimeAP}"   
+            else
+                log "Mismatch between dir- and json coded phase encoding. Double check data. Exiting..."
+                exit 1
+            fi        
 
-    if ${flags_DWI_topup}; then
-# TOPUP NEEDS TO BE EDITED FOR BIDS
-        cmd="${EXEDIR}/src/scripts/DWI_A_topup.sh"
-        echo $cmd
-        eval $cmd
-        exitcode=$?
+        if [ -n "$PA" ]; then
+            FileRawPA="${PA%???????}"
+            export rtag=1
 
-        if [[ ${exitcode} -ne 0 ]] ; then
-            echoerr "problem at DWI_A_topup. exiting."
-            exit 1
-        fi  
+            PhaseEncodingDirection=`cat ${FileRawPA}.json | ${EXEDIR}/src/func/jq-linux64 '.PhaseEncodingDirection'`
+            echo "PhaseEncodingDirection from ${FileRawPA}.json is ${PhaseEncodingDirection}"  
+
+            if [[ "${PhaseEncodingDirection}" == '"j"' ]]; then
+                TotalReadoutTimePA=`cat ${FileRawPA}.json | ${EXEDIR}/src/func/jq-linux64 '.TotalReadoutTime'`
+                echo "TotalReadoutTime from ${FileRawPA}.json is ${TotalReadoutTimePA}"
+
+                if [ "$TotalReadoutTimeAP" != "$TotalReadoutTimePA" ]; then
+                    log "Unequal TotalReadoutTime in AP vs. PA json files. Check data. Exiting..."
+                    exit 1
+                fi
+                export PAline="0 1 0 ${TotalReadoutTimePA}"  
+
+            else
+                log "Mismatch between dir- and json coded phase encoding. Double check data. Exiting..."
+                exit 1
+            fi  
+
+        elif [ -n  "$b0PA" ]; then
+            FileRawb0="$b0PA%???????"
+            export rtag=2
+
+            PhaseEncodingDirection=`cat ${FileRawb0}.json | ${EXEDIR}/src/func/jq-linux64 '.PhaseEncodingDirection'`
+            echo "PhaseEncodingDirection from ${FileRawb0}.json is ${PhaseEncodingDirection}"  
+
+            if [[ "${PhaseEncodingDirection}" == '"j"' ]]; then
+                TotalReadoutTimeb0PA=`cat ${FileRawb0}.json | ${EXEDIR}/src/func/jq-linux64 '.TotalReadoutTime'`
+                echo "TotalReadoutTime from ${FileRawb0}.json is ${TotalReadoutTimeb0PA}"
+
+                if [ "$TotalReadoutTimeAP" != "$TotalReadoutTimeb0PA" ]; then
+                    log "Unequal TotalReadoutTime in AP vs. b0PA json files. Check data. Exiting..."
+                    exit 1
+                fi
+                export PAline="0 1 0 ${TotalReadoutTimeb0PA}"  
+
+            else
+                log "Mismatch between dir- and json coded phase encoding. Double check data. Exiting..."
+                exit 1
+            fi  
+
+        else
+            export rtag=3
+        fi
+
+    else
+        log " No AP phase encoding run found. Exitings ..."
+        exit 1
     fi
-
-    #### FSL Eddy
-    if ${flags_DWI_eddy}; then
-# WILL NEED SOME UPDATES FOR TWO SCAN RUNS AND RUNS WITH TOPUP TO RUN BIDS DATA 
-        cmd="${EXEDIR}/src/scripts/DWI_A_eddy.sh"
-        echo $cmd
-        eval $cmd
-        exitcode=$?
-
-        if [[ ${exitcode} -ne 0 ]] ; then
-            echoerr "problem at DWI_A_eddy. exiting."
-            exit 1
-        fi  
-    fi
-
-    #### DTIfit
-    if ${flags_DWI_DTIfit}; then
-
-        cmd="${EXEDIR}/src/scripts/DWI_A_DTIfit.sh"
-        echo $cmd
-        eval $cmd
-        exitcode=$?
-
-        if [[ ${exitcode} -ne 0 ]] ; then
-            echoerr "problem at DWI_A_eddy. exiting."
-            exit 1
-        fi  
-    fi
-
 
 else 
 
-    log "WARNING Subject DWI directory does not exist; skipping DWI processing for subject ${SUBJ}"
+    log "WARNING Subject raw DWI directory does not exist; skipping DWI processing for subject ${SUBJ}"
 
 fi 
+
+######################################################################################
+
+msg2file "=================================="
+msg2file "0.5. Bvec & Bval File Format"
+msg2file "=================================="  
+
+export fileBval="${FileRaw}.bval"
+export fileBvec="${FileRaw}.bvec"
+export fileNifti="${FileRaw}.nii.gz"
+export fileJson="${FileRaw}.json"
+
+if [[ ! -e "${fileBval}" ]] && [[ ! -e "${fileBvec}" ]]; then
+    log "WARNING Bvec and/or Bval files do not exist. Skipping further analyses"
+    exit 1
+else
+    cmd="python ${EXEDIR}/src/func/read_bvals_bvecs.py \
+     ${fileBval} ${fileBvec} ${fileNifti} ${DWIpath}"
+    log $cmd
+    eval $cmd
+
+    export fileBval="${DWIpath}/0_DWI.bval"
+    export fileBvec="${DWIpath}/0_DWI.bvec"
+fi 
+
+if [[ "$rtag" -eq 1 ]]; then
+    export fileBvalPA="${FileRawPA}.bval"
+    export fileBvecPA="${FileRawPA}.bvec"
+    export fileNiftiPA="${FileRawPA}.nii.gz"
+
+    if [[ ! -e "${fileBvalPA}" ]] && [[ ! -e "${fileBvecPA}" ]]; then
+        log "WARNING Bvec and/or Bval PA files do not exist. Skipping further analyses"
+        exit 1
+    else
+        cmd="python ${EXEDIR}/src/func/read_bvals_bvecs.py \
+         ${fileBvalPA} ${fileBvecPA} ${fileNiftiPA} ${DWIpath} "PA""
+        log $cmd
+        eval $cmd
+
+        export fileBvalPA="${DWIpath}/0_DWI_PA.bval"
+        export fileBvecPA="${DWIpath}/0_DWI_PA.bvec"
+    fi
+
+elif [[ "$rtag" -eq 2 ]]; then
+    export fileBvalb0PA="${DWIpath}/0_DWI_b0PA.bval"
+    export fileBvecb0PA="${DWIpath}/0_DWI_b0PA.bvec"
+    export fileNiftib0PA="${FileRawb0}.nii.gz"
+
+    log "Creating dummy Bvec and/or Bval files ${DWIpath}/${fileBvalb0PA} and ${DWIpath}/${fileBvecb0PA}"
+    # find the number of B0's as the 4th dimension
+    numB0=$(fslinfo ${fileNiftib0PA} | awk '/^dim4/' | awk '{split($0,a," "); {print a[2]}}')
+    log "There is/are ${numB0} B0 in ${fileNiftib0PA}"
+
+    # create dummy B0 files
+    dummy_bvec=`echo -e '0 \t 0 \t  0 \t'` 
+    for ((k=0; k<${numB0}; k++)); do
+        echo ${dummy_bvec} >> ${DWIpath}/${fileBvecb0PA}
+        echo "0" >> ${DWIpath}/${fileBvalb0PA}
+    done
+fi
+   
+######################################################################################
+    #### Topup field estimation.
+export TOPUPpath="${DWIpath}/TOPUP"
+if ${flags_DWI_topup}; then
+    
+    cmd="${EXEDIR}/src/scripts/DWI_A_topup.sh"
+    echo $cmd
+    eval $cmd
+    exitcode=$?
+
+    if [[ ${exitcode} -ne 0 ]] ; then
+        echoerr "problem at DWI_A_topup. exiting."
+        exit 1
+    fi  
+fi
+
+######################################################################################
+    #### FSL EDDY
+export EDDYpath="${DWIpath}/EDDY"
+if ${flags_DWI_eddy}; then
+
+    cmd="${EXEDIR}/src/scripts/DWI_A_eddy.sh"
+    echo $cmd
+    eval $cmd
+    exitcode=$?
+
+    if [[ ${exitcode} -ne 0 ]] ; then
+        echoerr "problem at DWI_A_eddy. exiting."
+        exit 1
+    fi  
+fi
+
+######################################################################################
+    #### DTIfit
+export DTpath="${DWIpath}/DTIfit"    
+if ${flags_DWI_DTIfit}; then
+
+    cmd="${EXEDIR}/src/scripts/DWI_A_DTIfit.sh"
+    echo $cmd
+    eval $cmd
+    exitcode=$?
+
+    if [[ ${exitcode} -ne 0 ]] ; then
+        echoerr "problem at DWI_A_eddy. exiting."
+        exit 1
+    fi  
+fi
+
+module unload fsl
+module unload python

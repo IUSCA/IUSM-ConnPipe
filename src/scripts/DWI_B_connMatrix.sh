@@ -3,7 +3,6 @@
 #
 # Script: f_preproc_DWI.m adaptaion from Matlab script 
 #
-
 ###############################################################################
 #
 # Environment set up
@@ -16,14 +15,9 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ############################################################################### 
 
-
-
-############################################################################### 
-
-
-echo "=================================="
-echo "3. Connectivity Matrix Assembly"
-echo "=================================="
+msg2file "=================================="
+msg2file "3. Connectivity Matrix Assembly"
+msg2file "=================================="
 
 
 if [[ ! -d "${path_DWI_matrices}" ]]; then
@@ -33,12 +27,12 @@ if [[ ! -d "${path_DWI_matrices}" ]]; then
 fi 
 
 # check paths
-log "path_DWI_EDDY is ${path_DWI_EDDY}"
-log "path_DWI_DTIfit is ${path_DWI_DTIfit}"
-log "path_DWI_mrtrix is ${path_DWI_mrtrix}"
-log "path_DWI_matrices is ${path_DWI_matrices}"
+log --no-datetime "path_DWI_EDDY is ${path_DWI_EDDY}"
+log --no-datetime "path_DWI_DTIfit is ${path_DWI_DTIfit}"
+log --no-datetime "path_DWI_mrtrix is ${path_DWI_mrtrix}"
+log --no-datetime "path_DWI_matrices is ${path_DWI_matrices}"
 
-fileFiltStreamlines="${path_DWI_mrtrix}/1m_sift_streamlines.tck"
+fileFiltStreamlines="${path_DWI_mrtrix}/${configs_DWI_sift_term_number}_sift_streamlines.tck"
 
 cntcort=0
 cntsubc=0
@@ -83,7 +77,7 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
     fi
 done
 
-if [[ "${cntsubc}" -eq 0 ]] && [[ $configs_DWI_addFSLsubcort == true ]]; then
+if [[ "${cntsubc}" -eq 0 ]] && [[ $configs_T1_subcortUser == false ]]; then
     echo " -- Subcortical parcellation: FSLsubcort" 
     pcname="${pcname}_FSLsubcort"
     # 
@@ -107,7 +101,7 @@ cmd="python ${EXEDIR}/src/func/add_parc.py \
 log $cmd
 eval $cmd
 
-fileConnMatrix="${path_DWI_matrices}/1M_2radial_density_${pcname}.csv"
+fileConnMatrix="${path_DWI_matrices}/1M_2radial_density${pcname}.csv"
 
 # CONFIG assignment_radial_search can be user set
 # CONFIG scale_invnodevol: other options are available for edge assignment

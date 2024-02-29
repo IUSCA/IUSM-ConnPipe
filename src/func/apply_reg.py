@@ -41,43 +41,57 @@ logfile_name = ''.join([os.environ['logfile_name'],'.log'])
 flog=open(logfile_name, "a+")
 
 flog.write("\n *** python apply_reg **** ")
-EPIpath=os.environ['EPIpath']
+EPIpath=os.environ['EPIrun_out']
+
 nuisanceReg=sys.argv[1]  
 print("nuisanceReg is ",nuisanceReg)
 flog.write("\n nuisanceReg "+ nuisanceReg)
+
 physReg=sys.argv[2] 
 print("physReg is ",physReg)
 flog.write("\n physReg "+ physReg)
 PhReg_path = ''.join([EPIpath,'/',nuisanceReg,'/',physReg])
 print("PhReg_path is ",PhReg_path)
 flog.write("\n PhReg_path "+ PhReg_path )
+
 config_param=int(os.environ['configs_EPI_numPhys'])
 print("config_param is ",config_param)
 flog.write("\n config_param "+ str(config_param))
+
 numReg=int(os.environ['configs_EPI_numReg'])
 flog.write("\n numReg "+ str(numReg))
 print("numReg is ",numReg)
+
 numGS=int(os.environ['configs_EPI_numGS'])
 flog.write("\n numGS "+ str(numGS))
 print("numGS is ",numGS)
+
 nR=os.environ['nR']
 flog.write("\n nR "+ nR)
 print("nR is ",nR)
-dvars_scrub=os.environ['flags_EPI_DVARS']
-flog.write("\n dvars_scrub "+ dvars_scrub)
+# If BPF is set, need to crop nR, since BPF doesnt get done until after nuissance regressison.
+if nR.endswith("_BPF"):
+    nRc=nR[:-4]
+else:
+    nRc=nR
+
+dvars_despike=os.environ['configs_EPI_despike']
+flog.write("\n dvars_despike "+ dvars_despike)
+
 resting_file=os.environ['configs_EPI_resting_file']
 flog.write("\n resting_file "+ resting_file)
 resting_file = ''.join([EPIpath,resting_file]) 
 flog.write("\n full resting file is "+ resting_file)
+
 dctfMin=float(os.environ['configs_EPI_dctfMin'])
 flog.write("\n dctfMin "+ str(dctfMin))
 
 
-flog.write("\n REGRESSORS -- Creating regressor matrix with the follwing:") 
+flog.write("\n REGRESSORS -- Creating regressor matrix with the following:") 
 
 if nuisanceReg == "AROMA":
-    print("1. Applying AROMA regressors")
-    flog.write("\n 1. Applying AROMA regressors")
+    print("1. Using AROMA cleaned data")
+    flog.write("\n 1. Using AROMA cleaned data")
     regressors = np.array([])
 
 elif nuisanceReg == "HMPreg" or nuisanceReg == "AROMA_HMP":
@@ -166,7 +180,7 @@ if physReg == "aCompCor":
     numphys = np.load(fname) 
     print("-- aCompCor PC of WM & CSF regressors")
     flog.write("\n -- aCompCor PC of WM & CSF regressors" )
-    zRegressMat = [];
+    zRegressMat = []
 
     if config_param > 5:
         print("  -- Applying all levels of PCA removal")
@@ -214,13 +228,17 @@ if physReg == "aCompCor":
 
         print("wm shape ",wm.shape)
 
-        components = np.vstack((regressors,\
-                                csf,\
-                                wm))
+        if regressors.size:
+             components = np.vstack((regressors,\
+                                    csf,\
+                                    wm))
+        else:
+            components = np.vstack((csf,\
+                                    wm))
 
         print("components shape: ", components.shape)
         flog.write("\n components shape " + str(components.shape))
-        zRegressMat.append(stats.zscore(components,axis=1));
+        zRegressMat.append(stats.zscore(components,axis=1))
         print("    -- PCA 1 through %d" % config_param)
         flog.write("\n    -- PCA 1 through " + str(config_param))
 
@@ -231,24 +249,38 @@ elif physReg == "meanPhysReg":
     flog.write("\n numphys[WMavg].shape " + str(numphys['WMavg'].shape))
     
     if config_param == 2:
-        regressors = np.vstack((regressors,\
+        if regressors.size:
+            regressors = np.vstack((regressors,\
                                 numphys['CSFavg'],\
                                 numphys['WMavg']))
+        else:
+            regressors = np.vstack((numphys['CSFavg'],\
+                                numphys['WMavg']))  
         print("   -- 2 physiological regressors ")
         flog.write("\n    -- 2 physiological regressors ")
         print("regressors shape ",regressors.shape)
         flog.write("\n regressors shape " + str(regressors.shape))
     if config_param == 4:
-        regressors = np.vstack((regressors,\
+        if regressors.size:
+            regressors = np.vstack((regressors,\
                                 numphys['CSFavg'],numphys['CSFderiv'],\
-                                numphys['WMavg'],numphys['WMderiv']))        
+                                numphys['WMavg'],numphys['WMderiv'])) 
+        else:
+            regressors = np.vstack((numphys['CSFavg'],numphys['CSFderiv'],\
+                                numphys['WMavg'],numphys['WMderiv']))       
         print("   -- 4 physiological regressors")
         flog.write("\n    -- 4 physiological regressors ")
         print("regressors shape ",regressors.shape)
         flog.write("\n regressors shape " + str(regressors.shape))
     if config_param == 8:
-        regressors = np.vstack((regressors,\
+        if regressors.size:
+            regressors = np.vstack((regressors,\
                                 numphys['CSFavg'],numphys['CSFavg_sq'],\
+                                numphys['CSFderiv'],numphys['CSFderiv_sq'],\
+                                numphys['WMavg'],numphys['WMavg_sq'],\
+                                numphys['WMderiv'],numphys['WMderiv_sq'])) 
+        else:
+            regressors = np.vstack((numphys['CSFavg'],numphys['CSFavg_sq'],\
                                 numphys['CSFderiv'],numphys['CSFderiv_sq'],\
                                 numphys['WMavg'],numphys['WMavg_sq'],\
                                 numphys['WMderiv'],numphys['WMderiv_sq'])) 
@@ -283,9 +315,9 @@ for i in range(0,numTimePoints):
 
 
 resid = []
-if dvars_scrub == 'true':
-    resid_DVARS = []
 
+# this loop is if all pc steps for acompcor are written out
+# otherwise zRegressMat is length 1
 for r in range(0,len(zRegressMat)):
 
     rr = f_apply_reg(resting_vol,volBrain_vol,zRegressMat[r])
@@ -294,11 +326,9 @@ for r in range(0,len(zRegressMat)):
 
     # save nifti image
     if len(zRegressMat)==1:
-        fileOut = "/7_epi_%s.nii.gz" % nR 
-        matlabfilename = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.mat'])
+        fileOut = "/7_epi_%s.nii.gz" % nRc 
     else:
-        fileOut = "/7_epi_%s%d.nii.gz" % (nR,pc)
-        matlabfilename = ''.join([PhReg_path,'/NuisanceRegression_',nR,pc,'.mat'])
+        fileOut = "/7_epi_%s%d.nii.gz" % (nRc,pc)
 
     fileOut = ''.join([PhReg_path,fileOut])
     print("Nifti file to be saved is: ",fileOut)
@@ -307,84 +337,83 @@ for r in range(0,len(zRegressMat)):
     resting_new = nib.Nifti1Image(rr.astype(np.float32),resting.affine,resting.header)
     nib.save(resting_new,fileOut) 
 
-    
+## Calculate DVARS after regression
+print("=== Calculating DVARS from residuals ===")
+configs_EPI_path2DVARS=os.environ['configs_EPI_path2DVARS']
+flog.write("\n configs_EPI_path2DVARS "+ str(configs_EPI_path2DVARS))
+print("configs_EPI_path2dvars ",configs_EPI_path2DVARS)
+
+# Define file name where DVARS info will be printed
+fname = ''.join([PhReg_path,'/DVARS_',nRc,'.txt'])
+fdvars=open(fname, "a+")
+
+import sys
+sys.path.append(configs_EPI_path2DVARS)
+from DSE import DSE_Calc, DVARS_Calc, CleanNIFTI
+
+DVARSout = DVARS_Calc(fileOut,dd=1,WhichExpVal='median',WhichVar='hIQRd',scl=0.001, \
+                demean=True,DeltapDvarThr=5)
+
+vols2despike = DVARSout["Inference"]["H"]
+vols2scrub = vols2despike
+
+if dvars_despike == 'true':
+    print("vols to despike: ",vols2despike)
+    fdvars.write("\n vols to despike: "+ str(vols2despike))
+    nvols2despike = vols2despike.shape[0]
+    print("num vols to be despiked: ",nvols2despike)
+    fdvars.write("\n vols to be despiked: "+ str(nvols2despike))
+    despiking = np.zeros((nvols2despike,numTimePoints), dtype=int)  
+
+    resid_DVARS = []
+    ## Apply regresison again with spike regressors included
+    if nvols2despike > 0:
+        for s in range(nvols2despike):
+            despiking[s,vols2despike[s]-1]=1
+
+        regressors_despike = np.vstack((zRegressMat[r],despiking))
+
+        rr = f_apply_reg(resting_vol,volBrain_vol,regressors_despike)
+        
+    resid_DVARS.append(rr)
+
+    # save nifti image
+    if len(zRegressMat)==1:
+        fileOut = "/7_epi_%s_despiked.nii.gz" % nRc 
+        matlabfilename = ''.join([PhReg_path,'/volumes2scrub_',nRc,'_despiked.mat'])
+    else:
+        fileOut = "/7_epi_%s%d_despiked.nii.gz" % (nRc,pc)
+        matlabfilename = ''.join([PhReg_path,'/volumes2scrub_',nRc,pc,'_despiked.mat'])
+
+    fileOut = ''.join([PhReg_path,fileOut])
+    print("Nifti file to be saved is: ",fileOut)
+
+    # save new resting file
+    resting_new = nib.Nifti1Image(rr.astype(np.float32),resting.affine,resting.header)
+    nib.save(resting_new,fileOut) 
+
     print("savign MATLAB file ", matlabfilename)
-    mdic = {"resid" : rr,"resting_vol" : resting_vol}
+    # mdic = {"resid" : rr, "vols2scrub":vols2scrub}
+    mdic = {"vols2scrub":vols2scrub}
     savemat(matlabfilename, mdic)
 
-    ## Calculate DVARS after regression
+    fdvars.close()
 
-    if dvars_scrub == 'true':
-        print("=== Calculating DVARS from residuals ===")
-        configs_EPI_path2DVARS=os.environ['configs_EPI_path2DVARS']
-        flog.write("\n configs_EPI_path2DVARS "+ str(configs_EPI_path2DVARS))
-        print("configs_EPI_path2dvars ",configs_EPI_path2DVARS)
-
-        # Define file name where DVARS info will be printed
-        fname = ''.join([PhReg_path,'/DVARS_',nR,'.txt'])
-        fdvars=open(fname, "a+")
-
-        import sys
-        sys.path.append(configs_EPI_path2DVARS)
-        from DSE import DSE_Calc, DVARS_Calc, CleanNIFTI
-
-        DVARSout = DVARS_Calc(fileOut,dd=1,WhichExpVal='median',WhichVar='hIQRd',scl=0.001, \
-                        demean=True,DeltapDvarThr=5)
-
-        vols2scrub = DVARSout["Inference"]["H"]
-        print("vols to scrub: ",vols2scrub)
-        fdvars.write("\n vols to scrub: "+ str(vols2scrub))
-        nvols2scrub = vols2scrub.shape[0]
-        print("num vols to be scrubbed: ",nvols2scrub)
-        fdvars.write("\n vols to be scrubbed: "+ str(nvols2scrub))
-        scrubbing = np.zeros((nvols2scrub,numTimePoints), dtype=int)
-
-        if nvols2scrub > 0:
-            for s in range(nvols2scrub):
-                scrubbing[s,vols2scrub[s]-1]=1
-
-            regressors_scrub = np.vstack((zRegressMat[r],scrubbing))
-
-            rr = f_apply_reg(resting_vol,volBrain_vol,regressors_scrub)
-            
-        resid_DVARS.append(rr)
-
-        # save nifti image
-        if len(zRegressMat)==1:
-            fileOut = "/7_epi_%s_DVARS.nii.gz" % nR 
-            matlabfilename = ''.join([PhReg_path,'/NuisanceRegression_',nR,'_DVARS.mat'])
-        else:
-            fileOut = "/7_epi_%s%d_DVARS.nii.gz" % (nR,pc)
-            matlabfilename = ''.join([PhReg_path,'/NuisanceRegression_',nR,pc,'_DVARS.mat'])
-
-        fileOut = ''.join([PhReg_path,fileOut])
-        print("Nifti file to be saved is: ",fileOut)
-
-        # save new resting file
-        resting_new = nib.Nifti1Image(rr.astype(np.float32),resting.affine,resting.header)
-        nib.save(resting_new,fileOut) 
-
-        print("savign MATLAB file ", matlabfilename)
-        mdic = {"resid" : rr, "vols2scrub":vols2scrub}
-        savemat(matlabfilename, mdic)
-
-        fdvars.close()
-
-
-if dvars_scrub == 'true': 
-    resid_before_DVARS = resid
+# THIS MAY NEED TO BE CHANGED TO RESTING NEW
+if dvars_despike == 'true': 
+    resid_before_despike = resid
     resid = resid_DVARS
     ## save data (for header info), regressors, and residuals
-    fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'_DVARS.npz'])
+    fname = ''.join([PhReg_path,'/NuisanceRegression_',nRc,'_despiked.npz'])
     np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol, \
-    zRegressMat=zRegressMat,resid_before_DVARS=resid_before_DVARS,nR=nR, \
+    zRegressMat=zRegressMat,resid_before_despike=resid_before_despike,nR=nRc, \
     resid=resid, DVARS_Inference_Hprac=DVARSout["Inference"]["H"])
 else:
-    ## save scrubbing data
-    fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.npz'])
+    ## save residuals and regressor data
+    fname = ''.join([PhReg_path,'/NuisanceRegression_',nRc,'.npz'])
     np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol, \
-    zRegressMat=zRegressMat,resid=resid,nR=nR)
-
+    zRegressMat=zRegressMat,resid=resid,nR=nRc, \
+    DVARS_Inference_Hprac=DVARSout["Inference"]["H"],vols2scrub=vols2scrub)
 
 print("Saved residuals")
 

@@ -14,9 +14,8 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ##############################################################################
 
-## PHYSIOLOGICAL REGRESSORS
 msg2file " =========================================================="
-msg2file "                5.3 OTHER REGRESSORS "
+msg2file "                5.4 DCT HIGH-PASS REGRESSOR "
 msg2file " =========================================================="
 
 fileIN="${EPIrun_out}${configs_EPI_resting_file}"
@@ -34,13 +33,6 @@ if [[ ! -d ${PhReg_path} ]]; then
     eval $cmd 
 fi
 
-if ${flags_EPI_GS}; then
-    log " Global signal regression is ON "
-else
-    log " Global signal regression is OFF - will compute global signal for QC"
-    export configs_EPI_numGS=2
-fi
-
 if ${configs_EPI_DCThighpass}; then
     log " DCT bases will be included in regression "
 else
@@ -48,7 +40,7 @@ else
     export configs_EPI_dctfMin=0
 fi
 
-cmd="python ${EXEDIR}/src/func/other_regressors.py \
+cmd="python ${EXEDIR}/src/func/dct_regressors.py \
      ${fileIN} ${PhReg_path}"
 log $cmd
 eval $cmd

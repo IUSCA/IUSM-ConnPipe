@@ -16,32 +16,31 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ############################################################################### 
 
-echo "# ==========================================="
-echo "# 1. Slice Time Acquisition Correction"
-echo "# ==========================================="
+msg2file "# ==========================================="
+msg2file "# 1. Slice Time Acquisition Correction"
+msg2file "# ==========================================="
 
 if (( $(echo "${TR} > $configs_EPI_minTR" |bc -l) )); then
 
-    if [[ -e "${EPIpath}/0_epi_unwarped.nii.gz" ]]; then  
-        fileIn="${EPIpath}/0_epi_unwarped.nii.gz"
+    if [[ -e "${EPIrun_out}/0_epi_unwarped.nii.gz" ]]; then  
+        fileIn="${EPIrun_out}/0_epi_unwarped.nii.gz"
         log "Processing: 0_epi_unwarped.nii.gz"
     else
-        fileIn=`ls ${EPIpath_raw}/*rest.nii*`
-        if [[ -e "${fileIn}" ]]; then          
+        if [[ -e "${EPIfile}" ]]; then 
+            fileIn="${EPIfile}"         
             log "Processing: raw nifti"
         else
-            log "WARNIGN file 0_epi not found. Exiting..."   
+            log "WARNING: Neither 0_epi_nwarped or the raw epi file found. Exiting..."   
             exit 1
         fi 
     fi 
 
-    fileOut="${EPIpath}/0_epi.nii.gz"
-    cmd="fslreorient2std ${fileIn} ${fileOut}"
+    cmd="fslreorient2std ${fileIn} ${fileIn}"
     log $cmd 
     eval $cmd  
 
-    fileRef="${EPIpath}/slicetimes_frac.txt"
-    fileOut="${EPIpath}/1_epi.nii.gz"
+    fileRef="${EPIrun_out}/slicetimes_frac.txt"
+    fileOut="${EPIrun_out}/1_epi.nii.gz"
 
     echo "TR --> ${TR}"
     echo "slice_ord --> ${slice_ord}"
@@ -74,5 +73,5 @@ if (( $(echo "${TR} > $configs_EPI_minTR" |bc -l) )); then
 else
 
     log "WARNING TR=${TR} is less than user specified minTR=${configs_EPI_minTR}"
-    log "Skipping slice time correction"
+    log --no-datetime "Skipping slice time correction"
 fi

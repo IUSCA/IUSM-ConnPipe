@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Checking input arguments:
 if (($# != 2)); then
 	echo "Incorrect number of input arguments:"	
 	echo "Need input path/name to config.sh and subj2run.txt"
@@ -9,75 +10,25 @@ fi
 config=$1
 subj2run=$2
 
-# IU modules load
-# FSL
-module unload fsl 
-module load fsl/6.0.5.1
-# AFNI
-#module load afni/22.0.04
-#module load afni
-# ANTS
-module unload ants
-module load ants/2.3.1
-# PYTHON
-#module unload python 
-#module load python/3.9.8
-#module load python/3.10.5
-# MRTRIX
-module unload mrtrix
-module load mrtrix/3.0.4
+# Location of package and scripts [if hpc_main is in pipeline directory]:
+ export EXEDIR=$(dirname "$(readlink -f "$0")")
 
-# Not sure if these are needed (jenya 5/13/23):
-#module load singularity
-#module load ica-aroma/0.4.4
-
-module list
-
-# FSL
-# set FSL env vars for fsl_sub.IU or fsl_sub.orig
-if [[ -z ${FSLDIR} ]] ; then
-	echoerr "FSLDIR not set"
-	exit 1
-fi
-
-# where this package of scripts are
-# export EXEDIR=$(dirname "$(readlink -f "$0")")
-export EXEDIR="/N/project/kbase-imaging/connpipe_job_test/IUSM-ConnPipe"
+# This change allows me to run the pipeline from any directory.
+# export EXEDIR="/N/project/kbase-imaging/connpipe_job_test/IUSM-ConnPipe"
 
 source ${EXEDIR}/src/func/bash_funcs.sh
-
-################################################################################
-# USER INSTRUCTIONS- PLEASE SET THE NAME OF THE CONFIG FILE TO READ
 source $config
-################################################################################
 
-
-################################################################################
-############################ Dependencies ######################################
-
+# Exporting path/file dependencies.
+#============================================================================
 export pathMNItmplates="${pathSM}/MNI_templates"
-
-export pathFSLstandard="${FSLDIR}/data/standard"
-
-if [[ -e "${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz" ]]; then
-    fileMNI2mm="${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz"
-else
-    fileMNI2mm="${pathMNItmplates}/MNI152_T1_2mm_brain.nii.gz"
-fi
-
-if ${configs_T1_useMNIbrain}; then
-    export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm_brain.nii.gz"
-else
-    export path2MNIref="${pathFSLstandard}/MNI152_T1_1mm.nii.gz"
-fi
-
 export pathBrainmaskTemplates="${pathSM}/brainmask_templates"
 export pathParcellations="${pathSM}/Parcellations"
 export PYpck="${pathSM}/python-pkgs"
 
-
-# # Create Derivatives dir if does not exist already 
-# #===========================================================================================					
+# Creating a derivative directory for connpipe. 
+#============================================================================
+path2data="$path2proj/raw"
 
 path2derivs="$path2proj/derivatives"
 if [[ ! -d "${path2derivs}" ]]; then
@@ -89,20 +40,18 @@ if [[ ! -d "${path2derivs}" ]]; then
 	mkdir ${path2derivs}
 fi
 
-# # Setting denoising option
-# #===========================================================================================					
+# Setting [anat] denoising option.
+#============================================================================
 if [[ "${configs_T1_denoised}" == "ANTS" ]]; then 
 	export configs_fslanat="T1_denoised_ANTS"
-	echo "USING ANTS FOR DENOISING"
 elif [[ "${configs_T1_denoised}" == "SUSAN" ]]; then
 	export configs_fslanat="T1_denoised_SUSAN"
-	echo "USING SUSAN FOR DENOISING"
 elif [[ "${configs_T1_denoised}" == "NONE" ]]; then  # do not perform denoising 
-	export configs_fslanat=${configs_T1}
-	echo "T1 WILL NOT BE DENOISED"
+	export configs_fslanat="anat"
 fi
 
-# define header tags for f_MRI_A
+# Defining scanner specific header tags for [func] f_MRI_A.
+#============================================================================
 if ${fMRI_A}; then
     if [[ ${scanner} == "SIEMENS" ]]; then
         export scanner_param_TR="RepetitionTime"  # "RepetitionTime" for Siemens; "tr" for GE
@@ -126,15 +75,15 @@ if ${fMRI_A}; then
         export scanner_param_PhaseEncodingDirection="phase_encode_direction"
     fi
 
-    # check that ony one UNWARP option is selected 
+ # Checking that ony one UNWARP option is selected.
+ #============================================================================
     if ${flags_EPI_SpinEchoUnwarp} && ${flags_EPI_GREFMUnwarp}; then
         log "ERROR --	Please select one option only: Spin Echo Unwarp or Gradient Echo Unwarp. Exiting... "
         exit 1
     fi
 
-    # Nuisance Regression
-    # #===========================================================================================
-
+ # Setting nuisance regression dependencies.
+ #============================================================================
     if [[ ${flags_NuisanceReg} == "AROMA" ]]; then # if using ICA-AROMA
 
         nR="aroma" # set filename postfix for output image
@@ -185,10 +134,8 @@ if ${fMRI_A}; then
         exit 1
     fi
 
-
-    # Pyhsiological Regression
-    # #===========================================================================================
-
+ # Setting physiological regression dependencies.
+ #============================================================================
     if [[ ${flags_PhysiolReg} == "aCompCor" ]]; then  ### if using aCompCorr
 
         if [[ "${configs_EPI_numPhys}" -ge 0 && "${configs_EPI_numPhys}" -le 5 ]]; then
@@ -212,45 +159,35 @@ if ${fMRI_A}; then
 
     export regPath=${flags_NuisanceReg}/${flags_PhysiolReg}
 
-    # Other regressors and file name settings
-    # #===========================================================================================
-
+ # Global Signal
+#============================================================================
     if ${flags_EPI_GS}; then
         nR="${nR}_Gs${configs_EPI_numGS}"
     else 
         export configs_EPI_numGS=0
     fi 
 
-                            
-    if ${configs_EPI_DCThighpass}; then
+# Frequency Filtering
+#============================================================================
+    if [[ ${flags_FreqFilt} == "DCT" ]]; then  ### if using discrete cosine transform
         nR="${nR}_DCT"
-    else 
+    elif [[ ${flags_FreqFilt} == "BPF" ]]; then
+        nR="${nR}_BPF"
         export configs_EPI_dctfMin=0
+        
     fi
 
-    if ${flags_EPI_DVARS}; then
+# DVARS-based time point scrubbing (Pham, ..., Mejia. NeuroImage 2023 and Afyouni $ Nichols, 2018)
+#============================================================================
+    if ${configs_EPI_despike}; then
         # nR=nR_DVARS -- this gets updated in fMRI_A
         # after regression is applied. This allows us to save both
         # sets of residuals with and without DVARS.
         export configs_EPI_path2DVARS="${EXEDIR}/src/func/"
     fi
 
-    if ${configs_EPI_DCThighpass} && ${flags_EPI_BandPass}; then
-        log "ERROR 	Please select one option only: DCT high-pass or Butterworth filtering. Exiting... "
-        exit 1
-    fi
-
     export nR 
-
 fi
-
-#################################################################################
-####################### DEFINE SUBJECTS TO RUN  ###################################
-	
-# if ${runAll}; then
-# 	find ${path2data} -maxdepth 1 -mindepth 1 -type d -printf '%f\n' \
-# 	| sort > ${path2derivs}/${subj2run}	
-# fi 
 
 #################################################################################
 #################################################################################
@@ -261,7 +198,7 @@ main() {
 log "START running Connectivity Pipeline on the following subjects:"
 
 IFS=$'\r\n' GLOBIGNORE='*' command eval 'SUBJECTS=($(cat ${subj2run}))'
-log "subjects: ${SUBJECTS[@]}"
+log --no-datetime "subjects: ${SUBJECTS[@]}"
 
 echo "##################"
 
@@ -281,23 +218,22 @@ for SUBJdir in "${SUBJECTS[@]}"; do
     export QCfile_name="${path2derivs}/${SUBJ}/${configs_session}/qc"
     export ERRfile_name="${path2derivs}/error_report"
 
-    log "# ############################ T1_PREPARE_A #####################################"
+    log "############################ T1_PREPARE_A #####################################"
 
-        if $T1_PREPARE_A; then
-            ## Path to raw data
-            export T1path_raw="${path2data}/${SUBJ}/${configs_session}/${configs_T1}"
+    if $T1_PREPARE_A; then
+        ## Path to raw data
+        export T1path_raw="${path2data}/${SUBJ}/${configs_session}/anat"
 
-            if [ -d "$T1path_raw" ]; then
-    	    ## Path to derivatives
-    	        export T1path="${path2derivs}/${SUBJ}/${configs_session}/${configs_T1}"
-    	    if [[ ! -d "${T1path}" ]]; then
-        	    mkdir -p ${T1path}
-    	    fi
-            fi ##NEED TO MAKE THIS SMARTER TO SKIP SUBJECT RATHER THAN ERROR DOWN THE ROAD
+        if [ -d "$T1path_raw" ]; then
+        ## Path to derivatives
+            export T1path="${path2derivs}/${SUBJ}/${configs_session}/anat"
+            if [[ ! -d "${T1path}" ]]; then
+                mkdir -p ${T1path}
+            fi
 
             echo "============== T1path is ${T1path} =============="
 
-            cmd="${EXEDIR}/src/scripts/t1_prepare_A.sh" # -d ${PWD}/inputdata/dwi.nii.gz \
+            cmd="${EXEDIR}/src/scripts/t1_prepare_A.sh"
             echo $cmd
             eval $cmd
             exitcode=$?
@@ -310,57 +246,61 @@ for SUBJdir in "${SUBJECTS[@]}"; do
                 echo "###" >> ${ERRfile_name}.log 
                 continue
             fi
-        else 
-            log "SKIP T1_PREPARE_A for subject $SUBJ"
-        fi 
-
-    export T1path="${path2derivs}/${SUBJ}/${configs_session}/${configs_T1}"
-
-    ######################################################################################
-    log "# ############################ T1_PREPARE_B #####################################"
-
-        if $T1_PREPARE_B; then
-
-            if [[ -d "$T1path" ]]; then 
-
-                cmd="${EXEDIR}/src/scripts/t1_prepare_B.sh" # -np ${numParcs} -d ${PWD}/inputdata/dwi.nii.gz \
-                echo $cmd
-                eval $cmd
-                exitcode=$?
-
-                if [[ ${exitcode} -ne 0 ]] ; then
-                    echoerr "problem at T1_PREPARE_B. exiting."
-                    dateTime=`date`
-                    echo "### $dateTime -" >> ${ERRfile_name}.log
-                    echo "$SUBJ ERROR -- problem at T1_PREPARE_B.  - " >> ${ERRfile_name}.log
-                    echo "###" >> ${ERRfile_name}.log                   
-                    continue
-                fi
-                        
-            else
-                echo "T1 directory doesn't exist; skipping subject $SUBJ"
-            fi
         else
-            log "SKIP T1_PREPARE_B for subject $SUBJ"
-        fi 
+            log "raw T1 directory doesn't exist; skipping subject $SUBJ"
+        fi
+    else 
+        log "SKIP T1_PREPARE_A for subject $SUBJ"
+    fi 
+
+    export T1path="${path2derivs}/${SUBJ}/${configs_session}/anat"
 
     ######################################################################################
-    log "# ############################ fMRI_A ###########################################"
+    log "############################# T1_PREPARE_B #####################################"
 
+    if $T1_PREPARE_B; then
+
+        if [[ -d "$T1path" ]]; then 
+
+            cmd="${EXEDIR}/src/scripts/t1_prepare_B.sh"
+            echo $cmd
+            eval $cmd
+            exitcode=$?
+
+            if [[ ${exitcode} -ne 0 ]] ; then
+                echoerr "problem at T1_PREPARE_B. exiting."
+                dateTime=`date`
+                echo "### $dateTime -" >> ${ERRfile_name}.log
+                echo "$SUBJ ERROR -- problem at T1_PREPARE_B.  - " >> ${ERRfile_name}.log
+                echo "###" >> ${ERRfile_name}.log                   
+                continue
+            fi
+                    
+        else
+            echo "T1 directory doesn't exist; skipping subject $SUBJ"
+        fi
+    else
+        log "SKIP T1_PREPARE_B for subject $SUBJ"
+    fi 
+
+    ######################################################################################
+    log "############################# fMRI_A ###########################################"
 
         if $fMRI_A; then
 
             if [[ -d "$T1path" ]]; then 
                 ## Path to raw data
-                export EPIpath_raw="${path2data}/${SUBJ}/${configs_session}/${configs_epiFolder}"
+                export EPIpath_raw="${path2data}/${SUBJ}/${configs_session}/func"
 
                 if [ -d "$EPIpath_raw" ]; then
     	        ## Path to derivatives
-    	            export EPIpath="${path2derivs}/${SUBJ}/${configs_session}/${configs_epiFolder}"
+    	            export EPIpath="${path2derivs}/${SUBJ}/${configs_session}/func"
     	            if [[ ! -d "${EPIpath}" ]]; then
         	            mkdir -p ${EPIpath}
     	            fi
                 fi 
+
+                log --no-datetime "USER SET SCANNER MANUFACTURER: ${scanner}"
 
                 cmd="${EXEDIR}/src/scripts/fMRI_A.sh"
                 echo $cmd
@@ -384,21 +324,14 @@ for SUBJdir in "${SUBJECTS[@]}"; do
         fi 
 
     ######################################################################################
-    # log "# ############################ fMRI_B ##########################################"
-
-    ## Generates Figures... this is Matlab stand-alone script for now
-
-
-    ######################################################################################
-    log "# ############################ DWI_A ############################################"
-
+    log "############################# DWI_A ############################################"
 
         if $DWI_A; then
 
-            export DWIpath_raw="${path2data}/${SUBJ}/${configs_session}/${configs_DWI}"
+            export DWIpath_raw="${path2data}/${SUBJ}/${configs_session}/dwi"
 
             ## Path to derivatives
-            export DWIpath="${path2derivs}/${SUBJ}/${configs_session}/${configs_DWI}"
+            export DWIpath="${path2derivs}/${SUBJ}/${configs_session}/dwi"
             if [[ ! -d "${DWIpath}" ]]; then
                 mkdir -p ${DWIpath}
             fi
@@ -433,13 +366,9 @@ for SUBJdir in "${SUBJECTS[@]}"; do
         if $DWI_B; then
             if [[ -d "$T1path" ]]; then 
         
-                export DWIpath="${path2derivs}/${SUBJ}/${configs_session}/${configs_DWI}"
+                export DWIpath="${path2derivs}/${SUBJ}/${configs_session}/dwi"
 
                 if [[ -d "${DWIpath}" ]]; then 
-
-                    # define the number of threads you want mrtrix to use
-                    # setting environmentally to avoid accidentally using all cores
-                    export MRTRIX_NTHREADS=4
 
                     cmd="${EXEDIR}/src/scripts/DWI_B.sh"
                     echo $cmd

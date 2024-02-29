@@ -16,7 +16,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ## PHYSIOLOGICAL REGRESSORS
 msg2file " =========================================================="
-msg2file "                5.3 OTHER REGRESSORS "
+msg2file "                5.3  GLOBAL SIGNAL REGRESSORS "
 msg2file " =========================================================="
 
 fileIN="${EPIrun_out}${configs_EPI_resting_file}"
@@ -41,14 +41,7 @@ else
     export configs_EPI_numGS=2
 fi
 
-if ${configs_EPI_DCThighpass}; then
-    log " DCT bases will be included in regression "
-else
-    log " DCT bases will NOT be included in regression "
-    export configs_EPI_dctfMin=0
-fi
-
-cmd="python ${EXEDIR}/src/func/other_regressors.py \
+cmd="python ${EXEDIR}/src/func/gs_regressors.py \
      ${fileIN} ${PhReg_path}"
 log $cmd
 eval $cmd

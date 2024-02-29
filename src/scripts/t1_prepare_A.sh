@@ -14,97 +14,46 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
+###############################################################################
+# Load IU Quartz supercomuter modules
+module load fsl/6.0.5.2
+module load ants/2.3.5
 
-log "T1_PREPARE_A"
-
-
-##### DICOM 2 nifti ######
-if ${flags_T1_dcm2niix}; then
-
-	if [[ -d "$T1path/${configs_dcmFolder}" ]]; then
-
-		if [[ "$(ls -A ${T1path}/${configs_dcmFolder})" ]]; then 
-
-			log "###### DICOM 2 nifti ######" 
-			# if .IMA or .IMA.dcm or .dcm files exis inside T1/DICOMS
-			dicomfiles=`find $T1path/${configs_dcmFolder}/ -maxdepth 1 -name "*.${configs_dcmFiles}*" | wc -l`
-			if [[ $dicomfiles -eq 0 ]]; then 
-				echo "No dicom (.${configs_dcmFiles}) images found."
-				echo "Please specify the correct file extension of dicom files by setting the configs_dcmFiles flag in the config file"
-				echo "Skipping further analysis"
-				exit 1				
-			fi
-
-
-			niifiles=`find $T1path -maxdepth 1 -name "*.nii*" | wc -l`
-			if [[ $niifiles != 0 ]]; then 
-				# Remove existing nifti images.
-				log "rm -f $T1path/.${configs_niiFiles}"
-				rm -f $T1path/*.${configs_niiFiles}*			
-			fi
-			
-			# Converting DICOM to Nifti
-			log "DICOM->NIFTI"
-			cmd=".${EXEDIR}/src/scripts/dcm2niix -f T1 -o $T1path -v y -x y -b y $T1path/${configs_dcmFolder} > $T1path/dcm2niix.log"
-			log $cmd
-			eval $cmd 
-			if [[ $? != 0 ]];  then
-				echoerr "dcm2nii exit status not zero. exiting."
-				exit 1
-			else
-				cmd="mv $T1path/${configs_T1}.nii $T1path/${configs_T1}_orig.nii"
-				log $cmd
-				eval $cmd 
-				if ${configs_T1_useCropped}; then
-					log "Using cropped field-of-view output of dcm2niix"
-					cmd="gzip -f $T1path/${configs_T1}_Crop_1.nii"
-					log $cmd
-					eval $cmd 
-					cmd="mv $T1path/${configs_T1}_Crop_1.nii.gz $T1path/${configs_T1}.nii.gz"
-					log $cmd
-					eval $cmd 
-				else
-					cmd="gzip -f $T1path/${configs_T1}_orig.nii"
-					log $cmd
-					eval $cmd
-					cmd="mv $T1path/${configs_T1}_orig.nii.gz $T1path/${configs_T1}.nii.gz"
-					log $cmd
-					eval $cmd
-				fi
-			fi
-		else
-			msg="WARNING T1 directory is empty; skipping subject $SUBJ"
-			log $msg
-			exit 1
-		fi
-	else
-		msg="WARNING $T1path/${configs_dcmFolder} directory doesn't exist; skipping T1_prepare_A for subject $SUBJ"
-		log $msg
-		exit 1
-	fi 
-
+# FSL
+# set FSL env vars for fsl_sub.IU or fsl_sub.orig
+if [[ -z ${FSLDIR} ]] ; then
+	echoerr "FSLDIR not set"
+	exit 1
 fi
-
+###############################################################################
 
 ##### T1 denoiser ######
 file4fslanat="$T1path/${configs_fslanat}"
 
 if ${flags_T1_applyDenoising}; then
-	log "********** Denoising T1 ***********"
+	log --no-datetime " -------- Denoising T1 -------- "
 
-	fileIn="$T1path_raw/${SUBJ}_${configs_session}_T1w.nii"  ### ATTENTION HERE
+	bidsT1="${SUBJ}_${configs_session}_*T1w.nii.gz"
+	found_file=$(find "$T1path_raw" -type f -name "$bidsT1")
+	if [ -n "$found_file" ]; then
+    	bidsT1="${found_file}"
+	else
+    	echo "${bidsT1} Matching string file not found."
+		exit 1
+	fi
+	
 	if [[ "${configs_fslanat}" == "T1_denoised_ANTS" ]]; then 
 
 		log "-------- Denoising T1 WITH ANTS ---------"
-		cmd="DenoiseImage -v -d 3 -n Gaussian -p 1 -r 1 -i ${fileIn} -o ${file4fslanat}.nii.gz"
-		log $cmd
+		cmd="DenoiseImage -v -d 3 -n Gaussian -p 1 -r 1 -i ${bidsT1} -o ${file4fslanat}.nii.gz"
+		log --no-datetime $cmd
 		eval $cmd
 	elif [[ "${configs_fslanat}" == "T1_denoised_SUSAN" ]]; then
 
 		file4fslanat="$T1path/${configs_fslanat}"
 		log "-------- Denoising T1 WITH SUSAN --------"
 		cmd="susan $T1path/${configs_T1} 56.5007996 3 3 1 0 ${file4fslanat}"
-		log $cmd
+		log --no-datetime $cmd
 		eval $cmd
 	else
 		log "-------- WARNING - Skipping T1 Denoising --------"
@@ -114,39 +63,50 @@ fi
 
 ##### FSL ANAT ######
 if ${flags_T1_anat}; then
-	log "********** FSL ANAT ***********"
+	log " ---------- FSL ANAT ---------- "
 
 	# strongbias should be more appropriate for multi-channel coils on 3T scanners.        	
 	if [ ${configs_T1_bias} -eq "0" ]; then
 		T1bias="--nobias"
 	elif [ ${configs_T1_bias} -eq "1" ]; then
 		T1bias="--weakbias"
+	elif [ ${configs_T1_bias} -eq "2" ]; then
+		T1bias="--strongbias"
 	else 
-		T1bias=" "
+		T1bias=""
 	fi
-	log "T1bias is ${T1bias}"
+
+	if [ -z "$T1bias" ]; then
+    	log --no-datetime "T1bias is unspecified. --weakbias (FSL default) is used"
+	else
+    	log --no-datetime "T1bias is ${T1bias}"
+	fi
 
 	# add nocrop option if registration fails	
 	if [ ${configs_T1_crop} -eq "0" ]; then
 		T1crop="--nocrop"
 	else 
-		T1crop=" "
+		T1crop=""
 	fi
-	
-	log "T1crop is ${T1crop}"
+
+	if [ -z "$T1crop" ]; then
+		log --no-datetime "T1crop: robustfov cropping will be done."
+	else
+		log --no-datetime "T1crop is ${T1crop}"
+	fi
 
 	T1args="${T1bias} ${T1crop}"
 
 	if [[ -d "${file4fslanat}.anat" ]]; then
 		cmd="rm -fr ${file4fslanat}.anat"
-		log $cmd
+		log --no-datetime $cmd
 		eval $cmd 
 	fi
 
 	if [[ -e "${file4fslanat}.nii.gz" ]]; then
-		log "Running fsl_anat on ${file4fslanat}.nii.gz"
+		log --no-datetime "Running fsl_anat on ${file4fslanat}.nii.gz"
 		cmd="fsl_anat --noreg --nononlinreg --noseg ${T1args} -i ${file4fslanat}.nii.gz"
-		log ${cmd}
+		log --no-datetime ${cmd}
 		eval ${cmd}
 	else
 		log "${file4fslanat}.nii.gz not found"
@@ -158,7 +118,7 @@ if ${flags_T1_anat}; then
 		log $cmd
 		eval $cmd 
 		cmd="gunzip -f ${T1path}/T1_fov_denoised.nii.gz"
-		log $cmd
+		log --no-datetime $cmd
 		eval $cmd 
 
 		if [[ $? != 0 ]]; then
@@ -171,7 +131,6 @@ if ${flags_T1_anat}; then
 fi 
 
 ##### T1 Brain Extraction and Masking ######
-
 if ${flags_T1_extract_and_mask}; then
 
 	log "Brain Extraction and Masking"
@@ -181,28 +140,28 @@ if ${flags_T1_extract_and_mask}; then
 
 	if [[ ${configs_antsTemplate} == "MICCAI" ]]; then
 
-		log "${configs_antsTemplate} brain mask template selected"
+		log --no-datetime "${configs_antsTemplate} brain mask template selected"
 
 		fileTemplate="${pathBrainmaskTemplates}/MICCAI2012-Multi-Atlas-Challenge-Data/T_template0.nii.gz"
 		fileProbability="${pathBrainmaskTemplates}/MICCAI2012-Multi-Atlas-Challenge-Data/T_template0_BrainCerebellumProbabilityMask.nii.gz"
 
 	elif [[ ${configs_antsTemplate} == "NKI" ]]; then
 
-		log "${configs_antsTemplate} brain mask template selected"
+		log --no-datetime "${configs_antsTemplate} brain mask template selected"
 
 		fileTemplate="${pathBrainmaskTemplates}/NKI/T_template.nii.gz"
 		fileProbability="${pathBrainmaskTemplates}/NKI/T_template_BrainCerebellumProbabilityMask.nii.gz"
 
 	elif [[ ${configs_antsTemplate} == "IXI" ]]; then
 
-		log "${configs_antsTemplate} brain mask template selected"
+		log --no-datetime "${configs_antsTemplate} brain mask template selected"
 
 		fileTemplate="${pathBrainmaskTemplates}/IXI/T_template0.nii.gz"
 		fileProbability="${pathBrainmaskTemplates}/IXI/T_template_BrainCerebellumProbabilityMask.nii.gz"
 
 	elif [[ ${configs_antsTemplate} == "KBASE" ]]; then
 
-		log "${configs_antsTemplate} brain mask template selected"
+		log --no-datetime "${configs_antsTemplate} brain mask template selected"
 
 		fileTemplate="${pathBrainmaskTemplates}/KBASE/t1template0.nii.gz"
 		fileProbability="${pathBrainmaskTemplates}/KBASE/t1template0_probabilityMask.nii.gz"
@@ -210,7 +169,7 @@ if ${flags_T1_extract_and_mask}; then
 
 	elif [[ ${configs_antsTemplate} == "bet" ]]; then
 
-		log "${configs_antsTemplate} Using bet -f and -g inputs to perform fsl bet with -B option"
+		log --no-datetime "${configs_antsTemplate} Using bet -f and -g inputs to perform fsl bet with -B option"
 
 	else
 
@@ -225,29 +184,31 @@ if ${flags_T1_extract_and_mask}; then
 		if [[ ${configs_antsTemplate} == "bet" ]]; then
 			cmd="bet ${fileIn} ${fileOut} \
 			-B -m -f ${configs_T1_A_betF} -g ${configs_T1_A_betG}"
-			log $cmd
+			log --no-datetime $cmd
 			eval $cmd 
 			out=$?
 		else 
 			antsBrainExtraction="$( which antsBrainExtraction.sh )"
-			log "antsBrainExtraction path is $antsBrainExtraction"
+			log --no-datetime "antsBrainExtraction path is $antsBrainExtraction"
 
 			ANTSlog="$T1path/ants_bet.log"
 			cmd="${antsBrainExtraction} -d 3 -a ${fileIn} \
 			-e ${fileTemplate} \
 			-m ${fileProbability} \
 			-o ${fileOutroot} > ${ANTSlog}"
-			log $cmd
+			log --no-datetime $cmd
 			eval $cmd 					
 
 			cmd="mv $T1path/T1_BrainExtractionMask.nii.gz ${fileIn2}"
-			log $cmd
+			log --no-datetime $cmd
 			eval $cmd 
 			cmd="mv $T1path/T1_BrainExtractionBrain.nii.gz ${fileOut}"
-			log $cmd
+			log --no-datetime $cmd
 			eval $cmd 					
 			out=$?
+		fi
 
+		if [ -n "$config_brainmask_overlap_thr" ]; then
 			## For QC purposes, we run bet anyway, to compare the bet mask with the one from ANTS
 			
 			fileOut_bet="$T1path/T1_brain_betQC.nii.gz"
@@ -255,10 +216,10 @@ if ${flags_T1_extract_and_mask}; then
 
 			cmd="bet ${fileIn} ${fileOut_bet} \
 			-B -m -f ${configs_T1_A_betF} -g ${configs_T1_A_betG}"
-			log $cmd
+			log --no-datetime $cmd
 			eval $cmd 
 			qc_out=$?
-
+			
 			bet_mask="$T1path/T1_brain_betQC_mask.nii.gz"
 
 			if [[ -e ${bet_mask} ]]; then
@@ -267,7 +228,7 @@ if ${flags_T1_extract_and_mask}; then
 				qc "Computing the overlap between ANTS and bet brain masks"
 				## Find the overlap between the two masks - BET vs ANTS and compute the volume
 				cmd="fslmaths ${bet_mask} -mul ${fileIn2} -bin ${overlap_mask}"
-				log "$cmd"
+				log --no-datetime "$cmd"
 				eval $cmd
 
 				# COmpute the volume of the overlap
@@ -290,19 +251,19 @@ if ${flags_T1_extract_and_mask}; then
 
 				if (( $(echo "$match < ${config_brainmask_overlap_thr}" |bc -l) )); then
 					qc "WARNING the mismatch between the ANTS brain_mask and bet brain_mask is greater than 80%"
-					qc "QC is highly recommended. You may compare both masks with FSLeyes"
-					qc "ANTS mask is ${fileIn2}"
-					qc "BET mask is ${bet_mask}"
-					qc "The intersection of the masks is ${overlap_mask}"
+					qc --no-datetime "QC is highly recommended. You may compare both masks with FSLeyes"
+					qc --no-datetime "ANTS mask is ${fileIn2}"
+					qc --no-datetime "BET mask is ${bet_mask}"
+					qc --no-datetime "The intersection of the masks is ${overlap_mask}"
 				fi 
 				
 
 			else
 				log "WARNING: BET mask not generated.. skipping brain extraction QC"
-				log "WARNING: We recommend doing a visual inspection of the brain mask" 
+				log --no-datetime "WARNING: We recommend doing a visual inspection of the brain mask." 
 			fi
+		fi
 
-		fi 
 
 		fileOut2="$T1path/T1_brain_mask_filled.nii.gz"
 
@@ -313,7 +274,7 @@ if ${flags_T1_extract_and_mask}; then
 			eval $cmd	
 			out=$?
 			if [[ $out == 0 ]] && [[ -e ${fileOut2} ]]; then
-				log "BET completed"
+				log --no-datetime "BET completed"
 			else
 				log "WARNING ${fileOut2} not created. Exiting... "
 				exit 1					
@@ -338,11 +299,11 @@ if ${flags_T1_re_extract}; then
 
 	if [[ -e "$fileIn" ]] && [[ -e "$fileMask" ]]; then
 		cmd="fslmaths ${fileIn} -mul ${fileMask} ${fileOut}"
-		log $cmd
+		log "$cmd"
 		eval $cmd
 		out=$?
 		if [[ $out == 0 ]] && [[ -e ${fileOut} ]]; then
-			log "${fileOut} created"
+			log --no-datetime "${fileOut} created"
 		else
 			log "WARNING ${fileOut} not created. Exiting... "
 			exit 1					
@@ -351,4 +312,5 @@ if ${flags_T1_re_extract}; then
 	fi
 fi
 
-
+module unload fsl
+module unload ants

@@ -4,7 +4,7 @@ import sys
 import numpy as np
 from scipy.io import savemat
 
-EPIpath=os.environ['EPIpath']
+EPIpath=os.environ['EPIrun_out']
 
 HMPpath=sys.argv[1]
 numReg=int(sys.argv[2])

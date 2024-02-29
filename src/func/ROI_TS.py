@@ -19,27 +19,18 @@ flog.write("\n PhReg_path "+ PhReg_path)
 flog.write("\n *** python ROI_TS **** ")
 numParcs = int(os.environ['numParcs'])
 flog.write("\n numParcs "+ str(numParcs))
-EPIpath=os.environ['EPIpath']
+EPIpath=os.environ['EPIrun_out']
 flog.write("\n EPIpath "+ EPIpath)
-nR=os.environ['nR']
-flog.write("\n nR "+ nR)
+
 post_nR=os.environ['post_nR']
 flog.write("\n post_nR "+ post_nR)
 
-fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.npz'])
-print("loading data from ",fname)
-data = np.load(fname) 
-
 # load appropriate residuals
-if nR == post_nR:
-    print("No post-regression denoising found. Loading residuals from ",fname)
-    resid=data['resid']
-else:
-    fname_post = ''.join([PhReg_path,'/NuisanceRegression_',post_nR,'.npz'])
-    print("Loading post-regression residuals from ",fname_post)
-    flog.write("\n Loading post-regression residuals "+fname_post)
-    data_postreg = np.load(fname_post) 
-    resid = data_postreg['resid'] 
+fname_post = ''.join([PhReg_path,'/NuisanceRegression_',post_nR,'.npz'])
+print("Loading post-regression residuals from ",fname_post)
+flog.write("\n Loading post-regression residuals "+fname_post)
+data_postreg = np.load(fname_post) 
+resid = data_postreg['resid'] 
 
 ### read nifti data
  # find the correct WM mask
@@ -47,15 +38,15 @@ fname = ''.join([EPIpath,'/rT1_WM_mask_eroded.nii.gz'])
 volWM_vol = np.asanyarray(nib.load(fname).dataobj)
 numVoxels = np.count_nonzero(volWM_vol);
 
-volWM_mask = np.logical_not(volWM_vol).astype(np.int) ## negate array and make int
+volWM_mask = np.logical_not(volWM_vol).astype(int) ## negate array and make int
 
 fname = ''.join([EPIpath,'/rT1_CSF_mask_eroded.nii.gz'])
 volCSF_vol = np.asanyarray(nib.load(fname).dataobj)
-volCSF_mask = np.logical_not(volCSF_vol).astype(np.int) ## negate array and make int
+volCSF_mask = np.logical_not(volCSF_vol).astype(int) ## negate array and make int
 
 fname = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
 volBrain_vol = np.asanyarray(nib.load(fname).dataobj)
-volBrain_mask = (volBrain_vol != 0).astype(np.int)
+volBrain_mask = (volBrain_vol != 0).astype(int)
 
 for pc in range(0,len(resid)):
 

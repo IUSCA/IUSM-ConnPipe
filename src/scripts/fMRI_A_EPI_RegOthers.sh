@@ -1,10 +1,7 @@
-
-               
 #!/bin/bash
 #
 # Script: fMRI_A adaptaion from Matlab script 
 #
-
 ###############################################################################
 #
 # Environment set up
@@ -17,13 +14,12 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ############################################################################### 
 
-
 msg2file "=========================================================="
 msg2file "3. Apply transformation to tissue and parcellation images."
 msg2file "=========================================================="
 
-if [[ ! -e "${EPIpath}/T1_2_epi_dof6_bbr.mat" ]]; then  
-    log "WARNING File ${EPIpath}/T1_2_epi_dof6_bbr.mat does not exist. Skipping further analysis"
+if [[ ! -e "${EPIrun_out}/T1_2_epi_dof6_bbr.mat" ]]; then  
+    log "WARNING File ${EPIrun_out}/T1_2_epi_dof6_bbr.mat does not exist. Skipping further analysis"
     exit 1 
 fi
 
@@ -31,9 +27,9 @@ fi
 
 # brain 
 fileIn="${T1path}/T1_brain.nii.gz"
-fileRef="${EPIpath}/2_epi_meanvol_mask.nii.gz"
-fileOut="${EPIpath}/rT1_brain_dof6bbr.nii.gz"
-fileInit="${EPIpath}/T1_2_epi_dof6_bbr.mat"
+fileRef="${EPIrun_out}/2_epi_meanvol_mask.nii.gz"
+fileOut="${EPIrun_out}/rT1_brain_dof6bbr.nii.gz"
+fileInit="${EPIrun_out}/T1_2_epi_dof6_bbr.mat"
 cmd="flirt -in ${fileIn} \
     -ref ${fileRef} \
     -out ${fileOut} \
@@ -42,7 +38,7 @@ cmd="flirt -in ${fileIn} \
 log $cmd
 eval $cmd 
 
-# COmpute the volume 
+# Compute the volume 
 cmd="fslstats ${fileOut} -V"
 qc "$cmd"
 out=`$cmd`
@@ -50,9 +46,9 @@ qc "Number of voxels in ${fileOut} :  $out"
 
 # brain mask
 fileIn="${T1path}/T1_brain_mask_filled.nii.gz"
-fileRef="${EPIpath}/2_epi_meanvol_mask.nii.gz"
-fileOut="${EPIpath}/rT1_brain_mask"
-fileInit="${EPIpath}/T1_2_epi_dof6_bbr.mat"
+fileRef="${EPIrun_out}/2_epi_meanvol_mask.nii.gz"
+fileOut="${EPIrun_out}/rT1_brain_mask"
+fileInit="${EPIrun_out}/T1_2_epi_dof6_bbr.mat"
 cmd="flirt -in ${fileIn} \
     -ref ${fileRef} \
     -out ${fileOut} \
@@ -61,16 +57,15 @@ cmd="flirt -in ${fileIn} \
 log $cmd
 eval $cmd 
 
-# COmpute the volume 
+# Compute the volume 
 cmd="fslstats ${fileOut} -V"
 qc "$cmd"
 out=`$cmd`
 qc "Number of voxels in ${fileOut} :  $out"
-#voxels=`echo $out | awk -F' ' '{ print $2}'`
 
 # WM mask
 fileIn="${T1path}/T1_WM_mask.nii.gz"
-fileOut="${EPIpath}/rT1_WM_mask"
+fileOut="${EPIrun_out}/rT1_WM_mask"
 cmd="flirt -in ${fileIn} \
     -ref ${fileRef} \
     -out ${fileOut} \
@@ -79,15 +74,15 @@ cmd="flirt -in ${fileIn} \
 log $cmd
 eval $cmd 
 
-# COmpute the volume 
+# Compute the volume 
 cmd="fslstats ${fileOut} -V"
 qc "$cmd"
 out=`$cmd`
 qc "Number of voxels in ${fileOut} :  $out"
 
-# 3rd (final) Erotion WM mask
+# Eroded WM mask
 fileIn="${T1path}/T1_WM_mask_eroded.nii.gz"
-fileOut="${EPIpath}/rT1_WM_mask_eroded"
+fileOut="${EPIrun_out}/rT1_WM_mask_eroded"
 cmd="flirt -in ${fileIn} \
     -ref ${fileRef} \
     -out ${fileOut} \
@@ -96,7 +91,7 @@ cmd="flirt -in ${fileIn} \
 log $cmd
 eval $cmd 
 
-# COmpute the volume 
+# Compute the volume 
 cmd="fslstats ${fileOut} -V"
 qc "$cmd"
 out=`$cmd`
@@ -104,7 +99,7 @@ qc "Number of voxels in ${fileOut} :  $out"
 
 # CSF mask
 fileIn="${T1path}/T1_CSF_mask.nii.gz"
-fileOut="${EPIpath}/rT1_CSF_mask"
+fileOut="${EPIrun_out}/rT1_CSF_mask"
 cmd="flirt -in ${fileIn} \
     -ref ${fileRef} \
     -out ${fileOut} \
@@ -121,7 +116,7 @@ qc "Number of voxels in ${fileOut} :  $out"
 
 # Eroded CSF mask
 fileIn="${T1path}/T1_CSF_mask_eroded.nii.gz"
-fileOut="${EPIpath}/rT1_CSF_mask_eroded"
+fileOut="${EPIrun_out}/rT1_CSF_mask_eroded"
 cmd="flirt -in ${fileIn} \
     -ref ${fileRef} \
     -out ${fileOut} \
@@ -130,7 +125,7 @@ cmd="flirt -in ${fileIn} \
 log $cmd
 eval $cmd 
 
-# COmpute the volume 
+# Compute the volume 
 cmd="fslstats ${fileOut} -V"
 qc "$cmd"
 out=`$cmd`
@@ -138,7 +133,7 @@ qc "Number of voxels in ${fileOut} :  $out"
 
 # CSF ventricle mask 
 fileIn="${T1path}/T1_CSFvent_mask.nii.gz"
-fileOut="${EPIpath}/rT1_CSFvent_mask"
+fileOut="${EPIrun_out}/rT1_CSFvent_mask"
 cmd="flirt -in ${fileIn} \
     -ref ${fileRef} \
     -out ${fileOut} \
@@ -155,7 +150,7 @@ qc "Number of voxels in ${fileOut} :  $out"
 
 # CSF ventricle mask eroded
 fileIn="${T1path}/T1_CSFvent_mask_eroded.nii.gz"
-fileOut="${EPIpath}/rT1_CSFvent_mask_eroded"
+fileOut="${EPIrun_out}/rT1_CSFvent_mask_eroded"
 cmd="flirt -in ${fileIn} \
     -ref ${fileRef} \
     -out ${fileOut} \
@@ -172,9 +167,9 @@ qc "Number of voxels in ${fileOut} :  $out"
 
 #-------------------------------------------------------------------------#
 
-# Probabilistic GM reg to fMRI space
+# GM reg to fMRI space
 fileIn="${T1path}/T1_GM_mask.nii.gz"
-fileOut="${EPIpath}/rT1_GM_mask_prob"
+fileOut="${EPIrun_out}/rT1_GM_mask_prob"
 cmd="flirt -applyxfm \
 -init ${fileInit} \
 -interp spline \
@@ -184,15 +179,15 @@ cmd="flirt -applyxfm \
 log $cmd
 eval $cmd   
 
-# COmpute the volume 
+# Compute the volume 
 cmd="fslstats ${fileOut} -V"
 qc "$cmd"
 out=`$cmd`
 qc "Number of voxels in ${fileOut}: $out"
 
 # binarize GM probability map
-fileIn="${EPIpath}/rT1_GM_mask_prob.nii.gz"
-fileOut="${EPIpath}/rT1_GM_mask"
+fileIn="${EPIrun_out}/rT1_GM_mask_prob.nii.gz"
+fileOut="${EPIrun_out}/rT1_GM_mask"
 cmd="fslmaths ${fileIn} -thr ${configs_EPI_GMprobthr} -bin ${fileOut}"
 log $cmd
 eval $cmd 
@@ -214,7 +209,7 @@ if ${configs_T1_addsubcort} && ! ${configs_T1_subcortUser}; then  # default FSL 
     
         # transformation from T1 to epi space
         fileIn="${T1path}/T1_GM_parc_FSLsubcort.nii.gz"
-        fileOut="${EPIpath}/rT1_parc_FSLsubcort.nii.gz"
+        fileOut="${EPIrun_out}/rT1_parc_FSLsubcort.nii.gz"
 
         cmd="flirt -applyxfm -init ${fileInit} \
         -interp nearestneighbour \
@@ -225,9 +220,9 @@ if ${configs_T1_addsubcort} && ! ${configs_T1_subcortUser}; then  # default FSL 
         eval $cmd 
 
         # masking with GM
-        fileIn="${EPIpath}/rT1_parc_FSLsubcort.nii.gz"                        
-        fileOut="${EPIpath}/rT1_GM_parc_FSLsubcort.nii.gz"
-        fileMul="${EPIpath}/rT1_GM_mask.nii.gz"
+        fileIn="${EPIrun_out}/rT1_parc_FSLsubcort.nii.gz"                        
+        fileOut="${EPIrun_out}/rT1_GM_parc_FSLsubcort.nii.gz"
+        fileMul="${EPIrun_out}/rT1_GM_mask.nii.gz"
 
         cmd="fslmaths ${fileIn} \
         -mas ${fileMul} ${fileOut}"
@@ -267,7 +262,7 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
 
         # transformation from T1 to epi space
         fileIn="${T1path}/T1_GM_parc_${parc}.nii.gz" # dropped the dil from testing
-        fileOut="${EPIpath}/rT1_parc_${parc}.nii.gz"
+        fileOut="${EPIrun_out}/rT1_parc_${parc}.nii.gz"
 
         cmd="flirt -applyxfm -init ${fileInit} \
         -interp nearestneighbour \
@@ -278,9 +273,9 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
         eval $cmd 
 
         # masking with GM
-        fileIn="${EPIpath}/rT1_parc_${parc}.nii.gz"                        
-        fileOut="${EPIpath}/rT1_GM_parc_${parc}.nii.gz"
-        fileMul="${EPIpath}/rT1_GM_mask.nii.gz"
+        fileIn="${EPIrun_out}/rT1_parc_${parc}.nii.gz"                        
+        fileOut="${EPIrun_out}/rT1_GM_parc_${parc}.nii.gz"
+        fileMul="${EPIrun_out}/rT1_GM_mask.nii.gz"
 
         cmd="fslmaths ${fileIn} \
         -mas ${fileMul} ${fileOut}"
@@ -302,7 +297,7 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
 
         # transformation from T1 to epi space
         fileIn="${T1path}/T1_GM_parc_${parc}.nii.gz"
-        fileOut="${EPIpath}/rT1_parc_${parc}.nii.gz"
+        fileOut="${EPIrun_out}/rT1_parc_${parc}.nii.gz"
 
         cmd="flirt -applyxfm -init ${fileInit} \
         -interp nearestneighbour \
@@ -313,9 +308,9 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
         eval $cmd 
 
         # masking with GM
-        fileIn="${EPIpath}/rT1_parc_${parc}.nii.gz"                        
-        fileOut="${EPIpath}/rT1_GM_parc_${parc}.nii.gz"
-        fileMul="${EPIpath}/rT1_GM_mask.nii.gz"
+        fileIn="${EPIrun_out}/rT1_parc_${parc}.nii.gz"                        
+        fileOut="${EPIrun_out}/rT1_GM_parc_${parc}.nii.gz"
+        fileMul="${EPIrun_out}/rT1_GM_mask.nii.gz"
 
         cmd="fslmaths ${fileIn} \
         -mas ${fileMul} ${fileOut}"
@@ -337,7 +332,7 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
 
         # transformation from T1 to epi space
         fileIn="${T1path}/T1_parc_${parc}.nii.gz"
-        fileOut="${EPIpath}/rT1_parc_${parc}.nii.gz"
+        fileOut="${EPIrun_out}/rT1_parc_${parc}.nii.gz"
 
         cmd="flirt -applyxfm -init ${fileInit} \
         -interp nearestneighbour \
@@ -362,38 +357,38 @@ done
 # ------------------------------------------------------------------------- ##
 # Generate EPI -> MNI and MNI -> EPI transformations
 
-if [[ ! -e "${EPIpath}/T1_2_epi_dof6_bbr.mat" ]]; then  
-    log "WARNING File ${EPIpath}/T1_2_epi_dof6_bbr.mat does not exist. Skipping further analysis"
+if [[ ! -e "${EPIrun_out}/T1_2_epi_dof6_bbr.mat" ]]; then  
+    log "WARNING File ${EPIrun_out}/T1_2_epi_dof6_bbr.mat does not exist. Skipping further analysis"
     exit 1 
 fi
 
 T1reg="${T1path}/registration"
     
 # EPI -> T1 linear dof6 and bbr (inverse of T1 -> EPI)
-fileMat="${EPIpath}/T1_2_epi_dof6_bbr.mat"
-fileMatInv="${EPIpath}/epi_dof6_bbr_2_T1.mat"
+fileMat="${EPIrun_out}/T1_2_epi_dof6_bbr.mat"
+fileMatInv="${EPIrun_out}/epi_dof6_bbr_2_T1.mat"
 cmd="convert_xfm -omat ${fileMatInv} -inverse ${fileMat}"
 log $cmd
 eval $cmd
 
 # Combine with T12MNI_dof6
 fileMat1="${T1reg}/T12MNI_dof6.mat"
-fileMat2="${EPIpath}/epi_dof6_bbr_2_T1.mat"
-fileMatJoint="${EPIpath}/epi_2_MNI_dof6.mat"
+fileMat2="${EPIrun_out}/epi_dof6_bbr_2_T1.mat"
+fileMatJoint="${EPIrun_out}/epi_2_MNI_dof6.mat"
 cmd="convert_xfm -omat ${fileMatJoint} -concat ${fileMat1} ${fileMat2}"
 log $cmd
 eval $cmd
 
 # Finally, apply T12MNI_dof12 and make an inverse
 fileMat1="${T1reg}/T12MNI_dof12.mat"
-fileMat2="${EPIpath}/epi_2_MNI_dof6.mat"
-fileMatJoint="${EPIpath}/epi_2_MNI_final.mat"
+fileMat2="${EPIrun_out}/epi_2_MNI_dof6.mat"
+fileMatJoint="${EPIrun_out}/epi_2_MNI_final.mat"
 cmd="convert_xfm -omat ${fileMatJoint} -concat ${fileMat1} ${fileMat2}"
 log $cmd
 eval $cmd
 
-fileMat="${EPIpath}/epi_2_MNI_final.mat"
-fileMatInv="${EPIpath}/MNI_2_epi_final.mat"
+fileMat="${EPIrun_out}/epi_2_MNI_final.mat"
+fileMatInv="${EPIrun_out}/MNI_2_epi_final.mat"
 cmd="convert_xfm -omat ${fileMatInv} -inverse ${fileMat}"
 log $cmd
 eval $cmd

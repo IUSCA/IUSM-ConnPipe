@@ -1,10 +1,7 @@
-
-
 #!/bin/bash
 #
 # Script: f_preproc_DWI.m adaptaion from Matlab script 
 #
-
 ###############################################################################
 #
 # Environment set up
@@ -17,296 +14,288 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ############################################################################### 
 
-function extract_b0_images() {
-path="$1" pbval="$2" python - <<END
-import os
-import numpy as np
+msg2file "=================================="
+msg2file "2. Eddy Correction"
+msg2file "=================================="
+    
+## Path to eddy subdirectory
+if [[ ! -d "${EDDYpath}" ]]; then
+    log " Creating EDDY subdirectory."
+    mkdir -p ${EDDYpath}
+fi
 
-DWIpath=os.environ['path']
-pbval=os.environ['pbval']
-configs_DWI_b0cut = int(os.environ['configs_DWI_b0cut'])
+log "EDDY directory is ${EDDYpath}"
 
-# print(DWIpath)
+if ${flags_EDDY_prep}; then
 
-def is_empty(any_struct):
-    if any_struct:
-        return False
-    else:
-        return True 
+    log "Purging existing EDDY subdirectory."
+    # remove any existing files
+    rm -rf ${EDDYpath}
+    log "rm -rf ${EDDYpath}/"
+    mkdir -p ${EDDYpath}
 
-#pbval=''.join([DWIpath,'/',dwifile,'.bval'])
-bval = np.loadtxt(pbval)
-# print(bval)
-
-B0_index = np.where(bval<=configs_DWI_b0cut)
-# print(B0_index)
-
-if is_empty(B0_index):    
-    #print("No B0 volumes identified. Check quality of 0_DWI.bval") 
-    print(0)
-else:   
-    b0file = ''.join([DWIpath,"/b0file.txt"])
-    ff = open(b0file,"w+")
-    for i in np.nditer(B0_index):
-        ff.write("%s\n" % i)
-    ff.close()
-    print(1)
-
-END
-}
-
-
-############################################################################### 
-
-
-echo "=================================="
-echo "2. Eddy Correction"
-echo "=================================="
-
-log "Number of scans is ${nscanmax}"
-
-for ((nscan=1; nscan<=nscanmax; nscan++)); do  #1 or 2 DWI scans
-
-
-    if ${configs_DWI_DICOMS2_B0only} && [[ "$nscan" -eq 2 ]]; then
-        log "WARNING skipping EDDY for DICOMS2"
-    else
-
-        # set paths to opposite phase encoded images
-        path_DWI_UNWARP=${DWIpath}/${configs_unwarpFolder}
-
-        if [[ "${nscanmax}" -eq "1" ]]; then 
-            export path_DWI_EDDY="${DWIpath}/EDDY"
-        elif [[ "${nscanmax}" -eq "2" ]]; then 
-            export path_DWI_EDDY="${DWIpath}/EDDY${nscan}"
-        fi 
-
-        log "path_DWI_EDDY is ${path_DWI_EDDY}"
-
-        # create output directory if one does not exist
-        if [[ ! -d "${path_DWI_EDDY}" ]]; then
-            cmd="mkdir ${path_DWI_EDDY}"
-            log $cmd
-            eval $cmd
-        fi 
-
-        # remove any existing files
-        rm -rf ${path_DWI_EDDY}/*
-        log "rm -rf ${path_DWI_EDDY}/*"
-
-        if [[ "$nscanmax" -eq "1" ]]; then 
-            dwifile="0_DWI"
-            b0file="AP_b0"
-        elif [[ "$nscanmax" -eq "2" ]]; then 
-            dwifile="0_DWI_ph${nscan}"
-            b0file=ph${nscan}_b0_
-        fi 
-
-        # prepare inputs for EDDY
+    # Prepare inputs for EDDY
         ## Create a B0 mask
-        if [[ -d "${path_DWI_UNWARP}" ]] && [[ -e "${path_DWI_UNWARP}/topup_unwarped.nii.gz" ]]; then
-            # inputs if topup was done
-            fileIn="${path_DWI_UNWARP}/topup_unwarped.nii.gz"
-            fileMean="${path_DWI_EDDY}/meanb0_unwarped.nii.gz"    
+    if [[ -d "${TOPUPpath}" ]] && [[ -e "${TOPUPpath}/topup_unwarped.nii.gz" ]]; then
+        # inputs if topup was done
+        fileIn="${TOPUPpath}/topup_unwarped.nii.gz"
+        fileMean="${EDDYpath}/meanb0_unwarped.nii.gz"    
+    else
+        # if topup distortion not available
+        log "WARNING Topup data not found; EDDY will run without topup field."
+        # Extract B0 volumes from dataset
+
+        cmd="python ${EXEDIR}/src/func/index_b0_images.py \
+        ${DWIpath} ${fileBval} ${configs_DWI_b0cut} "AP""
+        log $cmd
+        res=$(eval $cmd)
+
+        if [[ ${res} -ne "1" ]]; then
+            log "WARNING: No b0 volumes identified. Check quality of ${fileBval}"
         else
-            # if topup distortion not available
-            log "WARNING Topup data not found; Will run EDDY without topup field"
-            # Extract B0 volumes from dataset
-            res=$(extract_b0_images ${DWIpath} ${fileBval})
+            log "B0 indices identified: "
+            B0_indices="${DWIpath}/b0indicesAP.txt"
+            nB0=0
 
-            if [[ ${res} -ne "1" ]]; then
-                log "WARNING: No b0 volumes identified. Check quality of ${fileBval}"
-            else
-                log "B0 indices identified: "
-                B0_indices="${DWIpath}/b0file.txt"
-                fileIn="${fileNifti}"
-                nB0=0
+            while IFS= read -r b0_index
+            do 
+                echo "$b0_index"
+                nB0=$(echo $nB0+1 | bc) ## number of B0 indices 
 
-                while IFS= read -r b0_index
-                do 
-                    echo "$b0_index"
-                    nB0=$(echo $nB0+1 | bc) ## number of B0 indices 
+                fileOut="${EDDYpath}/AP_b0_${b0_index}.nii.gz"
 
-                    fileOut="${path_DWI_EDDY}/AP_b0_${b0_index}.nii.gz"
+                cmd="fslroi ${fileNifti} ${fileOut} ${b0_index} 1"
+                log $cmd
+                eval $cmd
+            done < "$B0_indices"
 
-                    cmd="fslroi ${fileIn} ${fileOut} ${b0_index} 1"
-                    log $cmd
-                    eval $cmd
-                done < "$B0_indices"
-
-            fi 
-            # create a list of AP volume names
-            ## list all files in EDDY directory
-            ### should just be the B0 images
-            filesIn=$(find ${path_DWI_EDDY} -maxdepth 1 -type f -iname "*.nii.gz")
-            echo $filesIn
-            B0_list=$(find ${path_DWI_EDDY} -maxdepth 1 -type f -iname "*.nii.gz" | wc -l)
-            echo "$B0_list AP_b0 volumes were found in ${path_DWI_EDDY}"
-
-            ### merge into a 4D volume
-            fileOut="${path_DWI_EDDY}/all_b0_raw.nii.gz"
-            cmd="fslmerge -t ${fileOut} ${filesIn}"
-            log $cmd
-            eval $cmd 
-
-            ## Inputs if topup was not done
-            fileIn="${path_DWI_EDDY}/all_b0_raw.nii.gz"
-            fileMean="${path_DWI_EDDY}/meanb0.nii.gz"
         fi 
 
+        # create a list of AP volume names
+        ## list all files in EDDY directory
+        ### should just be the B0 images
+        filesIn=$(find ${EDDYpath} -maxdepth 1 -type f -iname "*.nii.gz")
+        echo $filesIn
+        B0_list=$(find ${EDDYpath} -maxdepth 1 -type f -iname "*.nii.gz" | wc -l)
+        echo "$B0_list AP_b0 volumes were found in ${EDDYpath}"
 
-        # Generate mean B0 image
-        cmd="fslmaths ${fileIn} -Tmean ${fileMean}"
+        ### merge into a 4D volume
+        fileOut="${EDDYpath}/all_b0_raw.nii.gz"
+        cmd="fslmerge -t ${fileOut} ${filesIn}"
         log $cmd
         eval $cmd 
 
-        # run FSL brain extraction to get B0 brain mask
-        fileBrain="${path_DWI_EDDY}/b0_brain.nii.gz"
-        cmd="bet ${fileMean} ${fileBrain} -f ${configs_DWI_EDDYf} -m"
-        log $cmd
-        eval $cmd
+        ## Inputs if topup was not done
+        fileIn="${path_DWI_EDDY}/all_b0_raw.nii.gz"
+        fileMean="${path_DWI_EDDY}/meanb0.nii.gz"
+    fi 
 
-        # find location of b0 volumes in dataset
-        ## Extract b0 volumes from dataset
-        res=$(extract_b0_images ${DWIpath} ${fileBval})
-        echo "res is ${res}"
+    # Generate mean B0 image
+    cmd="fslmaths ${fileIn} -Tmean ${fileMean}"
+    log $cmd
+    eval $cmd 
+
+    # run FSL brain extraction to get B0 brain mask
+    fileBrain="${EDDYpath}/b0_brain.nii.gz"
+    cmd="bet ${fileMean} ${fileBrain} -f ${configs_DWI_EDDYf} -m"
+    log $cmd
+    eval $cmd
+
+    #####################################################################################
+    ## SETTING EDDY INPUTS (EDDYPREP)
+
+    # Set the acqparams, index, and input image data
+    ## If no full reverse phase encoding is available
+    if [[ "$rtag" -gt 1 ]]; then
+ 
+        # image data
+        fileIn="${fileNifti}"
+        fileInBvec="${fileBvec}"
+        fileInBval="${fileBval}"
+
+        # Find position of b0 volumes in dataset
+        cmd="python ${EXEDIR}/src/func/index_b0_images.py \
+        ${DWIpath} ${fileInBval} ${configs_DWI_b0cut} "AP""
+        log $cmd
+        res=$(eval $cmd)
 
         if [[ ${res} -ne "1" ]]; then
-            log "WARNING: No b0 volumes identified. Check quality of 0_DWI.bval"
+            log "WARNING: No b0 volumes identified. Check quality of ${fileInBval}"
         else
             log "B0 indices identified: "
-            B0_indices="${DWIpath}/b0file.txt"
+            B0_indices="${DWIpath}/b0indicesAP.txt"
             nB0=0
+
             while IFS= read -r b0_index
             do 
                 echo "$b0_index"
                 nB0=$(echo $nB0+1 | bc) ## number of B0 indices 
             done < "$B0_indices"
+        fi  
 
-        fi 
-
-        # Acquisition parameters file
-        ## EDDY only cares about phase encoding and readout
-        ## Unless DWI series contains both AP and PA in one 4D image, only one line is needed
-        ## write out the acqparams_eddy.txt 
-        APline=${DWIdcm_phase_1}
-
+        # acqparams file
         for ((i = 0; i < $nB0; i++)); do
-            echo $APline >> "${path_DWI_EDDY}/acqparams_eddy.txt"
+            echo $APline >> "${EDDYpath}/acqparams_eddy.txt"
         done
+        fileInAcqp="${EDDYpath}/acqparams_eddy.txt"
 
         # Index file
-        cmd="python ${EXEDIR}/src/func/get_B0_temporal_info.py ${fileNifti}"
+        cmd="python ${EXEDIR}/src/func/get_B0_temporal_info.py ${fileIn} ${B0_indices}"
         log $cmd
         eval $cmd
+        fileInIndex="${EDDYpath}/index.txt"
 
-        # State EDDY inputs
-        fileIn="${fileNifti}"
-        fileBvec="${fileBvec}"
-        fileBval="${fileBval}"
-        fileJson="${fileJson}"
+    ## If there are two full reverse phase encoding runs
+    elif [[ "$rtag" -eq 1 ]]; then
 
-        fileMask="${path_DWI_EDDY}/b0_brain_mask.nii.gz"
+        #image data: acquistions must be merged into a single 4D file
+        fileIn="${DWIpath}/0_DWI_AP-PA.nii.gz"
+        cmd="fslmerge -t ${fileIn} ${fileNifti} ${fileNiftiPA}"
+        log $cmd
+        eval $cmd 
+        dim4AP=`fslnvols "${fileNifti}"`
 
-        if [[ -d "${path_DWI_UNWARP}" ]] && [[ -e "${path_DWI_UNWARP}/topup_results_movpar.txt" ]]; then
-            fileTopup="${path_DWI_UNWARP}/topup_results"
-        fi 
-        fileIndex="${path_DWI_EDDY}/index.txt"
-        fileAcqp="${path_DWI_EDDY}/acqparams_eddy.txt"
-        fileOut="${path_DWI_EDDY}/eddy_output"
+        # now the bvec and bval need to be concatenated
 
-        if ${configs_DWI_repolON}; then  #Remove and interpolate outlier slices
-        ## By default, an outlier is a slice whose average intensity is at
-        ## least 4 standard deviations lower than what is expected by the
-        ## Gaussian Process Prediction within EDDY.
-            log "repolON"
-            if [[ -d "${path_DWI_UNWARP}" ]] && [[ -e "${path_DWI_UNWARP}/topup_results_fieldcoef.nii.gz" ]]; then
-                if ${configs_DWI_MBjson}; then
-                    cmd="eddy_openmp \
-                    --imain=${fileIn} \
-                    --mask=${fileMask} \
-                    --bvecs=${fileBvec} \
-                    --bvals=${fileBval} \
-                    --topup=${fileTopup} \
-                    --index=${fileIndex} \
-                    --acqp=${fileAcqp} \
-                    --repol --json=${fileJson} --out=${fileOut}"
-                else 
-                    cmd="eddy_openmp \
-                    --imain=${fileIn} \
-                    --mask=${fileMask} \
-                    --bvecs=${fileBvec} \
-                    --bvals=${fileBval} \
-                    --topup=${fileTopup} \
-                    --index=${fileIndex} \
-                    --acqp=${fileAcqp} \
-                    --repol --out=${fileOut}"
-                fi 
-            else  # no topup field available 
-                if ${configs_DWI_MBjson}; then
-                    cmd="eddy_openmp \
-                    --imain=${fileIn} \
-                    --mask=${fileMask} \
-                    --bvecs=${fileBvec} \
-                    --bvals=${fileBval} \
-                    --index=${fileIndex} \
-                    --acqp=${fileAcqp} \
-                    --repol --json=${fileJson} --out=${fileOut}"
-                else 
-                    cmd="eddy_openmp \
-                    --imain=${fileIn} \
-                    --mask=${fileMask} \
-                    --bvecs=${fileBvec} \
-                    --bvals=${fileBval} \
-                    --index=${fileIndex} \
-                    --acqp=${fileAcqp} \
-                    --repol --out=${fileOut}"
-                fi 
-            fi
-            log $cmd
-            eval $cmd
-        else #no repol
-            log "repolOFF"
-            if [[ -d "${path_DWI_UNWARP}"  && -e "${path_DWI_UNWARP}/topup_results_fieldcoef.nii.gz" ]]; then
+        fileInBvec="${DWIpath}/0_DWI_AP-PA.bvec"
+        cat ${fileBvec} > ${fileInBvec}
+        cat ${fileBvecPA} >> ${fileInBvec}
 
-                cmd="eddy_openmp \
-                --imain=${fileIn} \
-                --mask=${fileMask} \
-                --bvecs=${fileBvec} \
-                --bvals=${fileBval} \
-                --topup=${fileTopup} \
-                --index=${fileIndex} \
-                --acqp=${fileAcqp} \
-                --out=${fileOut}"
-            else  # no topup field available 
-                cmd="eddy_openmp \
-                --imain=${fileIn} \
-                --mask=${fileMask} \
-                --bvecs=${fileBvec} \
-                --bvals=${fileBval} \
-                --index=${fileIndex} \
-                --acqp=${fileAcqp} \
-                --out=${fileOut}" 
-            fi
-            log $cmd
-            eval $cmd
-        fi 
+        fileInBval="${DWIpath}/0_DWI_AP-PA.bval"
+        cat ${fileBval} > ${fileInBval}
+        cat ${fileBvalPA} >> ${fileInBval}
 
-        # For QC purpoces this created a difference (Delta image) between raw
-        # and EDDY corrected diffusion data.
-        
-        echo " ---- ${fileOut}"
+        # Find position of b0 volumes in dataset
+        cmd="python ${EXEDIR}/src/func/index_b0_images.py \
+        ${DWIpath} ${fileInBval} ${configs_DWI_b0cut} "AP-PA""
+        log $cmd
+        res=$(eval $cmd)
 
-        if [[ ! -e "${fileOut}.nii.gz" ]]; then
-            echo "WARNING  Eddy output not generated. Exiting..."
-            exit 1
+        if [[ ${res} -ne "1" ]]; then
+            log "WARNING: No b0 volumes identified. Check quality of ${fileInBval}"
         else
-            log "Computing Delta Eddy image"
-            cmd="python ${EXEDIR}/src/func/delta_EDDY.py ${fileOut} ${fileNifti}"
-            log $cmd
-            eval $cmd
-            log "Delta Eddy saved"
-        fi 
+            log "B0 indices identified: "
+            B0_indices="${DWIpath}/b0indicesAP-PA.txt"
+            nB0=0
+
+            while IFS= read -r b0_index
+            do 
+                echo "$b0_index"
+                nB0=$(echo $nB0+1 | bc) ## number of B0 indices 
+            done < "$B0_indices"
+        fi  
+        
+        fileInAcqp="${EDDYpath}/acqparams_AP-PA_eddy.txt"
+        # acqparams file
+        B0_indices="${DWIpath}/b0indicesAP-PA.txt"
+        APnB0=$(wc -l < "${DWIpath}/b0indicesAP.txt")
+        for ((i = 1; i <= $nB0; i++)); do
+            if [[ $i -le "$APnB0" ]]; then
+                echo $APline >> "${fileInAcqp}"
+            elif [[ $i -gt "$APnB0" ]]; then
+                echo $PAline >> "${fileInAcqp}"
+            fi
+        done
+        
+
+        # Index file
+        cmd="python ${EXEDIR}/src/func/get_B0_temporal_info.py ${fileIn} ${B0_indices}"
+        log $cmd
+        eval $cmd
+        fileInIndex="${EDDYpath}/index.txt"
     fi
-    
-done 
+fi
+
+#####################################################################################
+## RUNNING EDDY (EDDYRUN)
+
+if ${flags_EDDY_run}; then
+
+    fileInMask="${EDDYpath}/b0_brain_mask.nii.gz"
+
+    ## If topup output is available
+    if [[ -d "${TOPUPpath}" ]] && [[ -e "${TOPUPpath}/topup_results_movpar.txt" ]]; then
+
+        fileInTopup="${TOPUPpath}/topup_results"
+        
+    fi
+
+    if [[ "$rtag" -gt 1 ]]; then
+
+        # image data
+        fileIn="${fileNifti}"
+        fileInBvec="${fileBvec}"
+        fileInBval="${fileBval}"
+        fileInJson="${fileJson}"
+        # parameter data
+        fileInAcqp="${EDDYpath}/acqparams_eddy.txt"
+        fileInIndex="${EDDYpath}/index.txt"
+
+    elif [[ "$rtag" -eq 1 ]]; then
+
+        # image data
+        fileIn="${DWIpath}/0_DWI_AP-PA.nii.gz"
+        fileInBvec="${DWIpath}/0_DWI_AP-PA.bvec"
+        fileInBval="${DWIpath}/0_DWI_AP-PA.bval"
+        fileInJson="${fileJson}"
+        # parameter data
+        fileInAcqp="${EDDYpath}/acqparams_AP-PA_eddy.txt"
+        fileInIndex="${EDDYpath}/index.txt"
+
+    fi
+
+    fileOut="${EDDYpath}/eddy_output"
+
+    cmd="eddy_openmp \
+    --imain=${fileIn} \
+    --mask=${fileInMask} \
+    --bvecs=${fileInBvec} \
+    --bvals=${fileInBval} \
+    --index=${fileInIndex} \
+    --acqp=${fileInAcqp}"
+
+    if [[ -d "${TOPUPpath}" ]] && [[ -e "${TOPUPpath}/topup_results_fieldcoef.nii.gz" ]]; then
+        cmdT=" \
+        --topup=${fileInTopup}"
+        cmd+="$cmdT"
+    fi
+    #Remove and interpolate outlier slices
+    ## By default, an outlier is a slice whose average intensity is at
+    ## least 4 standard deviations lower than what is expected by the
+    ## Gaussian Process Prediction within EDDY.
+    if ${configs_DWI_repolON}; then
+        log "repolON"
+        cmdR=" \
+        --repol"
+        cmd+="$cmdR"
+    else
+        log "repolOFF"
+    fi
+    if ${configs_DWI_MBjson}; then
+        cmdJ=" \
+        --json=${fileInJson}"
+        cmd+="$cmdJ"
+    fi
+
+    cmdO=" \
+    --out=${fileOut}"
+    cmd+="$cmdO"
+    log $cmd
+    eval $cmd
+
+    # For QC purpoces this created a difference (Delta image) between raw
+    # and EDDY corrected diffusion data.
+
+    echo " ---- ${fileOut}"
+
+    if [[ ! -e "${fileOut}.nii.gz" ]]; then
+        echo "WARNING  Eddy output not generated. Exiting..."
+        exit 1
+    else
+        log "Computing Delta Eddy image"
+        cmd="python ${EXEDIR}/src/func/delta_EDDY.py ${fileOut} ${fileIn}"
+        log $cmd
+        eval $cmd
+        log "Delta Eddy saved"
+    fi 
+fi
