@@ -5,6 +5,7 @@ import numpy as np
 import nibabel as nib
 
 print("------ Start Python script --------- ")
+print("PYTHON VERSION ",sys.version)
 
 parcpath=sys.argv[1]
 print("parcpath is: ",parcpath)

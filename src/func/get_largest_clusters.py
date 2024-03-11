@@ -8,6 +8,9 @@ import numpy as np
 import nibabel as nib
 from skimage import measure 
 
+print(" ********* GET LARGES CLUSTERS ********* ")
+print("PYTHON VERSION ",sys.version)
+
 EPIpath=os.environ['EPIpath']
 print("EPIpath is: ",EPIpath)
 

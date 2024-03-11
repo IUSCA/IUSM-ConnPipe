@@ -55,8 +55,6 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         echo "export EPI_BandwidthPerPixelPhaseEncode=${EPI_BandwidthPerPixelPhaseEncode}" >> ${EPIpath}/0_param_dcm_hdr.sh
         # find TotalReadoutTime
 
-        log "THIS IS EPIpath ${EPIpath}"
-
         cmd="${EXEDIR}/src/scripts/get_readout.sh ${EPIpath}/0_epi.json ${RD_EPIpath}/DICOMS EPI" 
         log $cmd
         EPI_SEreadOutTime=`$cmd`
@@ -68,12 +66,8 @@ source ${EXEDIR}/src/func/bash_funcs.sh
         for val in $EPI_slice_fractimes; do 
             starr+=($val); 
         done                    
-        starr=("${starr[@]:1:$((${#starr[@]}-2))}")    # remove [ and ] at beginning and end of array                                   
+        starr=("${starr[@]:1:$((${#starr[@]}-2))}") # remove [ ] at beginning and end of array                                   
         starr=( "${starr[@]/,}" )  # remove commas at end of lines,
-        
-        # ########### just to test slice extraction ##################
-        # starr=("${starr[@]:1:$((${#starr[@]}-36))}") ##DELETE THIS LINE                    
-        # ###########################################################
 
         n_slice=${#starr[@]}
         log "SliceTiming extracted from header; number of slices: ${n_slice}"

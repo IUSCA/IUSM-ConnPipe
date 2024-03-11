@@ -41,6 +41,10 @@ logfile_name = ''.join([os.environ['logfile_name'],'.log'])
 flog=open(logfile_name, "a+")
 
 flog.write("\n *** python apply_reg **** ")
+print("PYTHON VERSION ",sys.version)
+flog.write("\n PYTHON VERSION "+ sys.version )
+
+
 EPIpath=os.environ['EPIpath']
 nuisanceReg=sys.argv[1]  
 print("nuisanceReg is ",nuisanceReg)

@@ -110,6 +110,11 @@ fi
 
 echo "## Starting ICA-AROMA"
 
+cmd="which python"
+log $cmd
+eval $cmd
+
+
 AROMAout="${AROMApath}/AROMA-output"
 
 if [[ -d "${AROMAout}" ]]; then

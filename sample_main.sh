@@ -1,16 +1,28 @@
 #!/bin/bash
 
+#### TO create the conda environment (this is only done once)
+# module load miniconda/python3.9/4.12.0
+# conda env create --file environment.yml --prefix ./envs
+#############################
 # # IU modules load
-module unload python 
-module load python/3.9.8 
-module load fsl/6.0.1
-module load mricrogl
-module load gsl
-module load afni
-module load ants
-#module load ica-aroma/0.4.4
-module load mrtrix/3.0
-# module load singularity
+# module load fsl/6.0.1
+# module load afni
+# module load ants
+# module load mricrogl
+# module load gsl
+# #module load ica-aroma/0.4.4
+# module load mrtrix/3.0
+#### TO activate the conda environment 
+## Must be activated after other modules are loaded
+## Currently other modules force the loading of python 3.11 which must be unloaded
+# module unload python
+# module load miniconda/python3.9/4.12.0
+# conda activate ./envs
+
+cmd="which python"
+echo $cmd
+eval $cmd
+# conda list --explicit > spec-file.txt
 
 # FSL
 # set FSL env vars for fsl_sub.IU or fsl_sub.orig

@@ -112,7 +112,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
             fileOut="${path_EPI_SEFM}/sefield.nii.gz"
             if [ -e "${fileOut}" ]; then
                 cmd="rm -fr ${fileOut}"
-                log $cmdn
+                log $cmd
                 eval $cmd 
             fi 
 
