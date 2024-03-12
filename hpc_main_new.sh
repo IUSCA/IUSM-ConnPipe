@@ -1,5 +1,9 @@
 #!/bin/bash
 
+module load fsl/6.0.5.1
+module load ants/2.3.1
+
+
 # Checking input arguments:
 if (($# != 2)); then
 	echo "Incorrect number of input arguments:"	
@@ -28,12 +32,10 @@ export PYpck="${pathSM}/python-pkgs"
 
 # Creating a derivative directory for connpipe. 
 #============================================================================
-path2data="$path2proj/raw"
 
-path2derivs="$path2proj/derivatives"
-if [[ ! -d "${path2derivs}" ]]; then
-	mkdir ${path2derivs}
-fi
+# if [[ ! -d "${path2derivs}" ]]; then
+# 	mkdir ${path2derivs}
+# fi
 
 path2derivs="$path2derivs/connpipe"
 if [[ ! -d "${path2derivs}" ]]; then
@@ -195,38 +197,56 @@ fi
 ## main
 main() {
 
-log "START running Connectivity Pipeline on the following subjects:"
+echo "START running Connectivity Pipeline on the following subjects:"
+# Define arrays
+declare -a SUBJECTS=()
+declare -a SESSIONS=()
 
-IFS=$'\r\n' GLOBIGNORE='*' command eval 'SUBJECTS=($(cat ${subj2run}))'
+# Read the file line by line
+while IFS=" " read -r col1 col2; do
+    # Add elements to arrays
+    SUBJECTS+=("$col1")
+    SESSIONS+=("$col2")
+done < "${subj2run}"
+
+
+# IFS=$'\r\n' GLOBIGNORE='*' command eval 'SUBJECTS=($(cat ${subj2run}))'
 log --no-datetime "subjects: ${SUBJECTS[@]}"
+log --no-datetime "sessions: ${SESSIONS[@]}"
+
 
 echo "##################"
 
 # #### START PROCESSING SUBJECTS ###############
+# Determine the length of the arrays
+nsubj=${#SUBJECTS[@]}
 
-for SUBJdir in "${SUBJECTS[@]}"; do
+# Loop through both arrays with a counter
+for ((i = 0; i < nsubj; i++)); do
+    log "Processing ${SUBJECTS[i]}_${SESSIONS[i]}"
 
     start=`date +%s`
 
-    export SUBJ=${SUBJdir}
-    
+    export SUBJ=${SUBJECTS[i]}  #${SUBJdir}
     log "Subject ${SUBJ}"
+    export SESS=${SESSIONS[i]}  #${SUBJdir}
+    log "Session ${SESS}"
 
     # specify name of logfile written inside each subjects dir
     today=$(date +"%m_%d_%Y_%H_%M")
-    export logfile_name="${path2derivs}/${SUBJ}/${configs_session}/out_${today}"
-    export QCfile_name="${path2derivs}/${SUBJ}/${configs_session}/qc"
+    export logfile_name="${path2derivs}/${SUBJ}/${SESS}/out_${today}"
+    export QCfile_name="${path2derivs}/${SUBJ}/${SESS}/qc"
     export ERRfile_name="${path2derivs}/error_report"
 
     log "############################ T1_PREPARE_A #####################################"
 
     if $T1_PREPARE_A; then
         ## Path to raw data
-        export T1path_raw="${path2data}/${SUBJ}/${configs_session}/anat"
+        export T1path_raw="${path2data}/${SUBJ}/${SESS}/anat"
 
         if [ -d "$T1path_raw" ]; then
         ## Path to derivatives
-            export T1path="${path2derivs}/${SUBJ}/${configs_session}/anat"
+            export T1path="${path2derivs}/${SUBJ}/${SESS}/anat"
             if [[ ! -d "${T1path}" ]]; then
                 mkdir -p ${T1path}
             fi
@@ -253,7 +273,7 @@ for SUBJdir in "${SUBJECTS[@]}"; do
         log "SKIP T1_PREPARE_A for subject $SUBJ"
     fi 
 
-    export T1path="${path2derivs}/${SUBJ}/${configs_session}/anat"
+    export T1path="${path2derivs}/${SUBJ}/${SESS}/anat"
 
     ######################################################################################
     log "############################# T1_PREPARE_B #####################################"
@@ -290,11 +310,11 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
             if [[ -d "$T1path" ]]; then 
                 ## Path to raw data
-                export EPIpath_raw="${path2data}/${SUBJ}/${configs_session}/func"
+                export EPIpath_raw="${path2data}/${SUBJ}/${SESS}/func"
 
                 if [ -d "$EPIpath_raw" ]; then
     	        ## Path to derivatives
-    	            export EPIpath="${path2derivs}/${SUBJ}/${configs_session}/func"
+    	            export EPIpath="${path2derivs}/${SUBJ}/${SESS}/func"
     	            if [[ ! -d "${EPIpath}" ]]; then
         	            mkdir -p ${EPIpath}
     	            fi
@@ -328,10 +348,10 @@ for SUBJdir in "${SUBJECTS[@]}"; do
 
         if $DWI_A; then
 
-            export DWIpath_raw="${path2data}/${SUBJ}/${configs_session}/dwi"
+            export DWIpath_raw="${path2data}/${SUBJ}/${SESS}/dwi"
 
             ## Path to derivatives
-            export DWIpath="${path2derivs}/${SUBJ}/${configs_session}/dwi"
+            export DWIpath="${path2derivs}/${SUBJ}/${SESS}/dwi"
             if [[ ! -d "${DWIpath}" ]]; then
                 mkdir -p ${DWIpath}
             fi
@@ -366,7 +386,7 @@ for SUBJdir in "${SUBJECTS[@]}"; do
         if $DWI_B; then
             if [[ -d "$T1path" ]]; then 
         
-                export DWIpath="${path2derivs}/${SUBJ}/${configs_session}/dwi"
+                export DWIpath="${path2derivs}/${SUBJ}/${SESS}/dwi"
 
                 if [[ -d "${DWIpath}" ]]; then 
 

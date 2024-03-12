@@ -13,7 +13,7 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
-module load fsl/6.0.5.2
+# module load fsl/6.0.5.2
 
 # FSL
 # set FSL env vars for fsl_sub.IU or fsl_sub.orig

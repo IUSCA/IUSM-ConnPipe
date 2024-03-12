@@ -16,8 +16,8 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ###############################################################################
 # Load IU Quartz supercomuter modules
-module load fsl/6.0.5.2
-module load ants/2.3.5
+# module load fsl/6.0.5.2
+# module load ants/2.3.5
 
 # FSL
 # set FSL env vars for fsl_sub.IU or fsl_sub.orig
@@ -33,7 +33,7 @@ file4fslanat="$T1path/${configs_fslanat}"
 if ${flags_T1_applyDenoising}; then
 	log --no-datetime " -------- Denoising T1 -------- "
 
-	bidsT1="${SUBJ}_${configs_session}_*T1w.nii.gz"
+	bidsT1="${SUBJ}_${SESS}_*T1w.nii.gz"
 	found_file=$(find "$T1path_raw" -type f -name "$bidsT1")
 	if [ -n "$found_file" ]; then
     	bidsT1="${found_file}"

@@ -14,8 +14,8 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ###############################################################################
 # Load IU Quartz supercomuter modules
-module load fsl/6.0.5.2
-module load python/3.11.4 
+# module load fsl/6.0.5.2
+# module load python/3.11.4 
 
 # FSL
 # set FSL env vars for fsl_sub.IU or fsl_sub.orig
@@ -134,10 +134,26 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             log --no-datetime "Sourcing scan parameters from existing file: ${EPIrun_out}/0_param_dcm_hdr.sh"
             source ${EPIrun_out}/0_param_dcm_hdr.sh 
 	    else
-            log "File ${EPIrun_out}/0_param_dcm_hdr.sh not found: Please set flags_EPI_ReadJson=true. Exiting..."
+            log "File ${EPIrun_out}/0_param_dcm_hdr.sh not found. Exiting..."
+            log --no-datetime "Please set flags_EPI_ReadJson=true if you have a json file with your Nifti data"
+            log --no-datetime "If you do NOT have a json file with your Nifti data, please follow these instructions:"
+            log --no-datetime "1) Create an executable file called 0_param_dcm_hdr.sh as follows:"
+            log --no-datetime "   >> touch ${EPIrun_out}/0_param_dcm_hdr.sh"
+            log --no-datetime "   >> chmod +x ${EPIrun_out}/0_param_dcm_hdr.sh"
+            log --no-datetime "2) Open the file with an editor and include the following parameters substituting the values with the values corresponding to your data:"
+            log --no-datetime "     export TR=0.78"
+            log --no-datetime "     export TE=0.029"
+            log --no-datetime "     export EPI_FlipAngle=54"
+            log --no-datetime "     export EPI_EffectiveEchoSpacing=0.000509992"
+            log --no-datetime "     export EPI_BandwidthPerPixelPhaseEncode=22.282"
+            log --no-datetime "     export EPI_TotalReadoutTime=0.0443693"
+            log --no-datetime "     export n_slice=55  # number of slices"
+            log --no-datetime "     export slice_ord=2  #1:Time Slices are Sequential; 2:Multiband (multiple slices acquired at a same time)"
+            log --no-datetime "     export nvols=760  # number of volumes"
+
             exit 1
 	    fi
-    fi
+    fi 
 
 ######################################################################################
     #### Distortion Correction (Spin Echo or Gradient Echo Unwarping) 

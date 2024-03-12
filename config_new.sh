@@ -14,12 +14,17 @@ export pathSM="/N/project/connpipe/fMRI_proc_utils"
 ################################################################################
 #########################  SET DATA VARIABLES  #################################
 
-# USER INSTRUCTIONS- Please set this to your bids project directory.
-export path2proj="/N/project/connpipe/jenya-test/projtest"
+# USER INSTRUCTIONS- Set these paths to your bids rawdata directory and your derivatives directory.
+#	path2data directory must contain subject subdirectories in BIDS-compliant format. 
+#   path2derivs directory is where a "connpipe" directory will be created (if it doesn't exist already)
+#               connpipe will create a subdirectory path2derivs/connpipe/sub-ID/ses-ID to store all output
+export path2data="/N/project/connpipe/Data/rawdata"
+
+export path2derivs="/N/project/connpipe/Data/derivatives"
 
 # USER INSTRUCTIONS- Please set this to the bids style session name you want to run.
 # "ses-"" is the BIDS standard tag 
-export configs_session="ses-20231107T125028"  
+# export configs_session="ses-test"  
 
 ################################################################################
 #####################  SET UP DIRECTORY STRUCTURE  #############################
@@ -111,7 +116,7 @@ export configs_T1_addcrblm=true
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export T1_PREPARE_A=false
+export T1_PREPARE_A=true
 
 if $T1_PREPARE_A; then
 		
@@ -145,7 +150,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export T1_PREPARE_B=false
+export T1_PREPARE_B=true
 
 if $T1_PREPARE_B; then
 
@@ -201,9 +206,9 @@ if $fMRI_A; then
 	export configs_EPI_runMax=1 # maximum run-# to be processed
 
 	# Obtain pertinent scan information from json file.
-	export flags_EPI_ReadJson=false
+	export flags_EPI_ReadJson=true
 		# If no json exists, set below to true to check source directory for DICOMS. 
-		export flags_EPI_UseSource=false  
+		# export flags_EPI_UseSource=false  
 			# If set to true, information will be extracted from DICOMS. 
 			# Headers are read using dicom_hinfo and header tags. This is not recommeded.
 
@@ -298,7 +303,7 @@ if $fMRI_A; then
 			fi
 
 	#================================ PHYSIOLOGICAL REGRESSORS =================================#
-	export flags_EPI_PhysiolReg=true
+	export flags_EPI_PhysiolReg=false
 	# Two options that the user can select from:
 	# 1) flags_PhysiolReg="aCompCorr" - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
 	# 2) flags_PhysiolReg=meanPhysReg - mean WM and CSF signal regression
@@ -318,7 +323,7 @@ if $fMRI_A; then
 			fi
 	
 	#================================ GLOBAL SIGNAL REGRESSION =================================#
-	export flags_EPI_GS=true # include global signal regression 
+	export flags_EPI_GS=false # include global signal regression 
 			
 		export configs_EPI_numGS=4 # define number of global signal regressors
 										# Options are: 1-mean signal; 2-mean signal+deriv; 4-mean signal+deriv+sq
@@ -326,7 +331,7 @@ if $fMRI_A; then
 	#================================ FREQUENCY FILTERING =================================#
 	# Frequiency filtering can be acomplished with discrete cosine transfrom for a high-pass filter OR
 	# with a bandpass butterworth filter. 
-	export flags_EPI_FreqFilt=true
+	export flags_EPI_FreqFilt=false
 
 		export flags_FreqFilt="BPF"
 
@@ -349,17 +354,17 @@ if $fMRI_A; then
 
     #==================================== APPLY REGRESSION ===================================#
 	## Apply regression using all previously specified regressors
-	export flags_EPI_ApplyReg=true
+	export flags_EPI_ApplyReg=false
 		# Despike and Scrub are mutually exculise!!! IF both are set to true, scrubbing will only be done on NONdespiked data with despike=false.
 		export configs_EPI_despike=true # dual-approach regression (Mejia 2023) based on statistical DVARS selection (Afyouni & Nichols 2018)
 									   
 	#=============================== POST REGRESSION SCRUBBING =================================# 
 	
-	export flags_EPI_scrub=true # delaults to statisitical DVARS; if not done then scrubbing is based on FSL's FD & DVARS 		
+	export flags_EPI_scrub=false # delaults to statisitical DVARS; if not done then scrubbing is based on FSL's FD & DVARS 		
 
 	#================ COMPUTE ROI TIME-SERIES FOR EACH NODAL PARCELLATION ===================#
 	# Make sure the parcellation relevant multi-seciton flags at the top are set as desired. 
-	export flags_EPI_ROIs=true
+	export flags_EPI_ROIs=false
 
 #=================================================================================================#
 #=================================================================================================#
