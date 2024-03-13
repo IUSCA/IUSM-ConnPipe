@@ -13,17 +13,7 @@ shopt -s nullglob # No-match globbing expands to null
 source ${EXEDIR}/src/func/bash_funcs.sh
 
 ###############################################################################
-# Load IU Quartz supercomuter modules
-module load fsl/6.0.5.2
-module load python/3.11.4 
 
-# FSL
-# set FSL env vars for fsl_sub.IU or fsl_sub.orig
-if [[ -z ${FSLDIR} ]] ; then
-	echoerr "FSLDIR not set"
-	exit 1
-fi
-############################################################################### 
 
 if [[ -d ${DWIpath_raw} ]]; then
 
@@ -276,6 +266,3 @@ if ${flags_DWI_DTIfit}; then
         exit 1
     fi  
 fi
-
-module unload fsl
-module unload python

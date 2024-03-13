@@ -15,17 +15,7 @@ shopt -s nullglob # No-match globbing expands to null
 source ${EXEDIR}/src/func/bash_funcs.sh
 
 ###############################################################################
-# Load IU Quartz supercomuter modules
-# module load fsl/6.0.5.2
-# module load ants/2.3.5
 
-# FSL
-# set FSL env vars for fsl_sub.IU or fsl_sub.orig
-if [[ -z ${FSLDIR} ]] ; then
-	echoerr "FSLDIR not set"
-	exit 1
-fi
-###############################################################################
 
 ##### T1 denoiser ######
 file4fslanat="$T1path/${configs_fslanat}"
@@ -312,5 +302,3 @@ if ${flags_T1_re_extract}; then
 	fi
 fi
 
-module unload fsl
-module unload ants

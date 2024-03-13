@@ -150,7 +150,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export T1_PREPARE_B=true
+export T1_PREPARE_B=false
 
 if $T1_PREPARE_B; then
 
@@ -158,7 +158,7 @@ if $T1_PREPARE_B; then
 	export configs_T1_useMNIbrain=true
 
 	# registration flags (T1 <-> MNI)
-	export flags_T1_reg2MNI=false
+	export flags_T1_reg2MNI=true
 		export configs_T1_useExistingMats=true
 		export configs_T1_fnirtSubSamp="4,4,2,1"
 
@@ -166,7 +166,7 @@ if $T1_PREPARE_B; then
 	export flags_T1_regParc=true
 
 	# segmentation flags
-	export flags_T1_seg=false	
+	export flags_T1_seg=true	
 		export configs_T1_segfastH="0.25"
 		export configs_T1_masklowthr=1
 		export configs_T1_flirtdof6cost="mutualinfo"
@@ -191,7 +191,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export fMRI_A=true
+export fMRI_A=false
 
 if $fMRI_A; then
 

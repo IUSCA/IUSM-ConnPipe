@@ -14,16 +14,7 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ###############################################################################
 # Load IU Quartz supercomuter modules
-module load fsl/6.0.5.2
-module load python/3.11.4 
 module load mrtrix3/3.0.2
-
-# FSL
-# set FSL env vars for fsl_sub.IU or fsl_sub.orig
-if [[ -z ${FSLDIR} ]] ; then
-	echoerr "FSLDIR not set"
-	exit 1
-fi
 
 # define the number of threads you want mrtrix to use
     # setting environmentally to avoid accidentally using all cores

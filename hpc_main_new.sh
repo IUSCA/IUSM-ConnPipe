@@ -232,13 +232,22 @@ for ((i = 0; i < nsubj; i++)); do
     export SESS=${SESSIONS[i]}  #${SUBJdir}
     log "Session ${SESS}"
 
+    # create sub-ses directory so that log files can be written
+    export path2ses="${path2derivs}/${SUBJ}/${SESS}"
+    if [[ ! -d "${path2ses}" ]]; then
+        mkdir -p ${path2ses}
+    fi
+
     # specify name of logfile written inside each subjects dir
     today=$(date +"%m_%d_%Y_%H_%M")
-    export logfile_name="${path2derivs}/${SUBJ}/${SESS}/out_${today}"
-    export QCfile_name="${path2derivs}/${SUBJ}/${SESS}/qc"
+    export logfile_name="${path2ses}/out_${today}"
+    export QCfile_name="${path2ses}/qc"
     export ERRfile_name="${path2derivs}/error_report"
 
+
     log "############################ T1_PREPARE_A #####################################"
+
+    export T1path="${path2ses}/anat"
 
     if $T1_PREPARE_A; then
         ## Path to raw data
@@ -246,7 +255,6 @@ for ((i = 0; i < nsubj; i++)); do
 
         if [ -d "$T1path_raw" ]; then
         ## Path to derivatives
-            export T1path="${path2derivs}/${SUBJ}/${SESS}/anat"
             if [[ ! -d "${T1path}" ]]; then
                 mkdir -p ${T1path}
             fi
@@ -259,21 +267,26 @@ for ((i = 0; i < nsubj; i++)); do
             exitcode=$?
 
             if [[ ${exitcode} -ne 0 ]] ; then
-                echoerr "problem at T1_PREPARE_A. exiting."
+                echoerr "${SUBJ}_${SESS}: problem at T1_PREPARE_A. exiting."
                 dateTime=`date`
                 echo "### $dateTime -" >> ${ERRfile_name}.log
-                echo "$SUBJ ERROR -- problem at T1_PREPARE_A.  - " >> ${ERRfile_name}.log
+                echo "${SUBJ}_${SESS} ERROR -- problem at T1_PREPARE_A.  - " >> ${ERRfile_name}.log
                 echo "###" >> ${ERRfile_name}.log 
                 continue
             fi
         else
-            log "raw T1 directory doesn't exist; skipping subject $SUBJ"
+            echoerr "${SUBJ}_${SESS}: Raw T1 directory doesn't exist: $T1path_raw"
+            echoerr "Skipping further analysis"
+            dateTime=`date`
+            echo "### $dateTime -" >> ${ERRfile_name}.log
+            echo -e "${SUBJ}_${SESS}: Raw T1 directory doesn't exist: $T1path_raw \n skipping further analysis" >> ${ERRfile_name}.log
+            echo "###" >> ${ERRfile_name}.log 
+            continue
         fi
     else 
         log "SKIP T1_PREPARE_A for subject $SUBJ"
     fi 
 
-    export T1path="${path2derivs}/${SUBJ}/${SESS}/anat"
 
     ######################################################################################
     log "############################# T1_PREPARE_B #####################################"
@@ -288,16 +301,22 @@ for ((i = 0; i < nsubj; i++)); do
             exitcode=$?
 
             if [[ ${exitcode} -ne 0 ]] ; then
-                echoerr "problem at T1_PREPARE_B. exiting."
+                echoerr "${SUBJ}_${SESS}: problem at T1_PREPARE_B. exiting."
                 dateTime=`date`
                 echo "### $dateTime -" >> ${ERRfile_name}.log
-                echo "$SUBJ ERROR -- problem at T1_PREPARE_B.  - " >> ${ERRfile_name}.log
+                echo "${SUBJ}_${SESS}: ERROR -- problem at T1_PREPARE_B.  - " >> ${ERRfile_name}.log
                 echo "###" >> ${ERRfile_name}.log                   
                 continue
             fi
                     
         else
-            echo "T1 directory doesn't exist; skipping subject $SUBJ"
+            echoerr "${SUBJ}_${SESS}: derivative T1 directory doesn't exist: $T1path"
+            echoerr "Skipping further analysis"
+            dateTime=`date`
+            echo "### $dateTime -" >> ${ERRfile_name}.log
+            echo -e "${SUBJ}_${SESS}: Derivative T1 directory doesn't exist: $T1path \n skipping further analysis" >> ${ERRfile_name}.log
+            echo "###" >> ${ERRfile_name}.log 
+            continue
         fi
     else
         log "SKIP T1_PREPARE_B for subject $SUBJ"
@@ -314,7 +333,7 @@ for ((i = 0; i < nsubj; i++)); do
 
                 if [ -d "$EPIpath_raw" ]; then
     	        ## Path to derivatives
-    	            export EPIpath="${path2derivs}/${SUBJ}/${SESS}/func"
+    	            export EPIpath="${path2ses}/func"
     	            if [[ ! -d "${EPIpath}" ]]; then
         	            mkdir -p ${EPIpath}
     	            fi
@@ -328,16 +347,22 @@ for ((i = 0; i < nsubj; i++)); do
                 exitcode=$?
 
                 if [[ ${exitcode} -ne 0 ]] ; then
-                    echoerr "problem at fMRI_A. exiting."
+                    echoerr "${SUBJ}_${SESS}: problem at fMRI_A. exiting."
                     dateTime=`date`
                     echo "### $dateTime -" >> ${ERRfile_name}.log
-                    echo "$SUBJ ERROR -- problem at fMRI_A.  - " >> ${ERRfile_name}.log
+                    echo "${SUBJ}_${SESS} ERROR -- problem at fMRI_A.  - " >> ${ERRfile_name}.log
                     echo "###" >> ${ERRfile_name}.log                    
                     continue
                 fi
                         
             else
-                echo "T1 directory doesn't exist; skipping subject $SUBJ"
+                echoerr "${SUBJ}_${SESS}: derivative T1 directory doesn't exist: $T1path"
+                echoerr "Skipping further analysis"
+                dateTime=`date`
+                echo "### $dateTime -" >> ${ERRfile_name}.log
+                echo -e "${SUBJ}_${SESS}: Derivative T1 directory doesn't exist: $T1path \n skipping further analysis" >> ${ERRfile_name}.log
+                echo "###" >> ${ERRfile_name}.log 
+                continue
             fi
         else
             log "SKIP fMRI_A for subject $SUBJ"
@@ -351,7 +376,7 @@ for ((i = 0; i < nsubj; i++)); do
             export DWIpath_raw="${path2data}/${SUBJ}/${SESS}/dwi"
 
             ## Path to derivatives
-            export DWIpath="${path2derivs}/${SUBJ}/${SESS}/dwi"
+            export DWIpath="${path2ses}/dwi"
             if [[ ! -d "${DWIpath}" ]]; then
                 mkdir -p ${DWIpath}
             fi
@@ -364,16 +389,22 @@ for ((i = 0; i < nsubj; i++)); do
                 exitcode=$?
 
                 if [[ ${exitcode} -ne 0 ]] ; then
-                    echoerr "problem at DWI_A. exiting."
+                    echoerr "${SUBJ}_${SESS}: problem at DWI_A. exiting."
                     dateTime=`date`
                     echo "### $dateTime -" >> ${ERRfile_name}.log
-                    echo "$SUBJ ERROR -- problem at DWI_A.  - " >> ${ERRfile_name}.log
+                    echo "${SUBJ}_${SESS} ERROR -- problem at DWI_A.  - " >> ${ERRfile_name}.log
                     echo "###" >> ${ERRfile_name}.log
                     continue
                 fi
                         
             else
-                echo "DWI directory doesn't exist; skipping subject $SUBJ"
+                echoerr "${SUBJ}_${SESS}: DWI directory doesn't exist: $DWIpath"
+                echoerr "Skipping further analysis"
+                dateTime=`date`
+                echo "### $dateTime -" >> ${ERRfile_name}.log
+                echo -e "${SUBJ}_${SESS}: DWI directory doesn't exist: $DWIpath \n skipping further analysis" >> ${ERRfile_name}.log
+                echo "###" >> ${ERRfile_name}.log 
+                continue
             fi
         else
             log "SKIP DWI_A for subject $SUBJ"
@@ -384,9 +415,10 @@ for ((i = 0; i < nsubj; i++)); do
 
 
         if $DWI_B; then
+
             if [[ -d "$T1path" ]]; then 
         
-                export DWIpath="${path2derivs}/${SUBJ}/${SESS}/dwi"
+                export DWIpath="${path2ses}/dwi"
 
                 if [[ -d "${DWIpath}" ]]; then 
 
@@ -396,19 +428,31 @@ for ((i = 0; i < nsubj; i++)); do
                     exitcode=$?
 
                     if [[ ${exitcode} -ne 0 ]] ; then
-                        echoerr "problem at DWI_B. exiting."
+                        echoerr "${SUBJ}_${SESS}: problem at DWI_B. exiting."
                         dateTime=`date`
                         echo "### $dateTime -" >> ${ERRfile_name}.log
-                        echo "$SUBJ ERROR -- problem at DWI_B.  - " >> ${ERRfile_name}.log
+                        echo "${SUBJ}_${SESS} ERROR -- problem at DWI_B.  - " >> ${ERRfile_name}.log
                         echo "###" >> ${ERRfile_name}.log
                         continue
                     fi
                         
                 else
-                    echo "DWI directory doesn't exist; skipping subject $SUBJ"
+                    echoerr "${SUBJ}_${SESS}: DWI directory doesn't exist: $DWIpath"
+                    echoerr "Skipping further analysis"
+                    dateTime=`date`
+                    echo "### $dateTime -" >> ${ERRfile_name}.log
+                    echo -e "${SUBJ}_${SESS}: DWI directory doesn't exist: $DWIpath \n skipping further analysis" >> ${ERRfile_name}.log
+                    echo "###" >> ${ERRfile_name}.log 
+                    continue
                 fi
             else
-                echo "T1 directory doesn't exist; skipping subject $SUBJ"
+                echoerr "${SUBJ}_${SESS}: derivative T1 directory doesn't exist: $T1path"
+                echoerr "Skipping further analysis"
+                dateTime=`date`
+                echo "### $dateTime -" >> ${ERRfile_name}.log
+                echo -e "${SUBJ}_${SESS}: Derivative T1 directory doesn't exist: $T1path \n skipping further analysis" >> ${ERRfile_name}.log
+                echo "###" >> ${ERRfile_name}.log 
+                continue
             fi
         else
             log "SKIP DWI_B for subject $SUBJ"

@@ -13,15 +13,6 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
-# module load fsl/6.0.5.2
-
-# FSL
-# set FSL env vars for fsl_sub.IU or fsl_sub.orig
-if [[ -z ${FSLDIR} ]] ; then
-	echoerr "FSLDIR not set"
-	exit 1
-fi
-
 export pathFSLstandard="${FSLDIR}/data/standard"
 
 if [[ -e "${pathFSLstandard}/MNI152_T1_2mm_brain.nii.gz" ]]; then
@@ -911,4 +902,3 @@ if ${flags_T1_parc}; then
         fi
 fi
 
-module unload fsl
