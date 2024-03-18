@@ -24,7 +24,7 @@ check_required() {
         then
             echoerr "${i} does not exist"
             echoerr "problem with ${!i}"
-            log "${i} for $subj does not exist: ${!i}" 
+            log "${i} for ${SUBJ}_${SESS} does not exist: ${!i}" 
             # return an error
             return 1
         fi
@@ -100,7 +100,7 @@ log() {
         echo -e ${NC_}
     fi
 
-    echo "${msg[@]}"
+    echo -e "${msg[@]}"
     echo -e ${NC_}
 
 	# echo "### $dateTime -" >> ${EXEDIR}/pipeline.log

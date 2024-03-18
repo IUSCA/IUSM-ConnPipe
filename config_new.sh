@@ -116,7 +116,7 @@ export configs_T1_addcrblm=true
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export T1_PREPARE_A=true
+export T1_PREPARE_A=false
 
 if $T1_PREPARE_A; then
 		
@@ -191,27 +191,24 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export fMRI_A=false
+export fMRI_A=true
 
 if $fMRI_A; then
 
 	# SPECIFY TASK TAG (_task-)
 	export configs_EPI_task="rest"
 
-	## IF MULTIPLE SCANS PER SESSION:
-	# Raw data func names must have _run-#_ tag
-	# LEAVE EMPTY IF THERE IS ONLY ONE RUN.
-	# In this case the 'run' tag is not required.
-	export configs_EPI_runMin=1 # minimum run-# to be processed
-	export configs_EPI_runMax=1 # maximum run-# to be processed
+	## IF MULTIPLE SCANS PER SESSION (raw func file names have _run-#_ tag):
+	# Select which run(s) you want to process by setting the run range.
+	# WARNING: ConnPipe can process nii and nii.gz files but only one (nii or nii.gz) should be present in the func directory. 
+	# IF THERE IS A SINGLE EPI SESSION (raw func file name does not include the _run- tag), then leave the runMin and runMax EMPTY
+	export configs_EPI_runMin= # minimum run-# to be processed
+	export configs_EPI_runMax= # maximum run-# to be processed
 
 	# Obtain pertinent scan information from json file.
-	export flags_EPI_ReadJson=true
-		# If no json exists, set below to true to check source directory for DICOMS. 
-		# export flags_EPI_UseSource=false  
-			# If set to true, information will be extracted from DICOMS. 
-			# Headers are read using dicom_hinfo and header tags. This is not recommeded.
-
+	export flags_EPI_ReadJson=false
+		# If there is no json file with the functional data: 
+		# set flag to false and run the pipeline to receive instructions to manually enter epi acquisition parameters
 	#==============================================================================#
 	#=================================   UNWARPING  ===============================#
 	#==============================================================================#
@@ -220,7 +217,7 @@ if $fMRI_A; then
 	# 2) Gradient echo field maps -- uses FUGE
 	
 	#============================ OPTION 1: SPIN ECO UNWARP =======================#
-	export flags_EPI_SpinEchoUnwarp=false # Requires raw fmap directory and approporiate files.
+	export flags_EPI_SpinEchoUnwarp=true # Requires raw fmap directory and approporiate files.
 		## FSL-topup
 		export flags_EPI_RunTopup=true # 1=Run topup (1st pass), 0=Run applyTopup only. (saves time if topup output exists). 
 
@@ -252,20 +249,20 @@ if $fMRI_A; then
 	#==================================================================================#
 	#==================================================================================#
 
-	export flags_EPI_SliceTimingCorr=false		
+	export flags_EPI_SliceTimingCorr=true		
 		export configs_EPI_minTR=1.6   # perform Slice Timing correction only if TR > configs_EPI_minTR
 		export configs_EPI_UseTcustom=1   # 1: use header-extracted slice times (suggested)
 
-	export flags_EPI_MotionCorr=false   # head motion estimation with FSL's mcflirt; generates 6 motion param for each BOLD image
+	export flags_EPI_MotionCorr=true   # head motion estimation with FSL's mcflirt; generates 6 motion param for each BOLD image
 
-	export flags_EPI_RegT1=false
+	export flags_EPI_RegT1=true
 		export configs_EPI_epibetF=0.3000;
 
-	export flags_EPI_RegOthers=false
+	export flags_EPI_RegOthers=true
 		export configs_EPI_GMprobthr=0.2 # Threshold the GM probability image; change from 0.25 to 0.2 or 0.15										
 		export configs_EPI_minVoxelsClust=8 
 
-	export flags_EPI_IntNorm4D=false # Intensity normalization to global 4D mean of 1000
+	export flags_EPI_IntNorm4D=true # Intensity normalization to global 4D mean of 1000
 
 	#=================================================================================================#
 	#=================================================================================================#
@@ -275,13 +272,13 @@ if $fMRI_A; then
 	# If running them in pieces, make sure that the subflags under each section are set to the options,
 	# which have already been ran and for which you want the time series extracted.
 	#================================== MOTION AND OUTLIER CORRECTION ================================#
-	export flags_EPI_NuisanceReg=false
+	export flags_EPI_NuisanceReg=true
 	## Nuisance Regressors. There are three options that user can select from to set the flags_NuisanceReg variable:
 	# 1) flags_NuisanceReg="AROMA": ICA-based denoising; WARNING: This will smooth your data.
 	# 2) flags_NuisanceReg="HMPreg": Head Motion Parameter Regression.  
 	# 3) flags_NuisanceReg="AROMA_HMP": apply ICA-AROMA followed by HMPreg. 
 
-		export flags_NuisanceReg="AROMA"
+		export flags_NuisanceReg="AROMA_HMP"
 
 			# if using ICA-AROMA or ICA-AROMA followed by HMP 
 			if [[ ${flags_NuisanceReg} == "AROMA" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then 

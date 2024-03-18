@@ -13,54 +13,51 @@ shopt -s nullglob # No-match globbing expands to null
 source ${EXEDIR}/src/func/bash_funcs.sh
 
 ############################################################################### 
-
-log --no-datetime "fMRI_A"
+# Operating on the scans set in configs.
+log "fMRI_A on subject ${SUBJ}_${SESS}"
+log --no-datetime "task - ${configs_EPI_task}"
 
 # If multi-run is set:
-if [ -n "$configs_EPI_runMin" ]; then
-    echo "Non-empty configs_EPI_runMin. Checking for _run- tag..."
+if [ -n "$configs_EPI_runMin" ] && [ -n "$configs_EPI_runMax" ]; then
+    log "Looping for multi-run data"
+    log "Checking for task-${configs_EPI_task} EPI file with _run- tag within the range ${configs_EPI_runMin},${configs_EPI_runMax}"
     # Generate list of EPI scan directories
     declare -a epiList
     while IFS= read -r -d $'\0' REPLY; do 
         epiList+=( "$REPLY" )
-    done < <(find ${EPIpath_raw} -maxdepth 1 -type f -iname "*_task-${configs_EPI_task}*_run-*nii.gz" -print0 | sort -z)
+    done < <(find ${EPIpath_raw} -maxdepth 1 -type f -iname "*_task-${configs_EPI_task}*_run-*_bold.nii*" -print0 | sort -z)
     
     if [ ${#epiList[@]} -eq 0 ]; then 
-        echo "No raw func files with _run- tag found for subject $SUBJ. Check consistency of naming convention."
+        echoerr "No raw func files with _run- tag found for subject ${SUBJ}_${SESS}. Check consistency of naming convention."
         exit 1
-    elif [ ${#epiList[@]} -gt 1 ]; then
-        echo "Multiple raw func runs found for subject $SUBJ."
-        echo "There are ${#epiList[@]} EPI-series "
-    else
-        echo "Single raw func with _run tag found for subject $SUBJ."
-        echo "There are ${#epiList[@]} EPI-series "
+    elif [ ${#epiList[@]} -gt 1 ]; then      
+        log "Multiple raw func runs found for subject ${SUBJ}_${SESS}."
     fi
     rtag=1
-else # else no run tag assumed
+else # single epi file
+    log "Looking for single task-${configs_EPI_task} EPI session in func directory"
     declare -a epiList
     while IFS= read -r -d $'\0' REPLY; do 
         epiList+=( "$REPLY" )
-    done < <(find ${EPIpath_raw} -maxdepth 1 -type f -iname "*_task-${configs_EPI_task}*nii.gz" -print0 | sort -z)
+    done < <(find ${EPIpath_raw} -maxdepth 1 -type f -iname "*_task-${configs_EPI_task}*_bold.nii*" -not -name "*_run-*" -print0 | sort -z)
 
     if [ ${#epiList[@]} -eq 0 ]; then 
-        echo "No raw func files found for subject $SUBJ. Check consistency of naming convention."
+        echoerr "No raw func files found for subject ${SUBJ}_${SESS}. Check consistency of naming convention."
         exit 1
     elif [ ${#epiList[@]} -gt 1 ]; then
-        echo "Multiple raw func files found for subject $SUBJ. Check for proper naming convention. OR"
-        echo "Include configs_EPI_runMin and Max if _run- tag is used."
+        echoerr "Multiple raw func files found for subject ${SUBJ}_${SESS}. Check for proper naming convention \n \
+                or include configs_EPI_runMin and Max if _run- tag is used."
         exit 1
-    else
-        echo "There are ${#epiList[@]} EPI-series "
     fi
     rtag=0
 fi
 
+log "There are ${#epiList[@]} task-${configs_EPI_task} EPI-series: ${epiList[@]} "
+
+
 #LOOPING OVER EPI SESSIONS
 for ((i=0; i<${#epiList[@]}; i++)); do
 ######################################################################################
-    # Operating on the scans set in configs.
-    log "fMRI_A on subject ${SUBJ}"
-    log --no-datetime "task - ${configs_EPI_task}"
 
     if [ ${rtag} -eq 1 ]; then
         ind=$(echo ${epiList[$i]} | sed 's/.*run-\(.*\)_.*/\1/')
@@ -127,19 +124,19 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             log --no-datetime "Please set flags_EPI_ReadJson=true if you have a json file with your Nifti data"
             log --no-datetime "If you do NOT have a json file with your Nifti data, please follow these instructions:"
             log --no-datetime "1) Create an executable file called 0_param_dcm_hdr.sh as follows:"
-            log --no-datetime "   >> touch ${EPIrun_out}/0_param_dcm_hdr.sh"
-            log --no-datetime "   >> chmod +x ${EPIrun_out}/0_param_dcm_hdr.sh"
+            log --no-datetime "\t >> touch ${EPIrun_out}/0_param_dcm_hdr.sh"
+            log --no-datetime "\t >> chmod +x ${EPIrun_out}/0_param_dcm_hdr.sh"
             log --no-datetime "2) Open the file with an editor and include the following parameters substituting the values with the values corresponding to your data:"
-            log --no-datetime "     export TR=0.78"
-            log --no-datetime "     export TE=0.029"
-            log --no-datetime "     export EPI_FlipAngle=54"
-            log --no-datetime "     export EPI_EffectiveEchoSpacing=0.000509992"
-            log --no-datetime "     export EPI_BandwidthPerPixelPhaseEncode=22.282"
-            log --no-datetime "     export EPI_TotalReadoutTime=0.0443693"
-            log --no-datetime "     export n_slice=55  # number of slices"
-            log --no-datetime "     export slice_ord=2  #1:Time Slices are Sequential; 2:Multiband (multiple slices acquired at a same time)"
-            log --no-datetime "     export nvols=760  # number of volumes"
-
+            log --no-datetime "\t export TR=0.78"
+            log --no-datetime "\t export TE=0.029"
+            log --no-datetime "\t export EPI_FlipAngle=54"
+            log --no-datetime "\t export EPI_EffectiveEchoSpacing=0.000509992"
+            log --no-datetime "\t export EPI_BandwidthPerPixelPhaseEncode=22.282"
+            log --no-datetime "\t export EPI_TotalReadoutTime=0.0443693"
+            log --no-datetime "\t export n_slice=55  \t #(number of slices)"
+            log --no-datetime "\t export slice_ord=2  \t #(set to 1 for Sequential; set to 2 for Multiband)"
+            log --no-datetime "\t export nvols=760  \t #(number of volumes)"
+            log --no-datetime "3) Run ConnPipe with flags_EPI_ReadJson=false"
             exit 1
 	    fi
     fi 

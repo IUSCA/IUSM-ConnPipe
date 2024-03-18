@@ -15,7 +15,9 @@ msg2file "# =================================="
 msg2file "# 0. Reading Scan Parameters"
 msg2file "# =================================="
 
-json_loc="${EPIfile::-6}json"
+# json_loc="${EPIfile::-6}json"  
+json_loc="${EPIfile%%.*}.json" # remove extension after first . (works for .nii and .nii.gz)
+echo " looking for json file $json_loc"
 
 if [ -e "${json_loc}" ]; then
     log "JSON: Using json file to extract header information."
@@ -93,7 +95,9 @@ if [ -e "${json_loc}" ]; then
     eval $cmd
     # exitcode=$?
     log "Config params are saved in ${EPIrun_out}/0_param_dcm_hdr.sh"
-fi
+else
+    log "Json file not found: ${json_loc}"
+fi 
 
 ### Andrea Note: The source files will not be available for most of our data and we cannot rely on them 
 #                being placed at a hard-coded path. Therefore, I'd propose that we discontinue support

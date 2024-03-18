@@ -28,13 +28,13 @@ if [[ -d ${DWIpath_raw} ]]; then
     done < <(find ${DWIpath_raw} -maxdepth 1 -type f -iname "*_dir-*nii.gz" -print0 | sort -z)
     
     if [ ${#dwiList[@]} -eq 0 ]; then 
-        echo "No raw dwi files with _dir- tag found for subject $SUBJ. Check that dir- Phase Encoding is in bids naming."
+        echo "No raw dwi files with _dir- tag found for subject ${SUBJ}_${SESS}. Check that dir- Phase Encoding is in bids naming."
         exit 1
     elif [ ${#dwiList[@]} -gt 1 ]; then
-        echo "Multiple raw dwi runs found for subject $SUBJ."
+        echo "Multiple raw dwi runs found for subject ${SUBJ}_${SESS}."
         echo "There are ${#dwiList[@]} DWI-series "
     else
-        echo "Single raw dwi with _dir tag found for subject $SUBJ."
+        echo "Single raw dwi with _dir tag found for subject ${SUBJ}_${SESS}."
         echo "There are ${#dwiList[@]} DWI-series "
     fi
    

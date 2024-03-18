@@ -284,7 +284,7 @@ for ((i = 0; i < nsubj; i++)); do
             continue
         fi
     else 
-        log "SKIP T1_PREPARE_A for subject $SUBJ"
+        log "SKIP T1_PREPARE_A for subject ${SUBJ}_${SESS}"
     fi 
 
 
@@ -319,7 +319,7 @@ for ((i = 0; i < nsubj; i++)); do
             continue
         fi
     else
-        log "SKIP T1_PREPARE_B for subject $SUBJ"
+        log "SKIP T1_PREPARE_B for subject ${SUBJ}_${SESS}"
     fi 
 
     ######################################################################################
@@ -330,6 +330,7 @@ for ((i = 0; i < nsubj; i++)); do
             if [[ -d "$T1path" ]]; then 
                 ## Path to raw data
                 export EPIpath_raw="${path2data}/${SUBJ}/${SESS}/func"
+                export FMAPpath_raw="${path2data}/${SUBJ}/${SESS}/fmap"
 
                 if [ -d "$EPIpath_raw" ]; then
     	        ## Path to derivatives
@@ -365,7 +366,7 @@ for ((i = 0; i < nsubj; i++)); do
                 continue
             fi
         else
-            log "SKIP fMRI_A for subject $SUBJ"
+            log "SKIP fMRI_A for subject ${SUBJ}_${SESS}"
         fi 
 
     ######################################################################################
@@ -407,7 +408,7 @@ for ((i = 0; i < nsubj; i++)); do
                 continue
             fi
         else
-            log "SKIP DWI_A for subject $SUBJ"
+            log "SKIP DWI_A for subject ${SUBJ}_${SESS}"
         fi 
 
     ######################################################################################
@@ -455,7 +456,7 @@ for ((i = 0; i < nsubj; i++)); do
                 continue
             fi
         else
-            log "SKIP DWI_B for subject $SUBJ"
+            log "SKIP DWI_B for subject ${SUBJ}_${SESS}"
         fi 
 
     # ################################################################################
@@ -464,14 +465,14 @@ for ((i = 0; i < nsubj; i++)); do
         ## time it
         end=`date +%s`
         runtime=$((end-start))
-        log "SUBJECT $SUBJ runtime: $runtime"
+        log "SUBJECT ${SUBJ}_${SESS} runtime: $runtime"
 
     echo "#################################################################################"
     echo "#################################################################################"
     
     dateTime=`date`
     echo "### $dateTime -" >> ${ERRfile_name}.log
-    echo "$SUBJ COMPLETED -- runtime $runtime sec - " >> ${ERRfile_name}.log
+    echo "${SUBJ}_${SESS} COMPLETED -- runtime $runtime sec - " >> ${ERRfile_name}.log
     echo "###" >> ${ERRfile_name}.log
 
 done    

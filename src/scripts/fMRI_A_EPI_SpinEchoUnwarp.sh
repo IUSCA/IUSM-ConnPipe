@@ -19,30 +19,29 @@ echo "# =================================="
 echo "# 0. Spin Echo Field Map Correction"
 echo "# =================================="
 
-# Look for raw fieldmap directory
-FMAPpath_raw="${EPIpath_raw::-4}fmap"
+# Look for raw fieldmap directory (exported from main file)
 if [[ -d "$FMAPpath_raw" ]]; then 
-    
     ## Path to raw data
-    FMAPpath="${EPIpath::-4}fmap"
+    FMAPpath="${path2ses}/fmap"
     if [[ ! -d "${FMAPpath}" ]]; then
         mkdir -p ${FMAPpath}
     fi
-
 else
     log "No raw fieldmap directory: ${FMAPpath_raw}"
     exit 1
 fi 
 
+
 if ${flags_EPI_RunTopup}; then
 
     # Lets find the json files in the fmap directory 
     json_files=$(find "$FMAPpath_raw" -type f -name "*.json")
-    intfTag="${EPIfile#*raw/}" # epi file name so it can be matched to the intended for tag
+    intfTag=$(basename ${EPIfile})    #"${EPIfile#*raw/}" # epi file name so it can be matched to the intended for tag
+    echo "intfTag  ${intfTag}"
 
     # Looping through the files
     for jsf in $json_files; do
-        log "${jsf}"
+        log "Json file: ${jsf}"
         # Now lets see if we can find the session being processed as intended for
         if grep -q "${intfTag}" "${jsf}"; then
             # if file name match (presumably under the intended for tag cause where else would it be)

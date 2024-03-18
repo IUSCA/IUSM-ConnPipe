@@ -198,7 +198,7 @@ if ${flags_T1_extract_and_mask}; then
 			out=$?
 		fi
 
-		if [ -n "$config_brainmask_overlap_thr" ]; then
+		if [ -n "${config_brainmask_overlap_thr}" ]; then
 			## For QC purposes, we run bet anyway, to compare the bet mask with the one from ANTS
 			
 			fileOut_bet="$T1path/T1_brain_betQC.nii.gz"
