@@ -1,7 +1,8 @@
 #!/bin/bash
 
-module load fsl/6.0.5.1
-module load ants/2.3.1
+#module load python/3.11.4
+module load fsl/6.0.5.2
+module load ants/2.3.5
 
 
 # Checking input arguments:
