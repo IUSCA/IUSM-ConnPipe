@@ -206,7 +206,7 @@ if $fMRI_A; then
 	export configs_EPI_runMax= # maximum run-# to be processed
 
 	# Obtain pertinent scan information from json file.
-	export flags_EPI_ReadJson=false
+	export flags_EPI_ReadJson=true
 		# If there is no json file with the functional data: 
 		# set flag to false and run the pipeline to receive instructions to manually enter epi acquisition parameters
 	#==============================================================================#
