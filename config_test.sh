@@ -18,9 +18,9 @@ export pathSM="/N/project/connpipe/fMRI_proc_utils"
 #	path2data directory must contain subject subdirectories in BIDS-compliant format. 
 #   path2derivs directory is where a "connpipe" directory will be created (if it doesn't exist already)
 #               connpipe will create a subdirectory path2derivs/connpipe/sub-ID/ses-ID to store all output
-export path2data="/N/project/adniCONN/iadrc-2024/iadrc-bids"
+export path2data="/N/project/connpipe/jenya-test/projtest"
 
-export path2derivs="/N/project/adniCONN/iadrc-2024/iadrc-bids/derivatives"
+export path2derivs="/N/project/connpipe/jenya-test/projtest/derivatives"
 
 # USER INSTRUCTIONS- Please set this to the bids style session name you want to run.
 # "ses-"" is the BIDS standard tag 
@@ -40,26 +40,26 @@ export configs_grefmFolder="GREFM"  # Reserved for Gradient Field Mapping series
 
 # required
 #
-#export PARC1="Tian2"
-#export PARC1dir="Tian_Subcortex_S2_3T_FSLMNI152_1mm"
-#export PARC1pcort=0;
-#export PARC1pnodal=1;
-#export PARC1psubcortonly=1;
-#export PARC1pcrblmonly=0;
-#
-export PARC1="suit-crblm"
-export PARC1dir="Cerebellum-MNIfnirt-maxprob-thr0-1mm"
+export PARC1="Tian2"
+export PARC1dir="Tian_Subcortex_S2_3T_FSLMNI152_1mm"
 export PARC1pcort=0;
 export PARC1pnodal=1;
-export PARC1psubcortonly=0;
-export PARC1pcrblmonly=1;
+export PARC1psubcortonly=1;
+export PARC1pcrblmonly=0;
 #
-#export PARC2="buckner-crblm"
-#export PARC2dir="Buckner2011_yeo7_MNI1mm_LooseMask"
+#export PARC2="suit-crblm"
+#export PARC2dir="Cerebellum-MNIfnirt-maxprob-thr0-1mm"
 #export PARC2pcort=0;
 #export PARC2pnodal=1;
 #export PARC2psubcortonly=0;
 #export PARC2pcrblmonly=1;
+#
+export PARC2="buckner-crblm"
+export PARC2dir="Buckner2011_yeo7_MNI1mm_LooseMask"
+export PARC2pcort=0;
+export PARC2pnodal=1;
+export PARC2psubcortonly=0;
+export PARC2pcrblmonly=1;
 #
 #export PARC3="schaefer200y17"
 #export PARC3dir="Schaefer2018_200Parcels_17Networks_order_FSLMNI152_1mm"
@@ -68,26 +68,26 @@ export PARC1pcrblmonly=1;
 #export PARC3psubcortonly=0;
 #export PARC3pcrblmonly=0;
 #
-#export PARC3="schaefer200y7"
-#export PARC3dir="Schaefer200_7Net_1mm"
-#export PARC3pcort=1;
-#export PARC3pnodal=1;
-#export PARC3psubcortonly=0;
-#export PARC3pcrblmonly=0;
+export PARC3="schaefer200y7"
+export PARC3dir="Schaefer200_7Net_1mm"
+export PARC3pcort=1;
+export PARC3pnodal=1;
+export PARC3psubcortonly=0;
+export PARC3pcrblmonly=0;
 #
-export PARC2="DKT"
-export PARC2dir="DKTcort"
-export PARC2pcort=1;
-export PARC2pnodal=1;
-export PARC2psubcortonly=0;
-export PARC2pcrblmonly=0;
+#export PARC2="DKT"
+#export PARC2dir="DKTcort"
+#export PARC2pcort=1;
+#export PARC2pnodal=1;
+#export PARC2psubcortonly=0;
+#export PARC2pcrblmonly=0;
 
 ## USER INSTRUCTIONS - SET THE NUMBER OF PARCELLATIONS THAT YOU WANT TO USE
 ## FROM THE OPTIONS LISTED ABOVE. YOU MAY ADD YOUR OWN PARCELLATIONS BY FOLLOWING
 ## THE NAMING FORMAT. NOTE THAT PARCELLATIONS ARE RUN IN THE ORDER IN WHICH THEY ARE 
 ## LISTED ABOVE. FOR EXAMPLE IF numParcs is set to 1, PARC1="shaefer200_yeo7"
 ## WILL BE USED
-export numParcs=2  # numParcs cannot be less than 1. Schaefer is the defailt parc
+export numParcs=3  # numParcs cannot be less than 1. Schaefer is the defailt parc
 
 ################################################################################
 ############################# MULTI-SECTION FLAGS ##############################
@@ -105,7 +105,7 @@ export configs_T1_addsubcort=true
 	# For a user-provided subcortical parcellation, 
 	#  (included in PARC list above and found in ConnPipeSM folder)
 	#  set in the desired parcellation name for index "N" with "psubcortonly=1"
-	export configs_T1_subcortUser=false # false = default FSL; true = user-provided
+	export configs_T1_subcortUser=true # false = default FSL; true = user-provided
 
 # Add a cerebellar parcellation (user provided only) from which connectivity will be estimated.
 # Set cerebellar PARC index "N" with "pcrblmonly=1"
@@ -150,7 +150,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export T1_PREPARE_B=true
+export T1_PREPARE_B=false
 
 if $T1_PREPARE_B; then
 
@@ -158,7 +158,7 @@ if $T1_PREPARE_B; then
 	export configs_T1_useMNIbrain=true
 
 	# registration flags (T1 <-> MNI)
-	export flags_T1_reg2MNI=false
+	export flags_T1_reg2MNI=true
 		export configs_T1_useExistingMats=true
 		export configs_T1_fnirtSubSamp="4,4,2,1"
 
@@ -166,7 +166,7 @@ if $T1_PREPARE_B; then
 	export flags_T1_regParc=true
 
 	# segmentation flags
-	export flags_T1_seg=false	
+	export flags_T1_seg=true	
 		export configs_T1_segfastH="0.25"
 		export configs_T1_masklowthr=1
 		export configs_T1_flirtdof6cost="mutualinfo"
@@ -444,11 +444,11 @@ if $DWI_A; then
 		export configs_DWI_DTIfitf='0.17' # brain extraction (FSL bet -f) parameter 
 fi 
 
-export DWI_B=false
+export DWI_B=true
 
 if $DWI_B; then
 
-	export flags_DWI_regT1=false
+	export flags_DWI_regT1=true
 	export flags_DWI_MRtrix=false
         # Number of threads must be <= --ntasks-per-node of your Slurm jobs
         export configs_DWI_nthreads=4 # for mrtrix tckgen
@@ -460,5 +460,5 @@ if $DWI_B; then
         export configs_DWI_max_angles="30 45 60" # fine coverage if you ask me!
 		# filtering options
 		export configs_DWI_sift_term_number="1000" 
-	export flags_DWI_connMatrix=true # generate connectivity matrices  
+	export flags_DWI_connMatrix=false # generate connectivity matrices  
 fi 

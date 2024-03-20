@@ -4,7 +4,6 @@
 module load fsl/6.0.5.2
 module load ants/2.3.5
 
-
 # Checking input arguments:
 if (($# != 2)); then
 	echo "Incorrect number of input arguments:"	
@@ -414,7 +413,6 @@ for ((i = 0; i < nsubj; i++)); do
 
     ######################################################################################
     log "# ############################ DWI_B ############################################"
-
 
         if $DWI_B; then
 
