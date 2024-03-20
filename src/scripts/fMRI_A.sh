@@ -259,11 +259,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 
         if [[ ${flags_NuisanceReg} == "AROMA" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then
 
-            if ${AROMA_exists}; then
-
-                log "WARNING -- Skipping AROMA. User has indicated that AROMA output already exists."
-
-            else
+            if ${run_AROMA}; then
 
                 cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_AROMA.sh"
                 echo $cmd
@@ -273,7 +269,12 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                 if [[ ${exitcode} -ne 0 ]] ; then
                     echoerr "problem at fMRI_A_EPI_AROMA. exiting."
                     exit 1
-                fi                
+                fi
+                
+            else
+
+                log "WARNING -- Skipping AROMA. User has indicated that AROMA output already exists"
+
             fi
         fi
             

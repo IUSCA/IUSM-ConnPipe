@@ -36,7 +36,7 @@ if ${flags_EPI_RunTopup}; then
 
     # Lets find the json files in the fmap directory 
     json_files=$(find "$FMAPpath_raw" -type f -name "*.json")
-    intfTag=$(basename ${EPIfile})    #"${EPIfile#*raw/}" # epi file name so it can be matched to the intended for tag
+    intfTag=$(basename ${EPIfile})   # epi file name so it can be matched to the intended for tag
     echo "intfTag  ${intfTag}"
 
     # Looping through the files
@@ -46,17 +46,18 @@ if ${flags_EPI_RunTopup}; then
         if grep -q "${intfTag}" "${jsf}"; then
             # if file name match (presumably under the intended for tag cause where else would it be)
             # check endoding direction
-            log --no-datetime "Matched intended for tag found."
-            PE=`cat ${jsf} | ${EXEDIR}/src/func/jq-linux64 ."PhaseEncodingDirection"`
-            PE="${PE#?}"
+            log --no-datetime "Matched intended-for tag found."
+
+            PE=`cat ${jsf} | ${EXEDIR}/src/func/jq-linux64 .${scanner_param_PhaseEncodingDirection}`
+            PE="${PE#?}"  # remove quotes surounding phase encoding 
             PE="${PE%?}"
             log --no-datetime "Phase Encoding: ${PE}"
             if [[ $PE == "j" ]]; then
-                fileInPA="${jsf::-4}nii.gz"
+                fileInPA="${jsf%.json}.nii.gz" #"${jsf::-4}nii.gz"
                 dim4PA=`fslnvols "${fileInPA}"` 
                 log --no-datetime "Intended for PA fmap found (${dim4PA} volumes): ${fileInPA}"
             elif [[ "$PE" == "j-" ]]; then
-                fileInAP="${jsf::-4}nii.gz"
+                fileInAP="${jsf%.json}.nii.gz"
                 dim4AP=`fslnvols "${fileInAP}"`
                 log --no-datetime "Intended for AP fmap found (${dim4AP} volumes): ${fileInAP}" 
             else
