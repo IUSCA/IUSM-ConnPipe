@@ -288,7 +288,7 @@ if $fMRI_A; then
 				export flag_AROMA_dim=
 
 				# If AROMA has already been run, save computation time by skipping this step. 
-				export run_AROMA=true
+				export run_AROMA=false
 			fi
 
 			# if using Head Motion Parameters or ICA-AROMA followed by HMP
@@ -300,7 +300,7 @@ if $fMRI_A; then
 			fi
 
 	#================================ PHYSIOLOGICAL REGRESSORS =================================#
-	export flags_EPI_PhysiolReg=true
+	export flags_EPI_PhysiolReg=false
 	# Two options that the user can select from:
 	# 1) flags_PhysiolReg="aCompCorr" - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
 	# 2) flags_PhysiolReg=meanPhysReg - mean WM and CSF signal regression

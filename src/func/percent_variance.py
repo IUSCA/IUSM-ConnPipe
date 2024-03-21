@@ -35,7 +35,7 @@ print("%.2f percent of explained variance in removed motion components" % peVar)
 flog.write("\n "+ str(peVar)+ " percent of explained variance in removed motion components")
 
 print("%.2f percent of total variance in removed motion components" % ptVar)
-flog.write("\n "+ str(ptVar)+ " percent of total variance in removed motion components")
+flog.write("\n "+ str(ptVar)+ " percent of total variance in removed motion components \n\n")
 
 flog.close()
 

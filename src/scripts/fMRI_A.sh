@@ -254,7 +254,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 ######################################################################################
     if ${flags_EPI_NuisanceReg}; then
         msg2file "# =========================================================="
-        msg2file "# 5  Nuisance Regression. "
+        msg2file "# 5  Nuisance Regression (${flags_NuisanceReg}). "
         msg2file "# =========================================================="
 
         if [[ ${flags_NuisanceReg} == "AROMA" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then

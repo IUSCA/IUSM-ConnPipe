@@ -178,6 +178,9 @@ if [[ -f "${EPIfile}" ]] && [[ -f "${acqparams}" ]] && [[ -f "${fileOutCoefName}
     fi
 
 else
-    log "APPYTOPUP FAILED: MISSING AT LEAST ONE OF THE INPUT FILES."
+    log "APPYTOPUP FAILED: MISSING AT LEAST ONE OF THE INPUT FILES:"
+    log --no-datetime "${EPIfile}" 
+    log --no-datetime "${acqparams}"
+    log --no-datetime "${fileOutCoefName}"
     exit 1 
 fi

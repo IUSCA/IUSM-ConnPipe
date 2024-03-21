@@ -28,14 +28,10 @@ source $config
 export pathMNItmplates="${pathSM}/MNI_templates"
 export pathBrainmaskTemplates="${pathSM}/brainmask_templates"
 export pathParcellations="${pathSM}/Parcellations"
-export PYpck="${pathSM}/python-pkgs"
+ICA_AROMA_path="${pathSM}/ICA-AROMA"
 
 # Creating a derivative directory for connpipe. 
 #============================================================================
-
-# if [[ ! -d "${path2derivs}" ]]; then
-# 	mkdir ${path2derivs}
-# fi
 
 path2derivs="$path2derivs/connpipe"
 if [[ ! -d "${path2derivs}" ]]; then
@@ -86,22 +82,8 @@ if ${fMRI_A}; then
 
  # Setting nuisance regression dependencies.
  #============================================================================
-    if [[ ${flags_NuisanceReg} == "AROMA" ]]; then # if using ICA-AROMA
 
-        nR="aroma" # set filename postfix for output image
-        
-        # Use the ICA-AROMA package contained in the ConnPipe-SuppMaterials
-        ICA_AROMA_path="${PYpck}/ICA-AROMA" 
-       # ICA_AROMA_path="/N/project/KarekenLab/ConnPipelineSM/python-pkgs/ICA-AROMA"
-        export run_ICA_AROMA="python ${ICA_AROMA_path}/ICA_AROMA.py"
-        ## UNCOMMENT FOLLOWING LINE **ONLY** IF USING HPC ica-aroma MODULE:
-        # export run_ICA_AROMA="ICA_AROMA.py"
-
-        export configs_EPI_resting_file='/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'
-
-        export configs_EPI_numReg=0   # make sure numReg variable is set to 0
-
-    elif [[ ${flags_NuisanceReg} == "HMPreg" ]]; then   # if using Head Motion Parameters
+    if [[ ${flags_NuisanceReg} == "HMPreg" ]]; then   # if using Head Motion Parameters
                         
         nR="hmp${configs_EPI_numReg}"   # set filename postfix for output image
         
@@ -111,16 +93,30 @@ if ${fMRI_A}; then
                 exit 1
         fi	
 
-        export configs_EPI_resting_file='/4_epi.nii.gz'    
+        export configs_EPI_resting_file='/4_epi.nii.gz'  
+
+    elif [[ ${flags_NuisanceReg} == "AROMA" ]]; then # if using ICA-AROMA
+
+        nR="aroma" # set filename postfix for output image
+        
+        # RECOMMENDED: Use the ICA-AROMA package contained in the ConnPipe-SuppMaterials
+        export run_ICA_AROMA="python ${ICA_AROMA_path}/ICA_AROMA.py"
+        ## NOT RECOMMENDED: If usiing HPC ica-aroma module, then uncomment following lines:
+        # module load ica-aroma
+        # export run_ICA_AROMA="ICA_AROMA.py"
+
+        export configs_EPI_resting_file='/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'
+
+        export configs_EPI_numReg=0   # make sure numReg variable is set to 0
 
     elif [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then   # if using AROMA + Head Motion Parameters
 
         nR="aroma_hmp${configs_EPI_numReg}" # set filename postfix for output image
         
-        # Use the ICA-AROMA package contained in the ConnPipe-SuppMaterials
-        ICA_AROMA_path="${PYpck}/ICA-AROMA" 
+        # RECOMMENDED: Use the ICA-AROMA package contained in the ConnPipe-SuppMaterials
         export run_ICA_AROMA="python ${ICA_AROMA_path}/ICA_AROMA.py"
-        ## UNCOMMENT FOLLOWING LINE **ONLY** IF USING HPC ica-aroma MODULE:
+        ## NOT RECOMMENDED: If usiing HPC ica-aroma module, then uncomment following lines:
+        # module load ica-aroma
         # export run_ICA_AROMA="ICA_AROMA.py"
 
         export configs_EPI_resting_file='/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'
