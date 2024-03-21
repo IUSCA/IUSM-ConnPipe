@@ -9,59 +9,62 @@ email = 'echumin@iu.edu';
 acct = 'r00216'; % this is Jenya's carbonate connproc acct
 
 %% resources requested:
-ppn = '8';
+ppn = '1';
 walltime = '6:00:00';
-vmem = '12G';
+vmem = '6G';
 
 %% data
 % path to bids project
-path2deriv='/N/project/kbase-imaging/kbase1-bids/derivatives/connpipe';
+path2deriv='/N/project/adniCONN/iadrc-2024/iadrc-bids/derivatives/connpipe';
 % path to raw data
-path2data='/N/project/kbase-imaging/kbase1-bids/raw';
+path2data='/N/project/adniCONN/iadrc-2024/iadrc-bids/raw';
 % number of subjects per job
-nS = 2; 
+nS = 90; 
 
 % where to write job, log, and error files
-batch_path = '/N/project/kbase-imaging/connpipe_job_test';
+batch_path = '/N/project/adniCONN/iadrc-2024/iadrc-bids/batch_jobs';
 
 %% pipeline
 % pipeline directory
-connPipe = '/N/project/kbase-imaging/connpipe_job_test/IUSM-ConnPipe';
+connPipe = '/N/u/echumin/Quartz/img_proc_tools/IUSM-ConnPipe';
 
 % config file
-config = '/N/project/kbase-imaging/connpipe_job_test/hpc_config_s2_dwiA_REGon.sh';
+config = '/N/u/echumin/Quartz/img_proc_tools/IUSM-ConnPipe/config_iadrc.sh';
 
-%% building subject list from raw
-% subjALL = struct2cell(dir([path2data '/sub-*']));
-subjALL = subj_runREGon{2}';
+%% building subject list 
+
+subjALL = subj2run_hpc;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% just for me
-% filter to only subjects with specific visit data
-% subjV=cell.empty;
-% for su=1:length(subjALL)
-%     path = [path2deriv '/' subjALL{1,su} '/ses-v0'];
-%     if exist(path,'dir')
-%         subjV(1,end+1)=subjALL(1,su);
+% build a list of subjID and session pairs from a connpipe derivative
+% directory
+% subj=dir('/N/project/adniCONN/iadrc-2024/iadrc-bids/derivatives/connpipe/sub-*');
+% subj2run=cell.empty;
+% 
+% for ss=1:length(subj)
+%     ses=dir(fullfile(subj(ss).folder,subj(ss).name,'ses*'));
+%     for ee=1:length(ses)
+%         subj2run{end+1,1}=subj(ss).name;
+%         subj2run{end,2}=ses(ee).name;
 %     end
-%     clear path
+%     clear ses
 % end
-% subjALL=subjV; clear subjV
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-tS=length(subjALL); % total subjects
+tS=size(subjALL,1); % total subjects
 nJ = ceil(tS/nS);   % number of jobs
-rt='dwi_regon_v2';
+rt='t1b_parc';
 
 for j = 1:nJ
     sS=(j*nS)-nS+1; % starting subject
     eS=j*nS;        % ending subject
     if eS<=tS
-        s2r=subjALL(1,sS:eS)';
+        s2r=subjALL(sS:eS,:);
     else
-        s2r=subjALL(1,sS:end)';
+        s2r=subjALL(sS:end,:);
     end
     subj2run = [batch_path '/subj2run_' rt '_' num2str(j) 'of' num2str(nJ) '.txt'];
-    writecell(s2r,subj2run)
+    writecell(s2r,subj2run,'Delimiter',' ')
     clear s2r
 
     %% build slurm job file
@@ -81,7 +84,7 @@ for j = 1:nJ
     fprintf(fidslurm, ['#SBATCH --mem=' vmem '\n']);
 
     fprintf(fidslurm, ['cd ' connPipe '\n\n']);        
-    fprintf(fidslurm, ['./hpc_main_kbase.sh ' config ' ' subj2run]); %!!!!!!!!!!!!!!!!
+    fprintf(fidslurm, ['./hpc_main_new.sh ' config ' ' subj2run]); %!!!!!!!!!!!!!!!!
     fclose(fidslurm);
 end
 

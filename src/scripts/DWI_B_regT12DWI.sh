@@ -33,52 +33,30 @@ cmd="flirt -in ${fileFA2mm} \
 log $cmd
 eval $cmd
 
-# rigid body of T1 to FA
-log "DWI_B: rigid body dof6 T1 -> FA_1mm"
+# register T1 brain to FA via suick ants linear+nonlinear registration
+log "DWI_B: Ants SyN registration T1 -> FA_1mm"
 fileIn="${T1path}/T1_brain.nii.gz"
-fileMat1="${DWIpath}/T1_2_FA_dof6.mat"
-fileOut="${DWIpath}/rT1_dof6.nii.gz"
+prefixOut="${DWIpath}/rT1_qSyn_"
 
-cmd="flirt -in ${fileIn} \
-    -ref ${fileFA1mm} \
-    -omat ${fileMat1} \
-    -dof 6 \
-    -interp spline \
-    -out ${fileOut}"
+cmd="antsRegistrationSyNQuick.sh -d 3 \
+    -n ${configs_DWI_nthreads} \
+    -f ${fileFA1mm} \
+    -m ${fileIn} \
+    -o ${prefixOut}"
 log --no-datetime $cmd
-eval $cmd
-
-# remove negatives due to interpolation
-cmd="fslmaths ${fileOut} -thr 0 ${fileOut}"
-log $cmd
-eval $cmd
-
-fileMask="${T1path}/T1_brain_mask.nii.gz"
-fileMaskDWI="${DWIpath}/rT1_brain_mask.nii.gz"
-
-cmd="flirt -in ${fileMask} \
-    -ref ${fileFA1mm} \
-    -applyxfm \
-    -init ${fileMat1} \
-    -out ${fileMaskDWI} \
-    -interp nearestneighbour"
-log $cmd
-eval $cmd
-
-cmd="fslmaths ${fileOut} -mas ${fileMaskDWI} ${fileOut}"
-log $cmd
 eval $cmd
 
 # for white matter seeding register WM mask to DWI
 if [[ ${configs_DWI_seeding} == "wm" ]]; then
     fileWM="${T1path}/T1_WM_mask.nii.gz"
     fileWMdwi="${DWIpath}/rT1_WM_mask.nii.gz"
-    cmd="flirt -in ${fileWM} \
-        -ref ${fileFA1mm} \
-        -applyxfm \
-        -init ${fileMat1} \
-        -out ${fileWMdwi} \
-        -interp nearestneighbour"
+    cmd="antsApplyTransforms -d 3 \
+        -i ${fileWM} \
+        -r ${fileFA1mm} \
+        -n GenericLabel \
+        -t ${prefixOut}1Warp.nii.gz \
+        -t ${prefixOut}0GenericAffine.mat \
+        -o ${fileWMdwi} -v"
     log $cmd
     eval $cmd
 fi
@@ -109,12 +87,13 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
             fileOut="${DWIpath}/rT1_GM_parc_${parc}.nii.gz"
         fi
 
-        cmd="flirt -in ${fileGMparc} \
-            -ref ${fileFA1mm} \
-            -applyxfm \
-            -init ${fileMat1} \
-            -out ${fileOut} \
-            -interp nearestneighbour"
+        cmd="antsApplyTransforms -d 3 \
+            -i ${fileGMparc} \
+            -r ${fileFA1mm} \
+            -n GenericLabel \
+            -t ${prefixOut}1Warp.nii.gz \
+            -t ${prefixOut}0GenericAffine.mat \
+            -o ${fileOut} -v"
         log $cmd
         eval $cmd
     else
@@ -131,12 +110,13 @@ if ! ${configs_T1_subcortUser}; then
         # transformation from T1 to dwi space
         fileOut="${DWIpath}/rT1_GM_parc_FSLsubcort.nii.gz"
 
-        cmd="flirt -in ${fileGMparc} \
-            -ref ${fileFA1mm} \
-            -applyxfm \
-            -init ${fileMat1} \
-            -out ${fileOut} \
-            -interp nearestneighbour"
+        cmd="antsApplyTransforms -d 3 \
+            -i ${fileGMparc} \
+            -r ${fileFA1mm} \
+            -n GenericLabel \
+            -t ${prefixOut}1Warp.nii.gz \
+            -t ${prefixOut}0GenericAffine.mat \
+            -o ${fileOut} -v"
         log $cmd
         eval $cmd
     else
