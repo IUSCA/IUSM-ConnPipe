@@ -217,7 +217,7 @@ if $fMRI_A; then
 	# 2) Gradient echo field maps -- uses FUGE
 	
 	#============================ OPTION 1: SPIN ECO UNWARP =======================#
-	export flags_EPI_SpinEchoUnwarp=true # Requires raw fmap directory and approporiate files.
+	export flags_EPI_SpinEchoUnwarp=false # Requires raw fmap directory and approporiate files.
 		## FSL-topup
 		export flags_EPI_RunTopup=true # 1=Run topup (1st pass), 0=Run applyTopup only. (saves time if topup output exists). 
 
@@ -249,20 +249,20 @@ if $fMRI_A; then
 	#==================================================================================#
 	#==================================================================================#
 
-	export flags_EPI_SliceTimingCorr=true		
+	export flags_EPI_SliceTimingCorr=false		
 		export configs_EPI_minTR=1.6   # perform Slice Timing correction only if TR > configs_EPI_minTR
 		export configs_EPI_UseTcustom=1   # 1: use header-extracted slice times (suggested)
 
-	export flags_EPI_MotionCorr=true   # head motion estimation with FSL's mcflirt; generates 6 motion param for each BOLD image
+	export flags_EPI_MotionCorr=false   # head motion estimation with FSL's mcflirt; generates 6 motion param for each BOLD image
 
-	export flags_EPI_RegT1=true
+	export flags_EPI_RegT1=false
 		export configs_EPI_epibetF=0.3000;
 
-	export flags_EPI_RegOthers=true
+	export flags_EPI_RegOthers=false
 		export configs_EPI_GMprobthr=0.2 # Threshold the GM probability image; change from 0.25 to 0.2 or 0.15										
 		export configs_EPI_minVoxelsClust=8 
 
-	export flags_EPI_IntNorm4D=true # Intensity normalization to global 4D mean of 1000
+	export flags_EPI_IntNorm4D=false # Intensity normalization to global 4D mean of 1000
 
 	#=================================================================================================#
 	#=================================================================================================#
@@ -287,8 +287,8 @@ if $fMRI_A; then
 				## setting the desired number of componenets in the following config flag. Leave undefined for automatic estimation 
 				export flag_AROMA_dim=
 
-				# If AROMA has already been run, save computation time by skipping that step. 
-				export AROMA_exists=true
+				# If AROMA has already been run, save computation time by skipping this step. 
+				export run_AROMA=true
 			fi
 
 			# if using Head Motion Parameters or ICA-AROMA followed by HMP
@@ -300,7 +300,7 @@ if $fMRI_A; then
 			fi
 
 	#================================ PHYSIOLOGICAL REGRESSORS =================================#
-	export flags_EPI_PhysiolReg=false
+	export flags_EPI_PhysiolReg=true
 	# Two options that the user can select from:
 	# 1) flags_PhysiolReg="aCompCorr" - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
 	# 2) flags_PhysiolReg=meanPhysReg - mean WM and CSF signal regression

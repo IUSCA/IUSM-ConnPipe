@@ -66,6 +66,6 @@ cmd="mv ${EPIrun_out}/2_epi.par ${EPIrun_out}/motion.txt"
 log --no-datetime $cmd 
 eval $cmd 
 
-cmd="rm ${EPIrun_out}/2_mean_reg.nii.gz"
+cmd="rm ${EPIrun_out}/2_epi_mean_reg.nii.gz"
 log --no-datetime $cmd 
 eval $cmd 
