@@ -447,11 +447,13 @@ fi
 export DWI_B=false
 
 if $DWI_B; then
+	# Number of threads for parallel processing for ants and mrtrix
+	# Number of threads must be <= --ntasks-per-node of your Slurm jobs
+	export configs_DWI_nthreads=6 
 
-	export flags_DWI_regT1=false
+	export flags_DWI_regT1=true
+		export configs_DWI_useExistingMats=true
 	export flags_DWI_MRtrix=false
-        # Number of threads must be <= --ntasks-per-node of your Slurm jobs
-        export configs_DWI_nthreads=4 # for mrtrix tckgen
 		export configs_DWI_seeding="wm" # 'wm'-white matter OR 'dyn'-dynamic
 			# For WM seeding option, specify number of seeds/voxel
 		    export configs_DWI_Nseeds="1000"
