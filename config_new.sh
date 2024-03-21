@@ -300,7 +300,7 @@ if $fMRI_A; then
 			fi
 
 	#================================ PHYSIOLOGICAL REGRESSORS =================================#
-	export flags_EPI_PhysiolReg=false
+	export flags_EPI_PhysiolReg=true
 	# Two options that the user can select from:
 	# 1) flags_PhysiolReg="aCompCorr" - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
 	# 2) flags_PhysiolReg=meanPhysReg - mean WM and CSF signal regression
@@ -320,7 +320,7 @@ if $fMRI_A; then
 			fi
 	
 	#================================ GLOBAL SIGNAL REGRESSION =================================#
-	export flags_EPI_GS=false # include global signal regression 
+	export flags_EPI_GS=true # include global signal regression 
 			
 		export configs_EPI_numGS=4 # define number of global signal regressors
 										# Options are: 1-mean signal; 2-mean signal+deriv; 4-mean signal+deriv+sq

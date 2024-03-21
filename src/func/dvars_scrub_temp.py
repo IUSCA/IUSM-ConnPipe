@@ -48,9 +48,9 @@ flog.write("\n nuisanceReg "+ nuisanceReg)
 physReg=sys.argv[2] 
 print("physReg is ",physReg)
 flog.write("\n physReg "+ physReg)
-PhReg_path = ''.join([EPIpath,'/',nuisanceReg,'/',physReg])
-print("PhReg_path is ",PhReg_path)
-flog.write("\n PhReg_path "+ PhReg_path )
+NuisancePhysReg_out = ''.join([EPIpath,'/',nuisanceReg,'/',physReg])
+print("NuisancePhysReg_out is ",NuisancePhysReg_out)
+flog.write("\n NuisancePhysReg_out "+ NuisancePhysReg_out )
 
 config_param=int(os.environ['configs_EPI_numPhys'])
 print("config_param is ",config_param)
@@ -78,7 +78,7 @@ flog.write("\n dctfMin "+ str(dctfMin))
 
 resting = nib.load(resting_file)
 
-fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.npz'])
+fname = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',nR,'.npz'])
 
 flog.write("\n REGRESSORS -- Loading regressor matrix:") 
 print("Loading regressor matrix:") 
@@ -113,7 +113,7 @@ if dvars_scrub == 'true':
         print("configs_EPI_path2dvars ",configs_EPI_path2DVARS)
 
         # Define file name where DVARS info will be printed
-        fname = ''.join([PhReg_path,'/DVARS_',nR,'.txt'])
+        fname = ''.join([NuisancePhysReg_out,'/DVARS_',nR,'.txt'])
         fdvars=open(fname, "a+")
 
         import sys
@@ -149,12 +149,12 @@ if dvars_scrub == 'true':
         # save nifti image
         if len(zRegressMat)==1:
             fileOut = "/7_epi_%s_DVARS.nii.gz" % nR 
-            matlabfilename = ''.join([PhReg_path,'/volumes2scrub_',nR,'_DVARS.mat'])
+            matlabfilename = ''.join([NuisancePhysReg_out,'/volumes2scrub_',nR,'_DVARS.mat'])
         else:
             fileOut = "/7_epi_%s%d_DVARS.nii.gz" % (nR,pc)
-            matlabfilename = ''.join([PhReg_path,'/volumes2scrub_',nR,pc,'_DVARS.mat'])
+            matlabfilename = ''.join([NuisancePhysReg_out,'/volumes2scrub_',nR,pc,'_DVARS.mat'])
 
-        fileOut = ''.join([PhReg_path,fileOut])
+        fileOut = ''.join([NuisancePhysReg_out,fileOut])
         print("Nifti file to be saved is: ",fileOut)
 
         # save new resting file
@@ -170,7 +170,7 @@ if dvars_scrub == 'true':
 
 
     ## save data (for header info), regressors, and residuals
-    fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'_DVARS.npz'])
+    fname = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',nR,'_DVARS.npz'])
     np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol, \
     zRegressMat=zRegressMat,resid_before_DVARS=resid_before_DVARS,nR=nR, \
     resid=resid, DVARS_Inference_Hprac=DVARSout["Inference"]["H"])

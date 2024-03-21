@@ -20,8 +20,8 @@ fileIn=sys.argv[1]
 print("fileIn ",fileIn)
 fileOut=sys.argv[2]
 print("fileOut ",fileOut)
-PhReg_path=sys.argv[3]
-print("PhReg_path ",PhReg_path)
+NuisancePhysReg_out=sys.argv[3]
+print("NuisancePhysReg_out ",NuisancePhysReg_out)
 TR= float(sys.argv[4])
 print("TR ",TR)
 nR=os.environ['nR']
@@ -117,7 +117,7 @@ for pc in range(0,len(resid)):
     else:
         fileNii = "/8_epi_%s%d.nii.gz" % (nR,pc)
 
-    fileNii = ''.join([PhReg_path,fileNii])
+    fileNii = ''.join([NuisancePhysReg_out,fileNii])
     print("Nifti file to be saved is: ",fileNii)
 
     # save new resting file

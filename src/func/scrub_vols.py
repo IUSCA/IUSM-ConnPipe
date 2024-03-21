@@ -11,8 +11,8 @@ flog=open(logfile_name, "a+")
 
 EPIpath=os.environ['EPIrun_out']
 print("EPIpath ",EPIpath)
-PhReg_path=sys.argv[1]
-print("PhReg_path ",PhReg_path)
+NuisancePhysReg_out=sys.argv[1]
+print("NuisancePhysReg_out ",NuisancePhysReg_out)
 
 nR=os.environ['nR']
 print("nR ",nR)
@@ -29,7 +29,7 @@ resting_file = ''.join([EPIpath,resting_file])
 resting = nib.load(resting_file)
 
 
-fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.npz'])
+fname = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',nR,'.npz'])
 data = np.load(fname) 
 resid=data['resid']
 
@@ -62,7 +62,7 @@ for pc in range(0,len(resid)):
     else:
         fileNii = "/8_epi_%s%d_scrubbed.nii.gz" % (nR,pc)
 
-    fileNii = ''.join([PhReg_path,fileNii])
+    fileNii = ''.join([NuisancePhysReg_out,fileNii])
     print("Nifti file to be saved is: ",fileNii)
 
     # save new resting file
@@ -70,11 +70,11 @@ for pc in range(0,len(resid)):
     nib.save(resting_new,fileNii) 
 
 ## save data 
-fileOut = ''.join([PhReg_path,'/NuisanceRegression_',nR,'_scrubbed.npz'])
+fileOut = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',nR,'_scrubbed.npz'])
 np.savez(fileOut,resid=resid)
 print("Saved Scrubbed residuals")
 
-fileOut = ''.join([PhReg_path,'/NuisanceRegression_',nR,'_scrubbed.mat'])
+fileOut = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',nR,'_scrubbed.mat'])
 print("savign MATLAB file ", fileOut)
 mdic = {"resid" : resid[0]}
 savemat(fileOut, mdic)

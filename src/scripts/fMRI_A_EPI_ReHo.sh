@@ -21,12 +21,10 @@ log "# =========================================================="
 log "# 9. EXTRAS - ReHo. "
 log "# =========================================================="
 
-PhReg_path="${EPIpath}/${regPath}"     
-
 fileFC="${EPIpath}/rT1_brain_mask_FC.nii.gz"
 fileT1brain="${T1path}/T1_brain.nii.gz"
 
-path2ReHo="${PhReg_path}/${configs_ReHo_dirName}"
+path2ReHo="${NuisancePhysReg_out}/${configs_ReHo_dirName}"
 if [[ ! -d ${path2ReHo} ]]; then
     mkdir ${path2ReHo}
 else 
@@ -49,7 +47,7 @@ log "Using ${configs_ReHo_mask} as mask"
 
 #Compute Kendall's W coefficients
 cmd="3dReHo -prefix ${path2ReHo}/ReHo \
-    -inset ${PhReg_path}/${configs_ReHo_input} \
+    -inset ${NuisancePhysReg_out}/${configs_ReHo_input} \
     ${configs_ReHo_neigh} -mask ${configs_ReHo_mask}"
 log $cmd
 eval $cmd

@@ -20,12 +20,10 @@ log "# =========================================================="
 log "# 10. EXTRAS - ALFF. "
 log "# =========================================================="
 
-PhReg_path="${EPIpath}/${regPath}"     
-
-fileFC="${EPIpath}/rT1_brain_mask_FC.nii.gz"
+fileFC="${EPIrun_out}/rT1_brain_mask_FC.nii.gz"
 fileT1brain="${T1path}/T1_brain.nii.gz"
 
-path2ALFF="${PhReg_path}/${configs_ALFF_dirName}"
+path2ALFF="${NuisancePhysReg_out}/${configs_ALFF_dirName}"
 if [[ ! -d ${path2ALFF} ]]; then
     mkdir ${path2ALFF}
 else 
@@ -49,7 +47,7 @@ log "Using ${configs_ALFF_mask} as mask"
 #Run 3dRSFC with a 6 mm blur on input dataset
 cmd="3dRSFC -prefix ${path2ALFF}/RSFC ${configs_ALFF_blur} \
     -mask ${configs_ALFF_mask} \
-    -input ${PhReg_path}/${configs_ALFF_input} \
+    -input ${NuisancePhysReg_out}/${configs_ALFF_input} \
     ${configs_ALFF_bandpass} ${configs_ALFF_otherOptions}"
 log $cmd
 eval $cmd
@@ -108,7 +106,7 @@ log $cmd
 
 
 #Filter results through grey matter mask 
-fileGMmask="${EPIpath}/rT1_GM_mask.nii.gz"
+fileGMmask="${EPIrun_out}/rT1_GM_mask.nii.gz"
 cmd="3dcalc -a ${path2ALFF}/RSFC_ALFF+orig. -b ${fileGMmask} -expr '(a*b)' -prefix ${path2ALFF}/RSFC_ALFF_GM"
 log $cmd
 3dcalc -a ${path2ALFF}/RSFC_ALFF+orig. -b ${fileGMmask} -expr '(a*b)' -prefix ${path2ALFF}/RSFC_ALFF_GM
@@ -165,7 +163,7 @@ fileIn=${path2ALFF}/RSFC_ALFF_normalized.nii
 fileOut=${path2ALFF}/RSFC_ALFF_normalized_MNI_${configs_ALFF_MNIres}mm.nii.gz
 
 cmd="${EXEDIR}/src/func/transform_epi2MNI.sh \
-    ${EPIpath} ${T1path}/registration \
+    ${EPIrun_out} ${T1path}/registration \
     ${fileIn} ${fileOut} ${configs_ALFF_MNIres}"
 log $cmd
 eval $cmd
@@ -195,7 +193,7 @@ fi
 fileIn=${path2ALFF}/RSFC_fALFF_normalized.nii
 fileOut=${path2ALFF}/RSFC_fALFF_normalized_MNI_${configs_ALFF_MNIres}mm.nii.gz
 cmd="${EXEDIR}/src/func/transform_epi2MNI.sh \
-    ${EPIpath} ${T1path}/registration \
+    ${EPIrun_out} ${T1path}/registration \
     ${fileIn} ${fileOut} ${configs_ALFF_MNIres}"
 log $cmd
 eval $cmd
@@ -225,7 +223,7 @@ fileIn=${path2ALFF}/RSFC_ALFF_normalized_GM.nii
 fileOut=${path2ALFF}/RSFC_ALFF_normalized_GM_MNI_${configs_ALFF_MNIres}mm.nii.gz
 
 cmd="${EXEDIR}/src/func/transform_epi2MNI.sh \
-    ${EPIpath} ${T1path}/registration \
+    ${EPIrun_out} ${T1path}/registration \
     ${fileIn} ${fileOut} ${configs_ALFF_MNIres}"
 log $cmd
 eval $cmd
@@ -255,7 +253,7 @@ fi
 fileIn=${path2ALFF}/RSFC_fALFF_normalized_GM.nii
 fileOut=${path2ALFF}/RSFC_fALFF_normalized_GM_MNI_${configs_ALFF_MNIres}mm.nii.gz
 cmd="${EXEDIR}/src/func/transform_epi2MNI.sh \
-    ${EPIpath} ${T1path}/registration 
+    ${EPIrun_out} ${T1path}/registration 
     ${fileIn} ${fileOut} ${configs_ALFF_MNIres}"
 log $cmd
 eval $cmd

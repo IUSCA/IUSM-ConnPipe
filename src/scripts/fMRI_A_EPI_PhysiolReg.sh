@@ -63,14 +63,6 @@ elif [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then
     fi 
 fi
 
-PhReg_path="${EPIrun_out}/${regPath}"
-
-if [[ ! -d ${PhReg_path} ]]; then
-    cmd="mkdir ${PhReg_path}"
-    log $cmd
-    eval $cmd 
-fi
-
 # read in data and masks 
 cmd="python ${EXEDIR}/src/func/read_physiol_data.py"
 log $cmd
@@ -84,6 +76,6 @@ eval $cmd
 
 cmd="python ${EXEDIR}/src/func/physiological_regressors.py \
     ${fileIN} ${flags_PhysiolReg} \
-    ${configs_EPI_numPhys} ${PhReg_path}"
+    ${configs_EPI_numPhys} ${NuisancePhysReg_out}"
 log $cmd
 eval $cmd

@@ -28,8 +28,8 @@ flog.write("\n *** python time_series **** ")
 EPIpath=os.environ['EPIrun_out']
 fileIN=sys.argv[1]
 flog.write("\n"+"fileIN "+ fileIN)
-PhReg_path=sys.argv[2]
-flog.write("\n PhReg_path "+ PhReg_path)
+NuisancePhysReg_out=sys.argv[2]
+flog.write("\n NuisancePhysReg_out "+ NuisancePhysReg_out)
 configs_EPI_numGS=int(os.environ['configs_EPI_numGS'])
 flog.write("\n configs_EPI_numGS "+ str(configs_EPI_numGS))
 configs_EPI_dctfMin=float(os.environ['configs_EPI_dctfMin'])
@@ -53,9 +53,9 @@ if 0 < configs_EPI_numGS < 5:
     GSderiv_sq = np.power(GSderiv,2)
 
     # save the data
-    fname = ''.join([PhReg_path,'/dataGS.npz'])
+    fname = ''.join([NuisancePhysReg_out,'/dataGS.npz'])
     np.savez(fname,GSavg=GSavg,GSavg_sq=GSavg_sq,GSderiv=GSderiv,GSderiv_sq=GSderiv_sq)
-    fname = ''.join([PhReg_path,'/dataGS.mat'])
+    fname = ''.join([NuisancePhysReg_out,'/dataGS.mat'])
     print("savign MATLAB file ", fname)
     mdic = {"GSavg" : GSavg,"GSavg_sq" : GSavg_sq, "GSderiv" : GSderiv,"GSderiv_sq" : GSderiv_sq}
     savemat(fname, mdic)
