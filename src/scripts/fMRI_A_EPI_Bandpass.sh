@@ -18,16 +18,15 @@ log --no-datetime "# =========================================================="
 log --no-datetime "# 6. Demean, Detrend, Bandpass "
 log --no-datetime "# =========================================================="
 
-PhReg_path="${EPIrun_out}/${regPath}"
 if [[ $nR == *_BPF ]]; then
     # Crop out "_BPF" and save the new string into nRc
     nRc="${nR%_BPF}"
     if ${configs_EPI_despike}; then
-        fileIn="${PhReg_path}/NuisanceRegression_${nRc}_despiked.npz"
-        fileOut="${PhReg_path}/NuisanceRegression_${nR}_despiked"
+        fileIn="${NuisancePhysReg_out}/NuisanceRegression_${nRc}_despiked.npz"
+        fileOut="${NuisancePhysReg_out}/NuisanceRegression_${nR}_despiked"
     else
-        fileIn="${PhReg_path}/NuisanceRegression_${nRc}.npz"
-        fileOut="${PhReg_path}/NuisanceRegression_${nR}"
+        fileIn="${NuisancePhysReg_out}/NuisanceRegression_${nRc}.npz"
+        fileOut="${NuisancePhysReg_out}/NuisanceRegression_${nR}"
     fi
 fi
 
@@ -37,6 +36,6 @@ if [[ ! -e "${fileIn}" ]]; then
 fi 
 
 cmd="python ${EXEDIR}/src/func/dm_dt_bandpass.py \
-     ${fileIn} ${fileOut} ${PhReg_path} ${TR}"
+     ${fileIn} ${fileOut} ${NuisancePhysReg_out} ${TR}"
 log $cmd
 eval $cmd

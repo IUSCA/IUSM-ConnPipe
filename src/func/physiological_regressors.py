@@ -19,8 +19,8 @@ physReg=sys.argv[2]
 flog.write("\n physReg "+ physReg)
 num_comp=int(sys.argv[3])
 flog.write("\n num_comp "+ str(num_comp))
-PhReg_path=sys.argv[4]
-flog.write("\n PhReg_path "+ PhReg_path)
+NuisancePhysReg_out=sys.argv[4]
+flog.write("\n NuisancePhysReg_out "+ NuisancePhysReg_out)
 
 
 def get_ts(vol,numTP,rest):
@@ -85,9 +85,9 @@ if physReg == 'aCompCor':
     flog.write("\n Running PCA on WM time-series.\n")
     
     # save the data
-    fname = ''.join([PhReg_path,'/dataPCA',str(num_comp),'_WM-CSF.npz'])
+    fname = ''.join([NuisancePhysReg_out,'/dataPCA',str(num_comp),'_WM-CSF.npz'])
     np.savez(fname,CSFpca=CSFpca,CSFvar=CSFvar,CSFmask=CSFmask,CSFts=CSFts,WMpca=WMpca,WMvar=WMvar,WMmask=WMmask,WMts=WMts)
-    fname = ''.join([PhReg_path,'/dataPCA',str(num_comp),'_WM-CSF.mat'])
+    fname = ''.join([NuisancePhysReg_out,'/dataPCA',str(num_comp),'_WM-CSF.mat'])
     print("saving MATLAB file ", fname)
     mdic = {"CSFpca" : CSFpca,"CSFvar" : CSFvar,"CSFmask" : CSFmask,"CSFts" : CSFts,"WMpca" : WMpca,"WMvar" : WMvar,"WMmask" : WMmask,"WMts" : WMts}
     savemat(fname, mdic)
@@ -107,10 +107,10 @@ elif physReg == 'meanPhysReg':
     WMderiv_sq = np.power(WMderiv,2)
 
     # save the data
-    fname = ''.join([PhReg_path,'/dataMnRg_WM-CSF.npz'])
+    fname = ''.join([NuisancePhysReg_out,'/dataMnRg_WM-CSF.npz'])
     np.savez(fname,CSFavg=CSFavg,CSFavg_sq=CSFavg_sq,CSFderiv=CSFderiv,CSFderiv_sq=CSFderiv_sq,WMavg=WMavg,WMavg_sq=WMavg_sq,WMderiv=WMderiv,WMderiv_sq=WMderiv_sq)
     print("savign MATLAB file ", fname)
-    fname = ''.join([PhReg_path,'/dataMnRg_WM-CSF.mat'])
+    fname = ''.join([NuisancePhysReg_out,'/dataMnRg_WM-CSF.mat'])
     mdic = {"CSFavg" : CSFavg,"CSFavg_sq" : CSFavg_sq,"CSFderiv" : CSFderiv,"CSFderiv_sq" : CSFderiv_sq,"WMavg" : WMavg,"WMavg_sq" : WMavg_sq,"WMderiv" : WMderiv,"WMderiv_sq" : WMderiv_sq}
     savemat(fname, mdic)
     print("saved mean CSF WM signal, derivatives, and quadtatics")  

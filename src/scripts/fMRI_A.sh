@@ -90,6 +90,19 @@ for ((i=0; i<${#epiList[@]}; i++)); do
         mkdir -p ${EPIrun_out}
     fi
 
+    # Create and export path to Regression output dir 
+    # regPath=${flags_NuisanceReg}/${flags_PhysiolReg}  (defined in main, line 158 )
+    export NuisancePhysReg_out="${EPIrun_out}/${regPath}"  
+
+    log --no-datetime "nuisance and physiological regressor output directory:"
+    log --no-datetime "${NuisancePhysReg_out}"
+
+    if [[ ! -d ${NuisancePhysReg_out} ]]; then
+        cmd="mkdir -p ${NuisancePhysReg_out}"
+        log $cmd
+        eval $cmd 
+    fi
+
 ######################################################################################
     #### Read scan info from json
     if ${flags_EPI_ReadJson}; then
@@ -254,7 +267,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 ######################################################################################
     if ${flags_EPI_NuisanceReg}; then
         msg2file "# =========================================================="
-        msg2file "# 5  Nuisance Regression. "
+        msg2file "# 5  Nuisance Regression (${flags_NuisanceReg}). "
         msg2file "# =========================================================="
 
         if [[ ${flags_NuisanceReg} == "AROMA" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then

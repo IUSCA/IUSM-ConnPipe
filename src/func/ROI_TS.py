@@ -13,8 +13,8 @@ fqc=open(QCfile_name, "a+")
 logfile_name = ''.join([os.environ['logfile_name'],'.log'])
 flog=open(logfile_name, "a+")
 
-PhReg_path = sys.argv[1]
-flog.write("\n PhReg_path "+ PhReg_path)
+NuisancePhysReg_out = sys.argv[1]
+flog.write("\n NuisancePhysReg_out "+ NuisancePhysReg_out)
 
 flog.write("\n *** python ROI_TS **** ")
 numParcs = int(os.environ['numParcs'])
@@ -26,7 +26,7 @@ post_nR=os.environ['post_nR']
 flog.write("\n post_nR "+ post_nR)
 
 # load appropriate residuals
-fname_post = ''.join([PhReg_path,'/NuisanceRegression_',post_nR,'.npz'])
+fname_post = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',post_nR,'.npz'])
 print("Loading post-regression residuals from ",fname_post)
 flog.write("\n Loading post-regression residuals "+fname_post)
 data_postreg = np.load(fname_post) 
@@ -55,7 +55,7 @@ for pc in range(0,len(resid)):
     else:
         mtype = "/TimeSeries_%s%d" % (post_nR,pc)
 
-    path_EPI_Mats = ''.join([PhReg_path,mtype])
+    path_EPI_Mats = ''.join([NuisancePhysReg_out,mtype])
     CHECK_FOLDER = os.path.isdir(path_EPI_Mats)
 
     # If folder doesn't exist, then create it.

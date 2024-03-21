@@ -92,6 +92,7 @@ cmd="fslmaths ${fileEPI} \
 log --no-datetime $cmd
 eval $cmd 
 
+
 # mcFLIRT realignment parameters 
 log "#### mcFLIRT realignment parameters"
 
@@ -105,6 +106,10 @@ else
 fi 
 
 log "## Starting ICA-AROMA"
+
+cmd="which python"
+echo $cmd
+eval $cmd
 
 AROMAout="${AROMApath}/AROMA-output"
 
@@ -136,8 +141,9 @@ cmd="${run_ICA_AROMA} \
 -affmat ${fileMat} \
 -warp ${fileWarpField} ${AROMA_dim}"
 log $cmd 
-out=`$cmd`
-log "$out"
+eval $cmd
+# out=`$cmd`
+# log "$out"
 
 if [[ ! -e "${AROMAout}/denoised_func_data_nonaggr.nii.gz" ]]; then
 
@@ -158,3 +164,4 @@ cmd="python ${EXEDIR}/src/func/percent_variance.py \
     ${ICstats} ${motionICs}"
 log --no-datetime $cmd
 eval $cmd
+

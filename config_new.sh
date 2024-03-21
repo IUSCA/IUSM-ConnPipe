@@ -288,7 +288,7 @@ if $fMRI_A; then
 				export flag_AROMA_dim=
 
 				# If AROMA has already been run, save computation time by skipping this step. 
-				export run_AROMA=true
+				export run_AROMA=false
 			fi
 
 			# if using Head Motion Parameters or ICA-AROMA followed by HMP
@@ -320,7 +320,7 @@ if $fMRI_A; then
 			fi
 	
 	#================================ GLOBAL SIGNAL REGRESSION =================================#
-	export flags_EPI_GS=false # include global signal regression 
+	export flags_EPI_GS=true # include global signal regression 
 			
 		export configs_EPI_numGS=4 # define number of global signal regressors
 										# Options are: 1-mean signal; 2-mean signal+deriv; 4-mean signal+deriv+sq

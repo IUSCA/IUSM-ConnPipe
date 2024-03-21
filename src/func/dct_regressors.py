@@ -28,8 +28,8 @@ flog.write("\n *** python time_series **** ")
 EPIpath=os.environ['EPIrun_out']
 fileIN=sys.argv[1]
 flog.write("\n"+"fileIN "+ fileIN)
-PhReg_path=sys.argv[2]
-flog.write("\n PhReg_path "+ PhReg_path)
+NuisancePhysReg_out=sys.argv[2]
+flog.write("\n NuisancePhysReg_out "+ NuisancePhysReg_out)
 configs_EPI_numGS=int(os.environ['configs_EPI_numGS'])
 flog.write("\n configs_EPI_numGS "+ str(configs_EPI_numGS))
 configs_EPI_dctfMin=float(os.environ['configs_EPI_dctfMin'])
@@ -64,9 +64,9 @@ if 0 < configs_EPI_dctfMin:
 
 
     # save the data
-    fname = ''.join([PhReg_path,'/dataDCT.npz'])
+    fname = ''.join([NuisancePhysReg_out,'/dataDCT.npz'])
     np.savez(fname,dct=dct,numDCT=numDCT,actualFmin=actualFmin)
-    fname = ''.join([PhReg_path,'/dataDCT.mat'])
+    fname = ''.join([NuisancePhysReg_out,'/dataDCT.mat'])
     print("savign MATLAB file ", fname)
     mdic = {"dct" : dct, "numDCT":numDCT,"actualFmin":actualFmin}
     savemat(fname, mdic)

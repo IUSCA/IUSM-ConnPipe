@@ -18,8 +18,6 @@ msg2file "# =========================================================="
 msg2file "# 8. ROIs. "
 msg2file "# =========================================================="
 
-PhReg_path="${EPIrun_out}/${regPath}"   
-
 if ${configs_T1_addsubcort} && ! ${configs_T1_subcortUser}; then  # default FSL subcortical
 
     if [[ -e "${EPIrun_out}/rT1_GM_parc_FSLsubcort_clean.nii.gz" ]]; then 
@@ -41,6 +39,6 @@ if ${configs_T1_addsubcort} && ! ${configs_T1_subcortUser}; then  # default FSL 
     fi
 fi
 
-cmd="python ${EXEDIR}/src/func/ROI_TS.py ${PhReg_path}"
+cmd="python ${EXEDIR}/src/func/ROI_TS.py ${NuisancePhysReg_out}"
 log $cmd
 eval $cmd

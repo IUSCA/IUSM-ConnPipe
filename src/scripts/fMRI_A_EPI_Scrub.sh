@@ -20,22 +20,20 @@ msg2file "# =========================================================="
 
 if ! $configs_EPI_despike; then
 
-     PhReg_path="${EPIrun_out}/${regPath}"
-
      log "nR is ${nR}"
 
      # Identify what files to scrub
 
-     fileIn="${PhReg_path}/NuisanceRegression_${nR}.npz"
+     fileIn="${NuisancePhysReg_out}/NuisanceRegression_${nR}.npz"
 
      log --no-datetime "Applying scrubbing on Regression output ${fileIn}"
 
      checkisfile ${fileIn}    
-     fileOut="${PhReg_path}/NuisanceRegression_${nR}_scrubbed.npz"
+     fileOut="${NuisancePhysReg_out}/NuisanceRegression_${nR}_scrubbed.npz"
      log "Output file will be named ${fileOut}"
      
      cmd="python ${EXEDIR}/src/func/scrub_vols.py \
-          ${PhReg_path}"
+          ${NuisancePhysReg_out}"
      log $cmd
      eval $cmd
 else
