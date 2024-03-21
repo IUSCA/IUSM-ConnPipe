@@ -22,29 +22,51 @@ msg2file "=================================="
 log --no-datetime "path_DWI_EDDY is ${path_DWI_EDDY}"
 log --no-datetime "path_DWI_DTIfit is ${path_DWI_DTIfit}"
 
-# up-sample FA image
-fileFA2mm="${path_DWI_DTIfit}/3_DWI_FA.nii.gz"
 fileFA1mm="${path_DWI_DTIfit}/3_DWI_FA_1mm.nii.gz"
-
-cmd="flirt -in ${fileFA2mm} \
-    -ref ${fileFA2mm} \
-    -out ${fileFA1mm} \
-    -applyisoxfm 1"
-log $cmd
-eval $cmd
-
-# register T1 brain to FA via suick ants linear+nonlinear registration
-log "DWI_B: Ants SyN registration T1 -> FA_1mm"
-fileIn="${T1path}/T1_brain.nii.gz"
 prefixOut="${DWIpath}/rT1_qSyn_"
 
-cmd="antsRegistrationSyNQuick.sh -d 3 \
-    -n ${configs_DWI_nthreads} \
-    -f ${fileFA1mm} \
-    -m ${fileIn} \
-    -o ${prefixOut}"
-log --no-datetime $cmd
-eval $cmd
+if [[ $configs_DWI_useExistingMats && -e "${fileFA1mm}" ]]; then  # check for existing transformation and reference
+
+    warp="${prefixOut}1Warp.nii.gz"
+    affine="${prefixOut}0GenericAffine.mat"
+
+    check_inputs "affine" "warp"	
+    checkcode=$?	
+
+    if [[ $checkcode -eq 1 ]]; then
+        log --no-datetime "MISSING required transformation matrices: running reg2DWI"
+        configs_DWI_useExistingMats=false
+        log --no-datetime "useExistingMats is ${configs_DWI_useExistingMats}"
+    fi
+else
+    log --no-datetime "WARNING ${fileFA1mm} not found. Running reg2DWI"
+    configs_T1_useExistingMats=false
+    log --no-datetime "Resetting useExistingMats = ${configs_DWI_useExistingMats}"   
+fi 
+
+if ! ${configs_DWI_useExistingMats}; then      
+    # up-sample FA image
+    fileFA2mm="${path_DWI_DTIfit}/3_DWI_FA.nii.gz"
+
+    cmd="flirt -in ${fileFA2mm} \
+        -ref ${fileFA2mm} \
+        -out ${fileFA1mm} \
+        -applyisoxfm 1"
+    log $cmd
+    eval $cmd
+
+    # register T1 brain to FA via suick ants linear+nonlinear registration
+    log "DWI_B: Ants SyN registration T1 -> FA_1mm"
+    fileIn="${T1path}/T1_brain.nii.gz"
+
+    cmd="antsRegistrationSyNQuick.sh -d 3 \
+        -n ${configs_DWI_nthreads} \
+        -f ${fileFA1mm} \
+        -m ${fileIn} \
+        -o ${prefixOut}"
+    log --no-datetime $cmd
+    eval $cmd
+fi
 
 # for white matter seeding register WM mask to DWI
 if [[ ${configs_DWI_seeding} == "wm" ]]; then
