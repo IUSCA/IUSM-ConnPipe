@@ -34,6 +34,7 @@ def f_apply_reg(data, mask, regressors):
 
     return resid
 
+
 ###### print to log files #######
 QCfile_name = ''.join([os.environ['QCfile_name'],'.log'])
 fqc=open(QCfile_name, "a+")
@@ -126,7 +127,7 @@ if physReg == "aCompCor":
     numphys = np.load(fname) 
     print("-- aCompCor PC of WM & CSF regressors")
     flog.write("\n -- aCompCor PC of WM & CSF regressors" )
-    zRegressMat = []
+    # zRegressMat = []
 
     # if configs_numPhys > 5:
     #     print("  -- Applying all levels of PCA removal")
@@ -184,7 +185,7 @@ if physReg == "aCompCor":
 
         print("regressors shape: ", regressors.shape)
         flog.write("\n regressors shape " + str(regressors.shape))
-        zRegressMat.append(stats.zscore(regressors,axis=1))
+        # zRegressMat.append(stats.zscore(regressors,axis=1))
         print("    -- PCA 1 through %d" % configs_numPhys)
         flog.write("\n    -- PCA 1 through " + str(configs_numPhys))
 
@@ -235,8 +236,8 @@ elif physReg == "meanPhysReg":
         print("regressors shape ",regressors.shape) 
         flog.write("\n regressors shape " + str(regressors.shape))
     
-    zRegressMat = []
-    zRegressMat.append(stats.zscore(regressors,axis=1))
+    # zRegressMat = []
+    # zRegressMat.append(stats.zscore(regressors,axis=1))
 
 # Global signal regression
 if numGS > 0:
@@ -295,6 +296,14 @@ if configs_FreqFilt == "DCT":
     print("regressors shape ",regressors.shape)
     flog.write("\n regressors shape " + str(regressors.shape))
 
+
+# zscoring regressors
+print("Z-scoring regressor matrix")
+flog.write("\n Z-scoring regressor matrix")
+regressors = stats.zscore(regressors,axis=1)
+print("regressors shape ",regressors.shape)
+flog.write("\n regressors shape " + str(regressors.shape))
+
 ## regress-out motion/physilogical regressors 
 print("2. Applying motion/physicological regression")
 flog.write("\n 2. Applying motion/physicological regression")
@@ -316,28 +325,29 @@ for i in range(0,numTimePoints):
     resting_vol[:,:,:,i] = rv
 
 
-resid = []
+# resid = []
 
 # this loop is if all pc steps for acompcor are written out
 # otherwise zRegressMat is length 1
-for r in range(0,len(zRegressMat)):
+# for r in range(0,len(zRegressMat)):
 
-    rr = f_apply_reg(resting_vol,volBrain_vol,zRegressMat[r])
+# rr = f_apply_reg(resting_vol,volBrain_vol,zRegressMat[r])
+rr = f_apply_reg(resting_vol,volBrain_vol,regressors)
 
-    resid.append(rr)
+# resid.append(rr)
 
-    # save nifti image
-    if len(zRegressMat)==1:
-        fileOut = "/7_epi_%s.nii.gz" % nRc 
-    else:
-        fileOut = "/7_epi_%s%d.nii.gz" % (nRc,pc)
+# save nifti image
+# if len(zRegressMat)==1:
+fileOut = "/7_epi_%s.nii.gz" % nRc 
+# else:
+#     fileOut = "/7_epi_%s%d.nii.gz" % (nRc,pc)
 
-    fileOut = ''.join([NuisancePhysReg_out,fileOut])
-    print("Nifti file to be saved is: ",fileOut)
+fileOut = ''.join([NuisancePhysReg_out,fileOut])
+print("Nifti file to be saved is: ",fileOut)
 
-    # save new resting file
-    resting_new = nib.Nifti1Image(rr.astype(np.float32),resting.affine,resting.header)
-    nib.save(resting_new,fileOut) 
+# save new resting file
+resting_new = nib.Nifti1Image(rr.astype(np.float32),resting.affine,resting.header)
+nib.save(resting_new,fileOut) 
 
 ## Calculate DVARS after regression
 print("=== Calculating DVARS from residuals ===")
@@ -367,31 +377,31 @@ if dvars_despike == 'true':
     fdvars.write("\n vols to be despiked: "+ str(nvols2despike))
     despiking = np.zeros((nvols2despike,numTimePoints), dtype=int)  
 
-    resid_DVARS = []
+    # resid_DVARS = []
     ## Apply regresison again with spike regressors included
     if nvols2despike > 0:
         for s in range(nvols2despike):
             despiking[s,vols2despike[s]-1]=1
 
-        regressors_despike = np.vstack((zRegressMat[r],despiking))
+        regressors_despike = np.vstack((regressors,despiking))
 
-        rr = f_apply_reg(resting_vol,volBrain_vol,regressors_despike)
+        rr_dvars = f_apply_reg(resting_vol,volBrain_vol,regressors_despike)
         
-    resid_DVARS.append(rr)
+    # resid_DVARS.append(rr)
 
     # save nifti image
-    if len(zRegressMat)==1:
-        fileOut = "/7_epi_%s_despiked.nii.gz" % nRc 
-        matlabfilename = ''.join([NuisancePhysReg_out,'/volumes2scrub_',nRc,'_despiked.mat'])
-    else:
-        fileOut = "/7_epi_%s%d_despiked.nii.gz" % (nRc,pc)
-        matlabfilename = ''.join([NuisancePhysReg_out,'/volumes2scrub_',nRc,pc,'_despiked.mat'])
+    # if len(zRegressMat)==1:
+    fileOut = "/7_epi_%s_despiked.nii.gz" % nRc 
+    matlabfilename = ''.join([NuisancePhysReg_out,'/volumes2scrub_',nRc,'_despiked.mat'])
+    # else:
+    #     fileOut = "/7_epi_%s%d_despiked.nii.gz" % (nRc,pc)
+    #     matlabfilename = ''.join([NuisancePhysReg_out,'/volumes2scrub_',nRc,pc,'_despiked.mat'])
 
     fileOut = ''.join([NuisancePhysReg_out,fileOut])
     print("Nifti file to be saved is: ",fileOut)
 
     # save new resting file
-    resting_new = nib.Nifti1Image(rr.astype(np.float32),resting.affine,resting.header)
+    resting_new = nib.Nifti1Image(rr_dvars.astype(np.float32),resting.affine,resting.header)
     nib.save(resting_new,fileOut) 
 
     print("savign MATLAB file ", matlabfilename)
@@ -403,18 +413,18 @@ if dvars_despike == 'true':
 
 # THIS MAY NEED TO BE CHANGED TO RESTING NEW
 if dvars_despike == 'true': 
-    resid_before_despike = resid
-    resid = resid_DVARS
+    resid_before_despike = rr
+    resid = rr_dvars
     ## save data (for header info), regressors, and residuals
     fname = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',nRc,'_despiked.npz'])
     np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol, \
-    zRegressMat=zRegressMat,resid_before_despike=resid_before_despike,nR=nRc, \
+    regressors=regressors,resid_before_despike=resid_before_despike,nR=nRc, \
     resid=resid, DVARS_Inference_Hprac=DVARSout["Inference"]["H"])
 else:
     ## save residuals and regressor data
     fname = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',nRc,'.npz'])
     np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol, \
-    zRegressMat=zRegressMat,resid=resid,nR=nRc, \
+    regressors=regressors,resid=resid,nR=nRc, \
     DVARS_Inference_Hprac=DVARSout["Inference"]["H"],vols2scrub=vols2scrub)
 
 print("Saved residuals")

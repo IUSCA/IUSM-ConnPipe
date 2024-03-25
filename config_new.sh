@@ -330,9 +330,9 @@ if $fMRI_A; then
 										#           4 - regress mean signal+deriv+sq
 
 	#================================ FREQUENCY FILTERING =================================# 
-	export flags_EPI_FreqFilt=true  # compute Frequency filtering
+	export flags_EPI_FreqFilt=false  # compute Frequency filtering
 
-		export configs_FreqFilt="BPF"   # Options are:
+		export configs_FreqFilt="DCT"   # Options are:
 		#										DCT - Discrete Cosine Transfrom for a high-pass filter 
 	    # 										BPF - Bandpass Butterworth Filter 
 
@@ -355,7 +355,7 @@ if $fMRI_A; then
 
     #==================================== APPLY REGRESSION ===================================#
 	## Apply regression using all previously specified regressors
-	export flags_EPI_ApplyReg=false
+	export flags_EPI_ApplyReg=true
 		# Despike and Scrub are mutually exculise!!! IF both are set to true, scrubbing will only be done on NONdespiked data with despike=false.
 		export configs_EPI_despike=true # dual-approach regression (Mejia 2023) based on statistical DVARS selection (Afyouni & Nichols 2018)
 									   
