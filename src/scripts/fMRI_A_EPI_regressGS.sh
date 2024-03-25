@@ -22,7 +22,7 @@ msg2file " =========================================================="
 fileIN="${EPIrun_out}${configs_EPI_resting_file}"
 
 if  [[ ! -e ${fileIN} ]]; then
-    log "ERROR - ${fileIN} not found. Connot perform physiological regressors analysis"
+    log "ERROR - ${fileIN} not found. Connot perform regressors analysis"
     exit 1
 fi 
 

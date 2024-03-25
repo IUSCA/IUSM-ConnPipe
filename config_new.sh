@@ -294,7 +294,7 @@ if $fMRI_A; then
 			# if using Head Motion Parameters or ICA-AROMA followed by HMP
 			if [[ ${configs_NuisanceReg} == "HMPreg" ]] || [[ ${configs_NuisanceReg} == "AROMA_HMP" ]]; then   
 					
-				export configs_EPI_numReg=24  # define the number of regressors Head Motion regressors. 
+				export configs_EPI_numHMP=24  # define the number of regressors Head Motion regressors. 
 										      # options are: 12 (6 orig + 6 deriv) or 24 (+sq of 12)
 
 			fi
@@ -320,7 +320,7 @@ if $fMRI_A; then
 			fi
 	
 	#================================ GLOBAL SIGNAL REGRESSION =================================#
-	export flags_EPI_GS=false # run global signal regression 
+	export flags_EPI_GS=false # compute global signal regressors 
 			
 		export configs_EPI_numGS=4 # define number of global signal regressors
 										# Options are  
@@ -329,15 +329,15 @@ if $fMRI_A; then
 										#           2 - regress mean signal+deriv; 
 										#           4 - regress mean signal+deriv+sq
 
-	#================================ FREQUENCY FILTERING =================================#
-	# Frequiency filtering can be acomplished with discrete cosine transfrom for a high-pass filter OR
-	# with a bandpass butterworth filter. 
-	export flags_EPI_FreqFilt=false
+	#================================ FREQUENCY FILTERING =================================# 
+	export flags_EPI_FreqFilt=true  # compute Frequency filtering
 
-		export flags_FreqFilt="BPF"
+		export configs_FreqFilt="BPF"   # Options are:
+		#										DCT - Discrete Cosine Transfrom for a high-pass filter 
+	    # 										BPF - Bandpass Butterworth Filter 
 
 		# Perform highpass filtering within regression using Discrete Cosine Transforms.
-				if [[ ${flags_FreqFilt} == "DCT" ]]; then 
+				if [[ ${configs_FreqFilt} == "DCT" ]]; then 
 					export configs_EPI_dctfMin=0.009  # Specify level of high-pass filtering in Hz, 
 												# i.e. the lowest frequency signals that will be retained 
 												# The appropriate number (k) of DCT bases will be determined as follows:
@@ -348,7 +348,7 @@ if $fMRI_A; then
 				# Performs Butterworth filtering on residuals. Post regression filtering can potentially 
 				# reintroduce artifacts to the signal - see Lindquist et al. 2019 Hum Brain Mapp 
 				## WARNING BandPass cannot be applied if DCTs were included in regression.
-				if [[ ${flags_FreqFilt} == "BPF" ]]; then   
+				if [[ ${configs_FreqFilt} == "BPF" ]]; then   
 					export configs_EPI_fMin=0.009
 					export configs_EPI_fMax=0.08
 				fi

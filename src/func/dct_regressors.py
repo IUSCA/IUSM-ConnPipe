@@ -12,18 +12,6 @@ logfile_name = ''.join([os.environ['logfile_name'],'.log'])
 flog=open(logfile_name, "a+")
 
 
-def get_ts(vol,numTP,rest):
-    numVoxels = np.count_nonzero(vol)
-    print("numVoxels - ",numVoxels)
-    mask = np.nonzero(vol != 0)
-    ts = np.zeros((numVoxels,numTP))
-    for ind in range(0,numTP):
-        rvol = rest[:,:,:,ind]
-        rvals = rvol[mask[0],mask[1],mask[2]]
-        ts[:,ind] = rvals
-    return ts,mask
-
-
 flog.write("\n *** python DCT regressors **** ")
 # EPIpath=os.environ['EPIrun_out']
 fileIN=sys.argv[1]
@@ -71,6 +59,11 @@ if 0 < configs_EPI_dctfMin:
     mdic = {"dct" : dct, "numDCT":numDCT,"actualFmin":actualFmin}
     savemat(fname, mdic)
     print("saved DCT bases") 
+
+
+else:
+    print("ERROR - CANNOT COMPUTE DCT WITH configs_EPI_dctfMin = ",configs_EPI_dctfMin)
+    flog.write("\n ERROR - CANNOT COMPUTE DCT WITH configs_EPI_dctfMin =  "+ str(configs_EPI_dctfMin)+"\n")
 
 
 fqc.close()

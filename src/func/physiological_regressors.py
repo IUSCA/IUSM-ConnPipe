@@ -24,7 +24,7 @@ flog.write("\n NuisancePhysReg_out "+ NuisancePhysReg_out)
 
 
 def get_ts(vol,numTP,rest):
-    numVoxels = np.count_nonzero(vol);
+    numVoxels = np.count_nonzero(vol)
     print("numVoxels - ",numVoxels)
     mask = np.nonzero(vol != 0)
     ts = np.zeros((numVoxels,numTP))
@@ -61,17 +61,17 @@ print("resting_vol.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 
 fname = ''.join([EPIpath,'/rT1_CSFvent_mask_eroded.nii.gz'])
 volCSFvent_vol = np.asanyarray(nib.load(fname).dataobj)
-numVoxels = np.count_nonzero(volCSFvent_vol);
+numVoxels = np.count_nonzero(volCSFvent_vol)
 
 fname = ''.join([EPIpath,'/rT1_WM_mask_eroded.nii.gz'])
 volWM_vol = np.asanyarray(nib.load(fname).dataobj)
-numVoxels = np.count_nonzero(volWM_vol);
+numVoxels = np.count_nonzero(volWM_vol)
 
 ### CSFvent time-series
-[CSFts,CSFmask] = get_ts(volCSFvent_vol,numTimePoints,resting_vol);
+[CSFts,CSFmask] = get_ts(volCSFvent_vol,numTimePoints,resting_vol)
 
 ### WM time-series
-[WMts,WMmask] = get_ts(volWM_vol,numTimePoints,resting_vol);
+[WMts,WMmask] = get_ts(volWM_vol,numTimePoints,resting_vol)
 
 
 if physReg == 'aCompCor':
@@ -97,12 +97,12 @@ elif physReg == 'meanPhysReg':
     print("-------------Mean CSF and WM Regression--------------")
     flog.write("\n Physiological Reg: Mean CSF and WM Regression.\n")
     CSFavg = np.mean(CSFts,axis=0)
-    CSFderiv = np.append(0,np.diff(CSFavg));
+    CSFderiv = np.append(0,np.diff(CSFavg))
     CSFavg_sq = np.power(CSFavg,2)
     CSFderiv_sq = np.power(CSFderiv,2)
 
     WMavg = np.mean(WMts,axis=0)
-    WMderiv = np.append(0,np.diff(WMavg));
+    WMderiv = np.append(0,np.diff(WMavg))
     WMavg_sq = np.power(WMavg,2)
     WMderiv_sq = np.power(WMderiv,2)
 

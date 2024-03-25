@@ -22,11 +22,10 @@ msg2file "=========================================================="
 
 log "filename postfix for output image -- ${nR}"
 
-if [ "${configs_EPI_numGS}" -ne 0 ]; then   #if ${flags_EPI_GS}; then
+if [ "${configs_EPI_numGS}" -ne 0 ]; then   
     log " Global signal regression is ON "
 else
     log " Global signal regression is OFF "
-    # export configs_EPI_numGS=0
 fi
 
 if [[ ${flags_EPI_FreqFilt} == "DCT" ]]; then
@@ -34,7 +33,7 @@ if [[ ${flags_EPI_FreqFilt} == "DCT" ]]; then
 
 elif [[ ${flags_EPI_FreqFilt} == "BPF" ]]; then
     log " Post Regression: Data will be demeaned, detrended, and Bandpass filtered "
-    export configs_EPI_dctfMin=0
+    # export configs_EPI_dctfMin=0
 fi
 
 cmd="python ${EXEDIR}/src/func/apply_reg.py \
@@ -43,7 +42,7 @@ log $cmd
 eval $cmd
 
 ##############################################################################
-if [[ ${flags_FreqFilt} == "BPF" ]]; then
+if [[ ${configs_FreqFilt} == "BPF" ]]; then
     
     cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_Bandpass.sh"
     echo $cmd

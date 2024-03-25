@@ -31,10 +31,8 @@ flog.write("\n"+"fileIN "+ fileIN)
 NuisancePhysReg_out=sys.argv[2]
 flog.write("\n NuisancePhysReg_out "+ NuisancePhysReg_out)
 compute_gs=int(sys.argv[3])
-# configs_EPI_numGS=int(os.environ['configs_EPI_numGS'])
 flog.write("\n compute_gs "+ str(compute_gs))
-# configs_EPI_dctfMin=float(os.environ['configs_EPI_dctfMin'])
-# flog.write("\n configs_EPI_dctfMin "+ str(configs_EPI_dctfMin))
+
 
 ### load data and masks
 resting = nib.load(fileIN)

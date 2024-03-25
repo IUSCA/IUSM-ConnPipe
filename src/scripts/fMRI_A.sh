@@ -345,7 +345,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
     if ${flags_EPI_FreqFilt}; then  
 
 
-        if [[ ${flags_FreqFilt} == "DCT" ]]; then
+        if [[ ${configs_FreqFilt} == "DCT" ]]; then
 
             cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_regressDCT.sh"
             echo $cmd
@@ -357,7 +357,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
                 exit 1
             fi                
             
-        elif [[ ${flags_FreqFilt} == "BPF" ]]; then
+        elif [[ ${configs_FreqFilt} == "BPF" ]]; then
 
             log "Bandpass filter will be applied to residuals in ApplyReg."
 
