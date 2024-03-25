@@ -91,7 +91,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
     fi
 
     # Create and export path to Regression output dir 
-    # regPath=${flags_NuisanceReg}/${flags_PhysiolReg}  (defined in main, line 158 )
+    # regPath=${configs_NuisanceReg}/${configs_PhysiolReg}  (defined in main, line 158 )
     export NuisancePhysReg_out="${EPIrun_out}/${regPath}"  
 
     log --no-datetime "nuisance and physiological regressor output directory:"
@@ -267,10 +267,10 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 ######################################################################################
     if ${flags_EPI_NuisanceReg}; then
         msg2file "# =========================================================="
-        msg2file "# 5  Nuisance Regression (${flags_NuisanceReg}). "
+        msg2file "# 5  Nuisance Regression (${configs_NuisanceReg}). "
         msg2file "# =========================================================="
 
-        if [[ ${flags_NuisanceReg} == "AROMA" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then
+        if [[ ${configs_NuisanceReg} == "AROMA" ]] || [[ ${configs_NuisanceReg} == "AROMA_HMP" ]]; then
 
             if ${run_AROMA}; then
 
@@ -291,7 +291,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             fi
         fi
             
-        if [[ ${flags_NuisanceReg} == "HMPreg" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then
+        if [[ ${configs_NuisanceReg} == "HMPreg" ]] || [[ ${configs_NuisanceReg} == "AROMA_HMP" ]]; then
 
             cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_HeadMotionParam.sh"
             echo $cmd
@@ -337,7 +337,9 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             echoerr "problem at fMRI_A_EPI_regressGS. Exiting."
             exit 1
         fi  
-    fi
+    else
+        log "WARNING Skipping Global Signal Calculations. Please set flags_EPI_GS=true to compute Global Signal"
+    fi 
 
 ######################################################################################
     if ${flags_EPI_FreqFilt}; then  

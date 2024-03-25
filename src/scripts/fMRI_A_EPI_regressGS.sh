@@ -27,14 +27,16 @@ if  [[ ! -e ${fileIN} ]]; then
 fi 
 
 
-if ${flags_EPI_GS}; then
-    log " Global signal regression is ON "
+if [ "${configs_EPI_numGS}" -ne 0 ]; then  #if ${flags_EPI_GS}; then
+    log " Global signal regression is ON. ${configs_EPI_numGS} Global signal regressors will be computed "
+    compute_gs=${configs_EPI_numGS}
 else
-    log " Global signal regression is OFF - will compute global signal for QC"
-    export configs_EPI_numGS=2
+    log " Global signal regression is OFF "
+    log " Global signal and its derivative will be computed for QC purposes, only"
+    compute_gs=2
 fi
 
 cmd="python ${EXEDIR}/src/func/gs_regressors.py \
-     ${fileIN} ${NuisancePhysReg_out}"
+     ${fileIN} ${NuisancePhysReg_out} ${compute_gs}"
 log $cmd
 eval $cmd

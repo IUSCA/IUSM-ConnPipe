@@ -83,7 +83,7 @@ if ${fMRI_A}; then
  # Setting nuisance regression dependencies.
  #============================================================================
 
-    if [[ ${flags_NuisanceReg} == "HMPreg" ]]; then   # if using Head Motion Parameters
+    if [[ ${configs_NuisanceReg} == "HMPreg" ]]; then   # if using Head Motion Parameters
                         
         nR="hmp${configs_EPI_numReg}"   # set filename postfix for output image
         
@@ -95,7 +95,7 @@ if ${fMRI_A}; then
 
         export configs_EPI_resting_file='/4_epi.nii.gz'  
 
-    elif [[ ${flags_NuisanceReg} == "AROMA" ]]; then # if using ICA-AROMA
+    elif [[ ${configs_NuisanceReg} == "AROMA" ]]; then # if using ICA-AROMA
 
         nR="aroma" # set filename postfix for output image
         
@@ -109,7 +109,7 @@ if ${fMRI_A}; then
 
         export configs_EPI_numReg=0   # make sure numReg variable is set to 0
 
-    elif [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then   # if using AROMA + Head Motion Parameters
+    elif [[ ${configs_NuisanceReg} == "AROMA_HMP" ]]; then   # if using AROMA + Head Motion Parameters
 
         nR="aroma_hmp${configs_EPI_numReg}" # set filename postfix for output image
         
@@ -134,7 +134,7 @@ if ${fMRI_A}; then
 
  # Setting physiological regression dependencies.
  #============================================================================
-    if [[ ${flags_PhysiolReg} == "aCompCor" ]]; then  ### if using aCompCorr
+    if [[ ${configs_PhysiolReg} == "aCompCor" ]]; then  ### if using aCompCorr
 
         if [[ "${configs_EPI_numPhys}" -ge 0 && "${configs_EPI_numPhys}" -le 5 ]]; then
             nR="${nR}_pca${configs_EPI_numPhys}"
@@ -142,7 +142,7 @@ if ${fMRI_A}; then
             nR="${nR}_pca"
         fi
 
-    elif [[ ${flags_PhysiolReg} == "meanPhysReg" ]]; then
+    elif [[ ${configs_PhysiolReg} == "meanPhysReg" ]]; then
 
         nR="${nR}_mPhys${configs_EPI_numPhys}"
 
@@ -155,14 +155,14 @@ if ${fMRI_A}; then
         fi	
     fi
 
-    export regPath=${flags_NuisanceReg}/${flags_PhysiolReg}
+    export regPath=${configs_NuisanceReg}/${configs_PhysiolReg}
 
  # Global Signal
 #============================================================================
-    if ${flags_EPI_GS}; then
+    if [ "$configs_EPI_numGS" -ne 0 ]; then   #if ${flags_EPI_GS}; then
         nR="${nR}_Gs${configs_EPI_numGS}"
-    else 
-        export configs_EPI_numGS=0
+    # else 
+    #     export configs_EPI_numGS=0
     fi 
 
 # Frequency Filtering

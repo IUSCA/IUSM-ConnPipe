@@ -24,14 +24,14 @@ def get_ts(vol,numTP,rest):
     return ts,mask
 
 
-flog.write("\n *** python time_series **** ")
-EPIpath=os.environ['EPIrun_out']
+flog.write("\n *** python DCT regressors **** ")
+# EPIpath=os.environ['EPIrun_out']
 fileIN=sys.argv[1]
 flog.write("\n"+"fileIN "+ fileIN)
 NuisancePhysReg_out=sys.argv[2]
 flog.write("\n NuisancePhysReg_out "+ NuisancePhysReg_out)
-configs_EPI_numGS=int(os.environ['configs_EPI_numGS'])
-flog.write("\n configs_EPI_numGS "+ str(configs_EPI_numGS))
+# configs_EPI_numGS=int(os.environ['configs_EPI_numGS'])
+# flog.write("\n configs_EPI_numGS "+ str(configs_EPI_numGS))
 configs_EPI_dctfMin=float(os.environ['configs_EPI_dctfMin'])
 flog.write("\n configs_EPI_dctfMin "+ str(configs_EPI_dctfMin))
 

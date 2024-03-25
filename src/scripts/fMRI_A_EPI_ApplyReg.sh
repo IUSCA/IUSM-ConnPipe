@@ -22,16 +22,15 @@ msg2file "=========================================================="
 
 log "filename postfix for output image -- ${nR}"
 
-if ${flags_EPI_GS}; then
+if [ "${configs_EPI_numGS}" -ne 0 ]; then   #if ${flags_EPI_GS}; then
     log " Global signal regression is ON "
 else
     log " Global signal regression is OFF "
-    export configs_EPI_numGS=0
+    # export configs_EPI_numGS=0
 fi
 
 if [[ ${flags_EPI_FreqFilt} == "DCT" ]]; then
     log " DCT bases will be included in regression "
-
 
 elif [[ ${flags_EPI_FreqFilt} == "BPF" ]]; then
     log " Post Regression: Data will be demeaned, detrended, and Bandpass filtered "
@@ -39,7 +38,7 @@ elif [[ ${flags_EPI_FreqFilt} == "BPF" ]]; then
 fi
 
 cmd="python ${EXEDIR}/src/func/apply_reg.py \
-     ${flags_NuisanceReg} ${flags_PhysiolReg}"
+     ${configs_NuisanceReg} ${configs_PhysiolReg}"
 log $cmd
 eval $cmd
 

@@ -58,9 +58,9 @@ flog.write("\n config_param "+ str(config_param))
 numReg=int(os.environ['configs_EPI_numReg'])
 flog.write("\n numReg "+ str(numReg))
 print("numReg is ",numReg)
-numGS=int(os.environ['configs_EPI_numGS'])
-flog.write("\n numGS "+ str(numGS))
-print("numGS is ",numGS)
+# numGS=int(os.environ['configs_EPI_numGS'])
+# flog.write("\n numGS "+ str(numGS))
+# print("numGS is ",numGS)
 
 nR=os.environ['nR']
 flog.write("\n nR "+ nR)

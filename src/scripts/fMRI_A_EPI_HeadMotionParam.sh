@@ -25,7 +25,7 @@ if [[ ! -e "${EPIrun_out}/4_epi.nii.gz" ]]; then
 
 fi
 
-HMPpath="${EPIrun_out}/${flags_NuisanceReg}"
+HMPpath="${EPIrun_out}/${configs_NuisanceReg}"
 
 # load 6 motion regressors and get derivatives
 cmd="python ${EXEDIR}/src/func/load_motion_reg.py ${HMPpath} ${configs_EPI_numReg}"
