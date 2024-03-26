@@ -33,7 +33,6 @@ if [[ ${flags_EPI_FreqFilt} == "DCT" ]]; then
 
 elif [[ ${flags_EPI_FreqFilt} == "BPF" ]]; then
     log " Post Regression: Data will be demeaned, detrended, and Bandpass filtered "
-    # export configs_EPI_dctfMin=0
 fi
 
 cmd="python ${EXEDIR}/src/func/apply_reg.py \
@@ -41,20 +40,7 @@ cmd="python ${EXEDIR}/src/func/apply_reg.py \
 log $cmd
 eval $cmd
 
-##############################################################################
-if [[ ${configs_FreqFilt} == "BPF" ]]; then
-    
-    cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_Bandpass.sh"
-    echo $cmd
-    eval $cmd
-    exitcode=$?
-
-    if [[ ${exitcode} -ne 0 ]] ; then
-        echoerr "problem at fMRI_A_EPI_Bandpass. exiting."
-        exit 1
-    fi  
-
-fi             
+         
 
 
 

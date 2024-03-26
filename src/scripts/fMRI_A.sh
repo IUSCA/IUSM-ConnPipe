@@ -355,16 +355,12 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             if [[ ${exitcode} -ne 0 ]] ; then
                 echoerr "problem at fMRI_A_EPI_regressDCT. exiting."
                 exit 1
-            fi                
-            
-        elif [[ ${configs_FreqFilt} == "BPF" ]]; then
-
-            log "Bandpass filter will be applied to residuals in ApplyReg."
-
-        fi 
+            fi  
+        fi               
 
     else
-        log "WARNING Skipping Frequency Filters. Please set flags_EPI_FreqFilt=true to run frequency filtering"
+        log "WARNING Skipping DCT Frequency Filters within regression step. \
+            Please set flags_EPI_FreqFilt=true to DCT in regression"
     fi
     
 ######################################################################################
@@ -382,6 +378,27 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             exit 1
         fi 
     fi  
+
+##############################################################################
+
+    if ${flags_EPI_FreqFilt}; then
+
+        if [[ ${configs_FreqFilt} == "BPF" ]]; then
+        
+            cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_Bandpass.sh"
+            echo $cmd
+            eval $cmd
+            exitcode=$?
+
+            if [[ ${exitcode} -ne 0 ]] ; then
+                echoerr "problem at fMRI_A_EPI_Bandpass. exiting."
+                exit 1
+            fi  
+        fi
+    else
+        log "WARNING Skipping BandPass Frequency Filters after regression step. \
+            Please set flags_EPI_FreqFilt=true apply BandPass after regression"
+    fi    
 
 ######################################################################################
      

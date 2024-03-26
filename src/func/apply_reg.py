@@ -359,7 +359,6 @@ print("configs_EPI_path2dvars ",configs_EPI_path2DVARS)
 fname = ''.join([NuisancePhysReg_out,'/DVARS_',nRc,'.txt'])
 fdvars=open(fname, "a+")
 
-# import sys
 sys.path.append(configs_EPI_path2DVARS)
 from DSE import DSE_Calc, DVARS_Calc, CleanNIFTI
 
@@ -367,9 +366,11 @@ DVARSout = DVARS_Calc(fileOut,dd=1,WhichExpVal='median',WhichVar='hIQRd',scl=0.0
                 demean=True,DeltapDvarThr=5)
 
 vols2despike = DVARSout["Inference"]["H"]
-vols2scrub = vols2despike
+
 
 if dvars_despike == 'true':
+
+
     print("vols to despike: ",vols2despike)
     fdvars.write("\n vols to despike: "+ str(vols2despike))
     nvols2despike = vols2despike.shape[0]
@@ -386,7 +387,11 @@ if dvars_despike == 'true':
         regressors_despike = np.vstack((regressors,despiking))
 
         rr_dvars = f_apply_reg(resting_vol,volBrain_vol,regressors_despike)
-        
+
+    else:
+        rr_dvars = rr   
+        print("WARNING: There are no volumes to despike!") 
+        print("file 7_epi_",nRc,"_despiked.nii.gz will be a copy of ","7_epi_",nRc)
     # resid_DVARS.append(rr)
 
     # save nifti image
@@ -405,27 +410,24 @@ if dvars_despike == 'true':
     nib.save(resting_new,fileOut) 
 
     print("savign MATLAB file ", matlabfilename)
-    # mdic = {"resid" : rr, "vols2scrub":vols2scrub}
-    mdic = {"vols2scrub":vols2scrub}
+    mdic = {"vols2scrub":vols2despike}
     savemat(matlabfilename, mdic)
 
     fdvars.close()
 
-# THIS MAY NEED TO BE CHANGED TO RESTING NEW
-if dvars_despike == 'true': 
-    resid_before_despike = rr
-    resid = rr_dvars
-    ## save data (for header info), regressors, and residuals
+    ## Save all pre and post despiked data in npz format (for header info) for further analysis
     fname = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',nRc,'_despiked.npz'])
     np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol, \
-    regressors=regressors,resid_before_despike=resid_before_despike,nR=nRc, \
-    resid=resid, DVARS_Inference_Hprac=DVARSout["Inference"]["H"])
-else:
-    ## save residuals and regressor data
+    regressors=regressors,resid_before_despike=rr,nR=nRc, \
+    resid=rr_dvars, DVARS_Inference_Hprac=DVARSout["Inference"]["H"])
+
+else: 
+    ## save non-despiked data in npz format for further analysis
     fname = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',nRc,'.npz'])
     np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol, \
-    regressors=regressors,resid=resid,nR=nRc, \
-    DVARS_Inference_Hprac=DVARSout["Inference"]["H"],vols2scrub=vols2scrub)
+    regressors=regressors,resid=rr,nR=nRc, \
+    DVARS_Inference_Hprac=DVARSout["Inference"]["H"],vols2scrub=vols2despike)
+
 
 print("Saved residuals")
 

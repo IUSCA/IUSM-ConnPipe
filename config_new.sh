@@ -304,7 +304,7 @@ if $fMRI_A; then
 	# Two options that the user can select from:
 	# 1) configs_PhysiolReg="aCompCorr" - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
 	# 2) configs_PhysiolReg=meanPhysReg - mean WM and CSF signal regression
-		export configs_PhysiolReg="aCompCor"  
+		export configs_PhysiolReg="meanPhysReg"  
 
 			if [[ ${configs_PhysiolReg} == "aCompCor" ]]; then  ### if using aCompCorr
 
@@ -332,7 +332,7 @@ if $fMRI_A; then
 	#================================ FREQUENCY FILTERING =================================# 
 	export flags_EPI_FreqFilt=false  # compute Frequency filtering
 
-		export configs_FreqFilt="DCT"   # Options are:
+		export configs_FreqFilt="BPF"   # Options are:
 		#										DCT - Discrete Cosine Transfrom for a high-pass filter 
 	    # 										BPF - Bandpass Butterworth Filter 
 
@@ -345,7 +345,8 @@ if $fMRI_A; then
 				fi
 
 				# Demeans and detrends the data.
-				# Performs Butterworth filtering on residuals. Post regression filtering can potentially 
+				# Performs Butterworth filtering on residuals (i.e. after regression step, below). 
+				# Post regression filtering can potentially 
 				# reintroduce artifacts to the signal - see Lindquist et al. 2019 Hum Brain Mapp 
 				## WARNING BandPass cannot be applied if DCTs were included in regression.
 				if [[ ${configs_FreqFilt} == "BPF" ]]; then   
@@ -355,7 +356,7 @@ if $fMRI_A; then
 
     #==================================== APPLY REGRESSION ===================================#
 	## Apply regression using all previously specified regressors
-	export flags_EPI_ApplyReg=true
+	export flags_EPI_ApplyReg=false
 		# Despike and Scrub are mutually exculise!!! IF both are set to true, scrubbing will only be done on NONdespiked data with despike=false.
 		export configs_EPI_despike=true # dual-approach regression (Mejia 2023) based on statistical DVARS selection (Afyouni & Nichols 2018)
 									   
