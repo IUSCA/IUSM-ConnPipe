@@ -91,7 +91,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
     fi
 
     # Create and export path to Regression output dir 
-    # regPath=${flags_NuisanceReg}/${flags_PhysiolReg}  (defined in main, line 158 )
+    # regPath=${configs_NuisanceReg}/${configs_PhysiolReg}  (defined in main, line 158 )
     export NuisancePhysReg_out="${EPIrun_out}/${regPath}"  
 
     log --no-datetime "nuisance and physiological regressor output directory:"
@@ -267,10 +267,10 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 ######################################################################################
     if ${flags_EPI_NuisanceReg}; then
         msg2file "# =========================================================="
-        msg2file "# 5  Nuisance Regression (${flags_NuisanceReg}). "
+        msg2file "# 5  Nuisance Regression (${configs_NuisanceReg}). "
         msg2file "# =========================================================="
 
-        if [[ ${flags_NuisanceReg} == "AROMA" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then
+        if [[ ${configs_NuisanceReg} == "AROMA" ]] || [[ ${configs_NuisanceReg} == "AROMA_HMP" ]]; then
 
             if ${run_AROMA}; then
 
@@ -291,7 +291,7 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             fi
         fi
             
-        if [[ ${flags_NuisanceReg} == "HMPreg" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then
+        if [[ ${configs_NuisanceReg} == "HMPreg" ]] || [[ ${configs_NuisanceReg} == "AROMA_HMP" ]]; then
 
             cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_HeadMotionParam.sh"
             echo $cmd
@@ -337,13 +337,15 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             echoerr "problem at fMRI_A_EPI_regressGS. Exiting."
             exit 1
         fi  
-    fi
+    else
+        log "WARNING Skipping Global Signal Calculations. Please set flags_EPI_GS=true to compute Global Signal"
+    fi 
 
 ######################################################################################
     if ${flags_EPI_FreqFilt}; then  
 
 
-        if [[ ${flags_FreqFilt} == "DCT" ]]; then
+        if [[ ${configs_FreqFilt} == "DCT" ]]; then
 
             cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_regressDCT.sh"
             echo $cmd
@@ -353,16 +355,12 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             if [[ ${exitcode} -ne 0 ]] ; then
                 echoerr "problem at fMRI_A_EPI_regressDCT. exiting."
                 exit 1
-            fi                
-            
-        elif [[ ${flags_FreqFilt} == "BPF" ]]; then
-
-            log "Bandpass filter will be applied to residuals in ApplyReg."
-
-        fi 
+            fi  
+        fi               
 
     else
-        log "WARNING Skipping Frequency Filters. Please set flags_EPI_FreqFilt=true to run frequency filtering"
+        log "WARNING Skipping DCT Frequency Filters within regression step. \
+            Please set flags_EPI_FreqFilt=true to DCT in regression"
     fi
     
 ######################################################################################
@@ -380,6 +378,27 @@ for ((i=0; i<${#epiList[@]}; i++)); do
             exit 1
         fi 
     fi  
+
+##############################################################################
+
+    if ${flags_EPI_FreqFilt}; then
+
+        if [[ ${configs_FreqFilt} == "BPF" ]]; then
+        
+            cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_Bandpass.sh"
+            echo $cmd
+            eval $cmd
+            exitcode=$?
+
+            if [[ ${exitcode} -ne 0 ]] ; then
+                echoerr "problem at fMRI_A_EPI_Bandpass. exiting."
+                exit 1
+            fi  
+        fi
+    else
+        log "WARNING Skipping BandPass Frequency Filters after regression step. \
+            Please set flags_EPI_FreqFilt=true apply BandPass after regression"
+    fi    
 
 ######################################################################################
      
@@ -399,14 +418,20 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 ######################################################################################
     if ${flags_EPI_ROIs}; then
 
-        
-        if ${configs_EPI_despike}; then
-            export post_nR="${nR}_despiked"
-        elif ${flags_EPI_scrub}; then
-            export post_nR="${nR}_scrubbed"
-        else
-            export post_nR="${nR}"
-        fi
+        if [[ ${configs_scrub} == "no_scrub" ]]; then
+            if ${configs_EPI_despike}; then
+                export post_nR="${nR}_despiked"
+            else 
+                export post_nR="${nR}"
+            fi     
+        elif [[ ${configs_scrub} == "stat_DVARS" ]] || [[ ${configs_scrub} == "fsl_fd_dvars" ]] ; then
+            if ! ${configs_EPI_despike}; then
+                export post_nR="${nR}_scrubbed"
+            else 
+                export post_nR="${nR}_despiked"
+            fi 
+        fi 
+    
 
         cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_ROIs.sh"
         echo $cmd

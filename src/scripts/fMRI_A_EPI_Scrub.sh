@@ -20,22 +20,30 @@ msg2file "# =========================================================="
 
 if ! $configs_EPI_despike; then
 
-     log "nR is ${nR}"
+     if [[ ${configs_scrub} == "stat_DVARS" ]] || [[ ${configs_scrub} == "fsl_fd_dvars" ]] ; then
+          log "nR is ${nR}"
 
-     # Identify what files to scrub
+          # Identify what files to scrub
 
-     fileIn="${NuisancePhysReg_out}/NuisanceRegression_${nR}.npz"
+          fileIn="${NuisancePhysReg_out}/NuisanceRegression_${nR}.npz"
 
-     log --no-datetime "Applying scrubbing on Regression output ${fileIn}"
+          log --no-datetime "Applying scrubbing on Regression output ${fileIn}"
 
-     checkisfile ${fileIn}    
-     fileOut="${NuisancePhysReg_out}/NuisanceRegression_${nR}_scrubbed.npz"
-     log "Output file will be named ${fileOut}"
-     
-     cmd="python ${EXEDIR}/src/func/scrub_vols.py \
-          ${NuisancePhysReg_out}"
-     log $cmd
-     eval $cmd
+          checkisfile ${fileIn}    
+
+          fileOut="${NuisancePhysReg_out}/NuisanceRegression_${nR}_scrubbed"
+          log "Output file will be named ${fileOut}"
+          
+          cmd="python ${EXEDIR}/src/func/scrub_vols.py \
+               ${fileIn} ${fileOut}"
+          log $cmd
+          eval $cmd
+     else
+          echoerr "Scrubbing parameter configs_scrub not recognized. Options are: stat_DVARS, fsl_fd_dvars or no_scrub"
+          exit 1
+     fi
 else
-     log "Scubbing is bypassed because configs_EPI_despike=true"
+     log "WARNING: Scubbing cannot be performed on despiked data! \
+          To generated scrubbed data, set configs_EPI_despike=false \
+          and rerun the pipeline starting at the regression step, ApplyReg"
 fi

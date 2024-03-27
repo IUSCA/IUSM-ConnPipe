@@ -272,47 +272,47 @@ if $fMRI_A; then
 	# If running them in pieces, make sure that the subflags under each section are set to the options,
 	# which have already been ran and for which you want the time series extracted.
 	#================================== MOTION AND OUTLIER CORRECTION ================================#
-	export flags_EPI_NuisanceReg=true
-	## Nuisance Regressors. There are three options that user can select from to set the flags_NuisanceReg variable:
-	# 1) flags_NuisanceReg="AROMA": ICA-based denoising; WARNING: This will smooth your data.
-	# 2) flags_NuisanceReg="HMPreg": Head Motion Parameter Regression.  
-	# 3) flags_NuisanceReg="AROMA_HMP": apply ICA-AROMA followed by HMPreg. 
+	export flags_EPI_NuisanceReg=false
+	## Nuisance Regressors. There are three options that user can select from to set the configs_NuisanceReg variable:
+	# 1) configs_NuisanceReg="AROMA": ICA-based denoising; WARNING: This will smooth your data.
+	# 2) configs_NuisanceReg="HMPreg": Head Motion Parameter Regression.  
+	# 3) configs_NuisanceReg="AROMA_HMP": apply ICA-AROMA followed by HMPreg. 
 
-		export flags_NuisanceReg="AROMA_HMP"
+		export configs_NuisanceReg="AROMA_HMP"
 
 			# if using ICA-AROMA or ICA-AROMA followed by HMP 
-			if [[ ${flags_NuisanceReg} == "AROMA" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then 
+			if [[ ${configs_NuisanceReg} == "AROMA" ]] || [[ ${configs_NuisanceReg} == "AROMA_HMP" ]]; then 
 				## USER: by default, ICA_AROMA will estimate the dimensionality (i.e. num of independent components) for you; however, for higher multiband
 				## factors with many time-points and high motion subjects, it may be useful for the user to set the dimensionality. THis can be done by
 				## setting the desired number of componenets in the following config flag. Leave undefined for automatic estimation 
-				export flag_AROMA_dim=
+				export config_AROMA_dim=
 
 				# If AROMA has already been run, save computation time by skipping this step. 
 				export run_AROMA=false
 			fi
 
 			# if using Head Motion Parameters or ICA-AROMA followed by HMP
-			if [[ ${flags_NuisanceReg} == "HMPreg" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then   
+			if [[ ${configs_NuisanceReg} == "HMPreg" ]] || [[ ${configs_NuisanceReg} == "AROMA_HMP" ]]; then   
 					
-				export configs_EPI_numReg=24  # define the number of regressors Head Motion regressors. 
+				export configs_EPI_numHMP=24  # define the number of regressors Head Motion regressors. 
 										      # options are: 12 (6 orig + 6 deriv) or 24 (+sq of 12)
 
 			fi
 
 	#================================ PHYSIOLOGICAL REGRESSORS =================================#
-	export flags_EPI_PhysiolReg=true
+	export flags_EPI_PhysiolReg=false
 	# Two options that the user can select from:
-	# 1) flags_PhysiolReg="aCompCorr" - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
-	# 2) flags_PhysiolReg=meanPhysReg - mean WM and CSF signal regression
-		export flags_PhysiolReg="aCompCor"  
+	# 1) configs_PhysiolReg="aCompCorr" - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
+	# 2) configs_PhysiolReg=meanPhysReg - mean WM and CSF signal regression
+		export configs_PhysiolReg="aCompCor"  
 
-			if [[ ${flags_PhysiolReg} == "aCompCor" ]]; then  ### if using aCompCorr
+			if [[ ${configs_PhysiolReg} == "aCompCor" ]]; then  ### if using aCompCorr
 
 				export configs_EPI_numPhys=5   # defind the number of Principal Components to be used in regression. 
 											   # Options are: 1 - 5 PC's. We recommend 5 components. 
 											   # Set this option to 6 to include running regression with 1, 2, 3, 4 and 5 PC's. 
 
-			elif [[ ${flags_PhysiolReg} == "meanPhysReg" ]]; then  ### if using WM and CSF mean signal regression
+			elif [[ ${configs_PhysiolReg} == "meanPhysReg" ]]; then  ### if using WM and CSF mean signal regression
 
 				export configs_EPI_numPhys=2  # define how many regressors to use. 
 										      # options are: 2-mean signal; 4-mean signal+derivatives; 8-mean signal+derivatives+sq
@@ -320,31 +320,35 @@ if $fMRI_A; then
 			fi
 	
 	#================================ GLOBAL SIGNAL REGRESSION =================================#
-	export flags_EPI_GS=true # include global signal regression 
+	export flags_EPI_GS=false # compute global signal regressors 
 			
 		export configs_EPI_numGS=4 # define number of global signal regressors
-										# Options are: 1-mean signal; 2-mean signal+deriv; 4-mean signal+deriv+sq
+										# Options are  
+										#			0 - No global signal regression.
+										#           1 - regress mean signal; 
+										#           2 - regress mean signal+deriv; 
+										#           4 - regress mean signal+deriv+sq
 
-	#================================ FREQUENCY FILTERING =================================#
-	# Frequiency filtering can be acomplished with discrete cosine transfrom for a high-pass filter OR
-	# with a bandpass butterworth filter. 
-	export flags_EPI_FreqFilt=false
+	#================================ FREQUENCY FILTERING =================================# 
+	export flags_EPI_FreqFilt=false  # compute Frequency filtering
 
-		export flags_FreqFilt="BPF"
+		export configs_FreqFilt="DCT"   # Options are one of the following:
+		#										DCT - Discrete Cosine Transfrom for a high-pass filter 
+	    # 										BPF - Bandpass Butterworth Filter 
 
-		# Perform highpass filtering within regression using Discrete Cosine Transforms.
-				if [[ ${flags_FreqFilt} == "DCT" ]]; then 
+				# DCT: Perform highpass filtering within regression using Discrete Cosine Transforms.
+				if [[ ${configs_FreqFilt} == "DCT" ]]; then 
 					export configs_EPI_dctfMin=0.009  # Specify level of high-pass filtering in Hz, 
 												# i.e. the lowest frequency signals that will be retained 
 												# The appropriate number (k) of DCT bases will be determined as follows:
 												# k = fMin * 2 * TR * numTimePoints 
 				fi
 
-				# Demeans and detrends the data.
-				# Performs Butterworth filtering on residuals. Post regression filtering can potentially 
-				# reintroduce artifacts to the signal - see Lindquist et al. 2019 Hum Brain Mapp 
-				## WARNING BandPass cannot be applied if DCTs were included in regression.
-				if [[ ${flags_FreqFilt} == "BPF" ]]; then   
+				# Demeans and detrends the data. Performs Butterworth filtering on residuals
+				## NOTE that BPF will be applied to residuals AFTER the regression step (ApplyReg).
+				# Post regression filtering can potentially reintroduce artifacts to the signal 
+				#  		=> see Lindquist et al. 2019 Hum Brain Mapp 
+				if [[ ${configs_FreqFilt} == "BPF" ]]; then   
 					export configs_EPI_fMin=0.009
 					export configs_EPI_fMax=0.08
 				fi
@@ -352,16 +356,23 @@ if $fMRI_A; then
     #==================================== APPLY REGRESSION ===================================#
 	## Apply regression using all previously specified regressors
 	export flags_EPI_ApplyReg=false
-		# Despike and Scrub are mutually exculise!!! IF both are set to true, scrubbing will only be done on NONdespiked data with despike=false.
-		export configs_EPI_despike=true # dual-approach regression (Mejia 2023) based on statistical DVARS selection (Afyouni & Nichols 2018)
+		
+		export configs_EPI_despike=false # Dual-approach regression (Mejia 2023) 
+										# based on statistical DVARS selection (Afyouni & Nichols 2018)
+										# WARNING: Despike and Scrub are mutually exculise!!! 
+										# IF both are set to true, scrubbing will be skipped.
 									   
 	#=============================== POST REGRESSION SCRUBBING =================================# 
-	
-	export flags_EPI_scrub=false # delaults to statisitical DVARS; if not done then scrubbing is based on FSL's FD & DVARS 		
+	## Run one of the scrubbing methods
+	export flags_EPI_scrub=true 
+		export configs_scrub="stat_DVARS"   # User can select scrubbing based on:
+											#    stat_DVARS: statisitical DVARS (Afyouni & Nichols 2018)
+											#    fsl_fd_dvars: FSL's FD & DVARS 	
+											#	 no_scrub: data will not be scrubbed	
 
 	#================ COMPUTE ROI TIME-SERIES FOR EACH NODAL PARCELLATION ===================#
 	# Make sure the parcellation relevant multi-seciton flags at the top are set as desired. 
-	export flags_EPI_ROIs=false
+	export flags_EPI_ROIs=true
 
 #=================================================================================================#
 #=================================================================================================#

@@ -83,11 +83,11 @@ if ${fMRI_A}; then
  # Setting nuisance regression dependencies.
  #============================================================================
 
-    if [[ ${flags_NuisanceReg} == "HMPreg" ]]; then   # if using Head Motion Parameters
+    if [[ ${configs_NuisanceReg} == "HMPreg" ]]; then   # if using Head Motion Parameters
                         
-        nR="hmp${configs_EPI_numReg}"   # set filename postfix for output image
+        nR="hmp${configs_EPI_numHMP}"   # set filename postfix for output image
         
-        if [[ "${configs_EPI_numReg}" -ne 12 && "${configs_EPI_numReg}" -ne 24 ]]; then
+        if [[ "${configs_EPI_numHMP}" -ne 12 && "${configs_EPI_numHMP}" -ne 24 ]]; then
             log "ERROR The variable config_EPI_numReg must have values '12' or '24'. \
                 Please set the corect value in the config.sh file"
                 exit 1
@@ -95,7 +95,7 @@ if ${fMRI_A}; then
 
         export configs_EPI_resting_file='/4_epi.nii.gz'  
 
-    elif [[ ${flags_NuisanceReg} == "AROMA" ]]; then # if using ICA-AROMA
+    elif [[ ${configs_NuisanceReg} == "AROMA" ]]; then # if using ICA-AROMA
 
         nR="aroma" # set filename postfix for output image
         
@@ -107,11 +107,11 @@ if ${fMRI_A}; then
 
         export configs_EPI_resting_file='/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'
 
-        export configs_EPI_numReg=0   # make sure numReg variable is set to 0
+        export configs_EPI_numHMP=0   # make sure numReg variable is set to 0
 
-    elif [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then   # if using AROMA + Head Motion Parameters
+    elif [[ ${configs_NuisanceReg} == "AROMA_HMP" ]]; then   # if using AROMA + Head Motion Parameters
 
-        nR="aroma_hmp${configs_EPI_numReg}" # set filename postfix for output image
+        nR="aroma_hmp${configs_EPI_numHMP}" # set filename postfix for output image
         
         # RECOMMENDED: Use the ICA-AROMA package contained in the ConnPipe-SuppMaterials
         export run_ICA_AROMA="python ${ICA_AROMA_path}/ICA_AROMA.py"
@@ -121,7 +121,7 @@ if ${fMRI_A}; then
 
         export configs_EPI_resting_file='/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'
         
-        if [[ "${configs_EPI_numReg}" -ne 12 && "${configs_EPI_numReg}" -ne 24 ]]; then
+        if [[ "${configs_EPI_numHMP}" -ne 12 && "${configs_EPI_numHMP}" -ne 24 ]]; then
             log "ERROR The variable config_EPI_numReg must have values '12' or '24'. \
                 Please set the corect value in the config.sh file"
                 exit 1
@@ -134,7 +134,7 @@ if ${fMRI_A}; then
 
  # Setting physiological regression dependencies.
  #============================================================================
-    if [[ ${flags_PhysiolReg} == "aCompCor" ]]; then  ### if using aCompCorr
+    if [[ ${configs_PhysiolReg} == "aCompCor" ]]; then  ### if using aCompCorr
 
         if [[ "${configs_EPI_numPhys}" -ge 0 && "${configs_EPI_numPhys}" -le 5 ]]; then
             nR="${nR}_pca${configs_EPI_numPhys}"
@@ -142,7 +142,7 @@ if ${fMRI_A}; then
             nR="${nR}_pca"
         fi
 
-    elif [[ ${flags_PhysiolReg} == "meanPhysReg" ]]; then
+    elif [[ ${configs_PhysiolReg} == "meanPhysReg" ]]; then
 
         nR="${nR}_mPhys${configs_EPI_numPhys}"
 
@@ -155,36 +155,30 @@ if ${fMRI_A}; then
         fi	
     fi
 
-    export regPath=${flags_NuisanceReg}/${flags_PhysiolReg}
+    export regPath=${configs_NuisanceReg}/${configs_PhysiolReg}
 
  # Global Signal
 #============================================================================
-    if ${flags_EPI_GS}; then
+    if [ "$configs_EPI_numGS" -ne 0 ]; then   
         nR="${nR}_Gs${configs_EPI_numGS}"
-    else 
-        export configs_EPI_numGS=0
     fi 
 
 # Frequency Filtering
 #============================================================================
-    if [[ ${flags_FreqFilt} == "DCT" ]]; then  ### if using discrete cosine transform
+    if [[ ${configs_FreqFilt} == "DCT" ]]; then  ### if using discrete cosine transform
         nR="${nR}_DCT"
-    elif [[ ${flags_FreqFilt} == "BPF" ]]; then
+    elif [[ ${configs_FreqFilt} == "BPF" ]]; then
         nR="${nR}_BPF"
-        export configs_EPI_dctfMin=0
-        
     fi
 
 # DVARS-based time point scrubbing (Pham, ..., Mejia. NeuroImage 2023 and Afyouni $ Nichols, 2018)
 #============================================================================
-    if ${configs_EPI_despike}; then
-        # nR=nR_DVARS -- this gets updated in fMRI_A
-        # after regression is applied. This allows us to save both
-        # sets of residuals with and without DVARS.
-        export configs_EPI_path2DVARS="${EXEDIR}/src/func/"
-    fi
+export configs_EPI_path2DVARS="${EXEDIR}/src/func/"
 
-    export nR 
+# Export the name of the file with user-selected configurations   
+#============================================================================
+export nR 
+
 fi
 
 #################################################################################

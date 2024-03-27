@@ -120,14 +120,14 @@ if [[ -d "${AROMAout}" ]]; then
 fi
 
 # set number of components if user doesn't want automatic estimation
-if [[ ! -z "${flag_AROMA_dim}" ]]; then
+if [[ ! -z "${config_AROMA_dim}" ]]; then
 
     re='^[0-9]+$'
 
-    if [[ ${flag_AROMA_dim} =~ $re ]] ; then  # check that it is a number 
-        AROMA_dim="-dim ${flag_AROMA_dim}"
+    if [[ ${config_AROMA_dim} =~ $re ]] ; then  # check that it is a number 
+        AROMA_dim="-dim ${config_AROMA_dim}"
     else
-        log "WARNING flag_AROMA_dim should be a number; running AROMA with automatic estimation of number of components."
+        log "WARNING config_AROMA_dim should be a number; running AROMA with automatic estimation of number of components."
         AROMA_dim=" "
     fi
 else

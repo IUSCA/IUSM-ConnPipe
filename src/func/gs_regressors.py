@@ -24,16 +24,15 @@ def get_ts(vol,numTP,rest):
     return ts,mask
 
 
-flog.write("\n *** python time_series **** ")
+flog.write("\n *** python global signal calculation **** ")
 EPIpath=os.environ['EPIrun_out']
 fileIN=sys.argv[1]
 flog.write("\n"+"fileIN "+ fileIN)
 NuisancePhysReg_out=sys.argv[2]
 flog.write("\n NuisancePhysReg_out "+ NuisancePhysReg_out)
-configs_EPI_numGS=int(os.environ['configs_EPI_numGS'])
-flog.write("\n configs_EPI_numGS "+ str(configs_EPI_numGS))
-configs_EPI_dctfMin=float(os.environ['configs_EPI_dctfMin'])
-flog.write("\n configs_EPI_dctfMin "+ str(configs_EPI_dctfMin))
+compute_gs=int(sys.argv[3])
+flog.write("\n compute_gs "+ str(compute_gs))
+
 
 ### load data and masks
 resting = nib.load(fileIN)
@@ -42,7 +41,7 @@ resting_vol = np.asanyarray(resting.dataobj)
 print("resting_vol.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 
 ### Global Signal time-series
-if 0 < configs_EPI_numGS < 5:
+if 0 < compute_gs < 5:
     fname = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
     volGS = nib.load(fname)
     volGS_vol = np.asanyarray(volGS.dataobj)

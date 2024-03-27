@@ -34,6 +34,7 @@ def f_apply_reg(data, mask, regressors):
 
     return resid
 
+
 ###### print to log files #######
 QCfile_name = ''.join([os.environ['QCfile_name'],'.log'])
 fqc=open(QCfile_name, "a+")
@@ -54,41 +55,43 @@ NuisancePhysReg_out = ''.join([EPIpath,'/',nuisanceReg,'/',physReg])
 print("NuisancePhysReg_out is ",NuisancePhysReg_out)
 flog.write("\n NuisancePhysReg_out "+ NuisancePhysReg_out )
 
-config_param=int(os.environ['configs_EPI_numPhys'])
-print("config_param is ",config_param)
-flog.write("\n config_param "+ str(config_param))
+configs_numHMP=int(os.environ['configs_EPI_numHMP'])
+flog.write("\n configs_numHMP "+ str(configs_numHMP))
+print("configs_numHMP is ",configs_numHMP)
 
-numReg=int(os.environ['configs_EPI_numReg'])
-flog.write("\n numReg "+ str(numReg))
-print("numReg is ",numReg)
+configs_numPhys=int(os.environ['configs_EPI_numPhys'])
+print("configs_numPhys is ",configs_numPhys)
+flog.write("\n configs_numPhys "+ str(configs_numPhys))
 
 numGS=int(os.environ['configs_EPI_numGS'])
 flog.write("\n numGS "+ str(numGS))
 print("numGS is ",numGS)
 
+configs_FreqFilt=os.environ['configs_FreqFilt']
+flog.write("\n configs_FreqFilt "+ configs_FreqFilt)
+
+dvars_despike=os.environ['configs_EPI_despike']
+flog.write("\n dvars_despike "+ dvars_despike)
+
 nR=os.environ['nR']
 flog.write("\n nR "+ nR)
 print("nR is ",nR)
+
 # If BPF is set, need to crop nR, since BPF doesnt get done until after nuissance regressison.
 if nR.endswith("_BPF"):
     nRc=nR[:-4]
 else:
     nRc=nR
 
-dvars_despike=os.environ['configs_EPI_despike']
-flog.write("\n dvars_despike "+ dvars_despike)
-
 resting_file=os.environ['configs_EPI_resting_file']
 flog.write("\n resting_file "+ resting_file)
 resting_file = ''.join([EPIpath,resting_file]) 
 flog.write("\n full resting file is "+ resting_file)
 
-dctfMin=float(os.environ['configs_EPI_dctfMin'])
-flog.write("\n dctfMin "+ str(dctfMin))
-
 
 flog.write("\n REGRESSORS -- Creating regressor matrix with the following:") 
 
+# Nuisance regressors
 if nuisanceReg == "AROMA":
     print("1. Using AROMA cleaned data")
     flog.write("\n 1. Using AROMA cleaned data")
@@ -98,7 +101,7 @@ elif nuisanceReg == "HMPreg" or nuisanceReg == "AROMA_HMP":
     print("1. Applying Head Motion Param regressors") 
     flog.write("\n 1. Applying Head Motion Param regressors")
 
-    if numReg == 24:
+    if configs_numHMP == 24:
         print(" -- 24 Head motion regressors")
         flog.write("\n  -- 24 Head motion regressors")
         fname=''.join([EPIpath,'/',nuisanceReg,'/motion12_regressors.npz'])
@@ -108,7 +111,7 @@ elif nuisanceReg == "HMPreg" or nuisanceReg == "AROMA_HMP":
         m_sq_reg = np.load(fname)  
         print(sorted(m_sq_reg.files))
         regressors = np.vstack((m12reg['motion'].T,m12reg['motion_deriv'].T,m_sq_reg['motion_sq'].T,m_sq_reg['motion_deriv_sq'].T))
-    elif numReg == 12:
+    elif configs_numHMP == 12:
         print(" -- 12 Head motion regressors")
         flog.write("\n -- 12 Head motion regressors")
         fname=''.join([EPIpath,'/',nuisanceReg,'/motion12_regressors.npz'])
@@ -118,6 +121,108 @@ elif nuisanceReg == "HMPreg" or nuisanceReg == "AROMA_HMP":
 
 flog.write("\n regressors shape " + str(regressors.shape))
 
+# physiological regressors
+if physReg == "aCompCor":
+    fname = ''.join([NuisancePhysReg_out,'/dataPCA',str(configs_numPhys),'_WM-CSF.npz'])
+    numphys = np.load(fname) 
+    print("-- aCompCor PC of WM & CSF regressors")
+    flog.write("\n -- aCompCor PC of WM & CSF regressors" )
+
+    if 0 < configs_numPhys < 6:
+        print("-- Writing prespecified removal of %d components ----" % configs_numPhys)
+        flog.write("\n -- Writing prespecified removal of " + str(configs_numPhys) + " components")
+        print("regressors shape ",regressors.shape)
+
+        # Ensure that we have all CSF needed components
+        print("numphys['CSFpca'] shape ",numphys['CSFpca'].shape)
+        flog.write("\n CSFpca shape " + str(numphys['CSFpca'].shape))
+        if numphys['CSFpca'].ndim == 2:
+            csf = numphys['CSFpca'][:configs_numPhys,:]
+            print("--- Using CSF PC number %d" % configs_numPhys)
+            flog.write("\n--- Using CSF PC number " + str(configs_numPhys))
+        else:  # PCS failed and we used the mean signal and CSFpca is a singleton
+            csf = numphys['CSFpca']
+            print("--- Using CSF mean signal")
+            flog.write("\n--- Using CSF mean signal")
+        print("csf shape ",csf.shape)
+
+        # Ensure that we have all needed WM components
+        print("numphys['WMpca'] shape ",numphys['WMpca'].shape)
+        flog.write("\n WMpca shape " + str(numphys['WMpca'].shape))
+        if numphys['WMpca'].ndim == 2:
+            wm = numphys['WMpca'][:configs_numPhys,:]
+            print("--- Using WM PC number %d" % configs_numPhys)
+            flog.write("\n--- Using WM PC number " + str(configs_numPhys))
+        else:  # WM PCA failed and we used the mean signal
+            wm = numphys['WMpca']
+            print("--- Using WM mean signal")
+            flog.write("\n--- Using WM mean signal")
+
+        print("wm shape ",wm.shape)
+
+        if regressors.size:   #if we already filled regressors with HMP
+             regressors = np.vstack((regressors,\
+                                    csf,\
+                                    wm))
+        else:
+            regressors = np.vstack((csf,\
+                                    wm))
+
+        print("regressors shape: ", regressors.shape)
+        flog.write("\n regressors shape " + str(regressors.shape))
+        # zRegressMat.append(stats.zscore(regressors,axis=1))
+        print("    -- PCA 1 through %d" % configs_numPhys)
+        flog.write("\n    -- PCA 1 through " + str(configs_numPhys))
+
+elif physReg == "meanPhysReg":
+    fname = ''.join([NuisancePhysReg_out,'/dataMnRg_WM-CSF.npz'])
+    numphys = np.load(fname) 
+    flog.write("\n numphys[CSFavg].shape " + str(numphys['CSFavg'].shape))
+    flog.write("\n numphys[WMavg].shape " + str(numphys['WMavg'].shape))
+    
+    if configs_numPhys == 2:
+        if regressors.size:
+            regressors = np.vstack((regressors,\
+                                numphys['CSFavg'],\
+                                numphys['WMavg']))
+        else:
+            regressors = np.vstack((numphys['CSFavg'],\
+                                numphys['WMavg']))  
+        print("   -- 2 physiological regressors ")
+        flog.write("\n    -- 2 physiological regressors ")
+        print("regressors shape ",regressors.shape)
+        flog.write("\n regressors shape " + str(regressors.shape))
+    if configs_numPhys == 4:
+        if regressors.size:
+            regressors = np.vstack((regressors,\
+                                numphys['CSFavg'],numphys['CSFderiv'],\
+                                numphys['WMavg'],numphys['WMderiv'])) 
+        else:
+            regressors = np.vstack((numphys['CSFavg'],numphys['CSFderiv'],\
+                                numphys['WMavg'],numphys['WMderiv']))       
+        print("   -- 4 physiological regressors")
+        flog.write("\n    -- 4 physiological regressors ")
+        print("regressors shape ",regressors.shape)
+        flog.write("\n regressors shape " + str(regressors.shape))
+    if configs_numPhys == 8:
+        if regressors.size:
+            regressors = np.vstack((regressors,\
+                                numphys['CSFavg'],numphys['CSFavg_sq'],\
+                                numphys['CSFderiv'],numphys['CSFderiv_sq'],\
+                                numphys['WMavg'],numphys['WMavg_sq'],\
+                                numphys['WMderiv'],numphys['WMderiv_sq'])) 
+        else:
+            regressors = np.vstack((numphys['CSFavg'],numphys['CSFavg_sq'],\
+                                numphys['CSFderiv'],numphys['CSFderiv_sq'],\
+                                numphys['WMavg'],numphys['WMavg_sq'],\
+                                numphys['WMderiv'],numphys['WMderiv_sq'])) 
+        print("   -- 8 physiological regressors ")   
+        flog.write("\n    -- 8 physiological regressors ")
+        print("regressors shape ",regressors.shape) 
+        flog.write("\n regressors shape " + str(regressors.shape))
+    
+
+# Global signal regression
 if numGS > 0:
     fname = ''.join([NuisancePhysReg_out,'/dataGS.npz'])
     dataGS = np.load(fname) 
@@ -159,7 +264,7 @@ if numGS > 0:
 
 
 # k DCT filtering
-if dctfMin > 0:
+if configs_FreqFilt == "DCT":
     fname = ''.join([NuisancePhysReg_out,'/dataDCT.npz'])
     dataDCT = np.load(fname) 
     dctreg = dataDCT['dct'].T
@@ -175,123 +280,12 @@ if dctfMin > 0:
     flog.write("\n regressors shape " + str(regressors.shape))
 
 
-if physReg == "aCompCor":
-    fname = ''.join([NuisancePhysReg_out,'/dataPCA',str(config_param),'_WM-CSF.npz'])
-    numphys = np.load(fname) 
-    print("-- aCompCor PC of WM & CSF regressors")
-    flog.write("\n -- aCompCor PC of WM & CSF regressors" )
-    zRegressMat = []
-
-    if config_param > 5:
-        print("  -- Applying all levels of PCA removal")
-        flog.write("\n -- Applying all levels of PCA removal" )
-        for ic in range(6):
-            if ic == 0:
-                zRegressMat.append(stats.zscore(regressors,axis=1));                
-            else:
-                regMat = np.vstack((regressors,\
-                                        numphys['CSFpca'][:ic,:],\
-                                        numphys['WMpca'][:ic,:]))
-                zRegressMat.append(stats.zscore(regMat,axis=1));
-                print("    -- PCA %d" % ic)
-                flog.write("\n    -- PCA " + str(ic))
-
-    elif 0 < config_param < 6:
-        print("-- Writing prespecified removal of %d components ----" % config_param)
-        flog.write("\n -- Writing prespecified removal of " + str(config_param) + " components")
-        print("regressors shape ",regressors.shape)
-
-        # Ensure that we have all CSF needed components
-        print("numphys['CSFpca'] shape ",numphys['CSFpca'].shape)
-        flog.write("\n CSFpca shape " + str(numphys['CSFpca'].shape))
-        if numphys['CSFpca'].ndim == 2:
-            csf = numphys['CSFpca'][:config_param,:]
-            print("--- Using CSF PC number %d" % config_param)
-            flog.write("\n--- Using CSF PC number " + str(config_param))
-        else:  # PCS failed and we used the mean signal and CSFpca is a singleton
-            csf = numphys['CSFpca']
-            print("--- Using CSF mean signal")
-            flog.write("\n--- Using CSF mean signal")
-        print("csf shape ",csf.shape)
-
-        # Ensure that we have all needed WM components
-        print("numphys['WMpca'] shape ",numphys['WMpca'].shape)
-        flog.write("\n WMpca shape " + str(numphys['WMpca'].shape))
-        if numphys['WMpca'].ndim == 2:
-            wm = numphys['WMpca'][:config_param,:]
-            print("--- Using WM PC number %d" % config_param)
-            flog.write("\n--- Using WM PC number " + str(config_param))
-        else:  # WM PCA failed and we used the mean signal
-            wm = numphys['WMpca']
-            print("--- Using WM mean signal")
-            flog.write("\n--- Using WM mean signal")
-
-        print("wm shape ",wm.shape)
-
-        if regressors.size:
-             components = np.vstack((regressors,\
-                                    csf,\
-                                    wm))
-        else:
-            components = np.vstack((csf,\
-                                    wm))
-
-        print("components shape: ", components.shape)
-        flog.write("\n components shape " + str(components.shape))
-        zRegressMat.append(stats.zscore(components,axis=1))
-        print("    -- PCA 1 through %d" % config_param)
-        flog.write("\n    -- PCA 1 through " + str(config_param))
-
-elif physReg == "meanPhysReg":
-    fname = ''.join([NuisancePhysReg_out,'/dataMnRg_WM-CSF.npz'])
-    numphys = np.load(fname) 
-    flog.write("\n numphys[CSFavg].shape " + str(numphys['CSFavg'].shape))
-    flog.write("\n numphys[WMavg].shape " + str(numphys['WMavg'].shape))
-    
-    if config_param == 2:
-        if regressors.size:
-            regressors = np.vstack((regressors,\
-                                numphys['CSFavg'],\
-                                numphys['WMavg']))
-        else:
-            regressors = np.vstack((numphys['CSFavg'],\
-                                numphys['WMavg']))  
-        print("   -- 2 physiological regressors ")
-        flog.write("\n    -- 2 physiological regressors ")
-        print("regressors shape ",regressors.shape)
-        flog.write("\n regressors shape " + str(regressors.shape))
-    if config_param == 4:
-        if regressors.size:
-            regressors = np.vstack((regressors,\
-                                numphys['CSFavg'],numphys['CSFderiv'],\
-                                numphys['WMavg'],numphys['WMderiv'])) 
-        else:
-            regressors = np.vstack((numphys['CSFavg'],numphys['CSFderiv'],\
-                                numphys['WMavg'],numphys['WMderiv']))       
-        print("   -- 4 physiological regressors")
-        flog.write("\n    -- 4 physiological regressors ")
-        print("regressors shape ",regressors.shape)
-        flog.write("\n regressors shape " + str(regressors.shape))
-    if config_param == 8:
-        if regressors.size:
-            regressors = np.vstack((regressors,\
-                                numphys['CSFavg'],numphys['CSFavg_sq'],\
-                                numphys['CSFderiv'],numphys['CSFderiv_sq'],\
-                                numphys['WMavg'],numphys['WMavg_sq'],\
-                                numphys['WMderiv'],numphys['WMderiv_sq'])) 
-        else:
-            regressors = np.vstack((numphys['CSFavg'],numphys['CSFavg_sq'],\
-                                numphys['CSFderiv'],numphys['CSFderiv_sq'],\
-                                numphys['WMavg'],numphys['WMavg_sq'],\
-                                numphys['WMderiv'],numphys['WMderiv_sq'])) 
-        print("   -- 8 physiological regressors ")   
-        flog.write("\n    -- 8 physiological regressors ")
-        print("regressors shape ",regressors.shape) 
-        flog.write("\n regressors shape " + str(regressors.shape))
-    
-    zRegressMat = []
-    zRegressMat.append(stats.zscore(regressors,axis=1))
-
+# zscoring regressors
+print("Z-scoring regressor matrix")
+flog.write("\n Z-scoring regressor matrix")
+regressors = stats.zscore(regressors,axis=1)
+print("regressors shape ",regressors.shape)
+flog.write("\n regressors shape " + str(regressors.shape))
 
 ## regress-out motion/physilogical regressors 
 print("2. Applying motion/physicological regression")
@@ -313,29 +307,17 @@ for i in range(0,numTimePoints):
     rv[volBrain_vol==0]=0
     resting_vol[:,:,:,i] = rv
 
+rr = f_apply_reg(resting_vol,volBrain_vol,regressors)
 
-resid = []
+# save nifti image
+fileOut = "/7_epi_%s.nii.gz" % nRc 
 
-# this loop is if all pc steps for acompcor are written out
-# otherwise zRegressMat is length 1
-for r in range(0,len(zRegressMat)):
+fileOut = ''.join([NuisancePhysReg_out,fileOut])
+print("Nifti file to be saved is: ",fileOut)
 
-    rr = f_apply_reg(resting_vol,volBrain_vol,zRegressMat[r])
-
-    resid.append(rr)
-
-    # save nifti image
-    if len(zRegressMat)==1:
-        fileOut = "/7_epi_%s.nii.gz" % nRc 
-    else:
-        fileOut = "/7_epi_%s%d.nii.gz" % (nRc,pc)
-
-    fileOut = ''.join([NuisancePhysReg_out,fileOut])
-    print("Nifti file to be saved is: ",fileOut)
-
-    # save new resting file
-    resting_new = nib.Nifti1Image(rr.astype(np.float32),resting.affine,resting.header)
-    nib.save(resting_new,fileOut) 
+# save new resting file
+resting_new = nib.Nifti1Image(rr.astype(np.float32),resting.affine,resting.header)
+nib.save(resting_new,fileOut) 
 
 ## Calculate DVARS after regression
 print("=== Calculating DVARS from residuals ===")
@@ -347,7 +329,6 @@ print("configs_EPI_path2dvars ",configs_EPI_path2DVARS)
 fname = ''.join([NuisancePhysReg_out,'/DVARS_',nRc,'.txt'])
 fdvars=open(fname, "a+")
 
-import sys
 sys.path.append(configs_EPI_path2DVARS)
 from DSE import DSE_Calc, DVARS_Calc, CleanNIFTI
 
@@ -355,9 +336,9 @@ DVARSout = DVARS_Calc(fileOut,dd=1,WhichExpVal='median',WhichVar='hIQRd',scl=0.0
                 demean=True,DeltapDvarThr=5)
 
 vols2despike = DVARSout["Inference"]["H"]
-vols2scrub = vols2despike
 
 if dvars_despike == 'true':
+
     print("vols to despike: ",vols2despike)
     fdvars.write("\n vols to despike: "+ str(vols2despike))
     nvols2despike = vols2despike.shape[0]
@@ -365,55 +346,56 @@ if dvars_despike == 'true':
     fdvars.write("\n vols to be despiked: "+ str(nvols2despike))
     despiking = np.zeros((nvols2despike,numTimePoints), dtype=int)  
 
-    resid_DVARS = []
     ## Apply regresison again with spike regressors included
     if nvols2despike > 0:
         for s in range(nvols2despike):
             despiking[s,vols2despike[s]-1]=1
 
-        regressors_despike = np.vstack((zRegressMat[r],despiking))
+        regressors_despike = np.vstack((regressors,despiking))
 
-        rr = f_apply_reg(resting_vol,volBrain_vol,regressors_despike)
-        
-    resid_DVARS.append(rr)
+        rr_despike = f_apply_reg(resting_vol,volBrain_vol,regressors_despike)
 
-    # save nifti image
-    if len(zRegressMat)==1:
-        fileOut = "/7_epi_%s_despiked.nii.gz" % nRc 
-        matlabfilename = ''.join([NuisancePhysReg_out,'/volumes2scrub_',nRc,'_despiked.mat'])
     else:
-        fileOut = "/7_epi_%s%d_despiked.nii.gz" % (nRc,pc)
-        matlabfilename = ''.join([NuisancePhysReg_out,'/volumes2scrub_',nRc,pc,'_despiked.mat'])
+        rr_despike = rr   
+        print("WARNING: There are no volumes to despike!") 
+        print("file 7_epi_",nRc,"_despiked.nii.gz will be a copy of ","7_epi_",nRc)
+
+    fileOut = "/7_epi_%s_despiked.nii.gz" % nRc 
+    matlabfilename = ''.join([NuisancePhysReg_out,'/volumes2scrub_',nRc,'_despiked.mat'])
+
 
     fileOut = ''.join([NuisancePhysReg_out,fileOut])
     print("Nifti file to be saved is: ",fileOut)
 
     # save new resting file
-    resting_new = nib.Nifti1Image(rr.astype(np.float32),resting.affine,resting.header)
+    resting_new = nib.Nifti1Image(rr_despike.astype(np.float32),resting.affine,resting.header)
     nib.save(resting_new,fileOut) 
 
     print("savign MATLAB file ", matlabfilename)
-    # mdic = {"resid" : rr, "vols2scrub":vols2scrub}
-    mdic = {"vols2scrub":vols2scrub}
+    mdic = {"vols2scrub":vols2despike}
     savemat(matlabfilename, mdic)
 
     fdvars.close()
 
-# THIS MAY NEED TO BE CHANGED TO RESTING NEW
-if dvars_despike == 'true': 
-    resid_before_despike = resid
-    resid = resid_DVARS
-    ## save data (for header info), regressors, and residuals
-    fname = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',nRc,'_despiked.npz'])
-    np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol, \
-    zRegressMat=zRegressMat,resid_before_despike=resid_before_despike,nR=nRc, \
-    resid=resid, DVARS_Inference_Hprac=DVARSout["Inference"]["H"])
+
+
+## save non-despiked and despiked data in npz format for further analysis
+fname = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',nRc,'.npz'])
+
+if dvars_despike == 'true':
+    print("apply_reg: saving despiked regressors in file"+fname)
+    np.savez(fname, nR=nRc, \
+    regressors=regressors,despiking=despiking, \
+    resid=rr,resid_despike=rr_despike, \
+    DVARS_Inference_Hprac=DVARSout["Inference"]["H"], \
+    vols2scrub=vols2despike)
 else:
-    ## save residuals and regressor data
-    fname = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',nRc,'.npz'])
-    np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol, \
-    zRegressMat=zRegressMat,resid=resid,nR=nRc, \
-    DVARS_Inference_Hprac=DVARSout["Inference"]["H"],vols2scrub=vols2scrub)
+    print("apply_reg: saving despiked regressors in file"+fname)
+    np.savez(fname,nR=nRc, \
+    regressors=regressors,resid=rr, \
+    DVARS_Inference_Hprac=DVARSout["Inference"]["H"], \
+    vols2scrub=vols2despike)
+
 
 print("Saved residuals")
 

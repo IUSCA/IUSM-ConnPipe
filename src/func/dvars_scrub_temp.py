@@ -52,15 +52,15 @@ NuisancePhysReg_out = ''.join([EPIpath,'/',nuisanceReg,'/',physReg])
 print("NuisancePhysReg_out is ",NuisancePhysReg_out)
 flog.write("\n NuisancePhysReg_out "+ NuisancePhysReg_out )
 
-config_param=int(os.environ['configs_EPI_numPhys'])
-print("config_param is ",config_param)
-flog.write("\n config_param "+ str(config_param))
-numReg=int(os.environ['configs_EPI_numReg'])
-flog.write("\n numReg "+ str(numReg))
-print("numReg is ",numReg)
-numGS=int(os.environ['configs_EPI_numGS'])
-flog.write("\n numGS "+ str(numGS))
-print("numGS is ",numGS)
+# configs_numPhys=int(os.environ['configs_EPI_numPhys'])
+# print("configs_numPhys is ",configs_numPhys)
+# flog.write("\n configs_numPhys "+ str(configs_numPhys))
+# numReg=int(os.environ['configs_EPI_numHMP'])
+# flog.write("\n numReg "+ str(numReg))
+# print("numReg is ",numReg)
+# numGS=int(os.environ['configs_EPI_numGS'])
+# flog.write("\n numGS "+ str(numGS))
+# print("numGS is ",numGS)
 
 nR=os.environ['nR']
 flog.write("\n nR "+ nR)
@@ -72,8 +72,6 @@ resting_file=os.environ['configs_EPI_resting_file']
 flog.write("\n resting_file "+ resting_file)
 resting_file = ''.join([EPIpath,resting_file]) 
 flog.write("\n full resting file is "+ resting_file)
-dctfMin=float(os.environ['configs_EPI_dctfMin'])
-flog.write("\n dctfMin "+ str(dctfMin))
 
 
 resting = nib.load(resting_file)
