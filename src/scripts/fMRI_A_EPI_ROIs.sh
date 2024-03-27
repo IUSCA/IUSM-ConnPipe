@@ -44,11 +44,11 @@ log "nR is ${nR}"
 
 # Identify what files to load
 
-if [[ ${configs_scrub} != "no_scrub" ]]; then
-    # if ${configs_EPI_despike}; then
+if [[ ${configs_scrub} == "no_scrub" ]]; then
+
     fileIn="${NuisancePhysReg_out}/NuisanceRegression_${nR}.npz"
-    # else
-elif [[ ${configs_scrub} != "stat_DVARS" ]] || [[ ${configs_scrub} != "fsl_fd_dvars" ]] ; then
+
+elif [[ ${configs_scrub} == "stat_DVARS" ]] || [[ ${configs_scrub} == "fsl_fd_dvars" ]] ; then
     if ! ${configs_EPI_despike}; then
         fileIn="${NuisancePhysReg_out}/NuisanceRegression_${nR}_scrubbed.npz"
     else 

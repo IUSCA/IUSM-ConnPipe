@@ -16,16 +16,14 @@ print("NuisancePhysReg_out ",NuisancePhysReg_out)
 
 nR=os.environ['nR']
 print("nR ",nR)
-# resting_file=os.environ['configs_EPI_resting_file']
-# print("resting_file ",resting_file)
+
 configs_scrub=os.environ['configs_scrub']
 flog.write("\n configs_scrub "+ configs_scrub)
 
-resting_file=os.environ['configs_EPI_resting_file']
-flog.write("\n resting_file "+ resting_file)
-
 # load resting vol image to use header for saving new image. 
+resting_file=os.environ['configs_EPI_resting_file']
 resting_file = ''.join([EPIpath,resting_file])    
+flog.write("\n resting_file "+ resting_file)
 resting = nib.load(resting_file)
 
 fileIn=sys.argv[1]
@@ -48,7 +46,7 @@ if configs_scrub == "stat_DVARS":
     print("DVARS: ",dvars)
     goodvols = np.ones(numTimePoints, dtype=int)
     goodvols[dvars]=0
-else:
+elif configs_scrub == "fsl_fd_dvars":
     flog.write("\n *** Scrubbing with FSL's dvars and fd *** ")
     fname=''.join([EPIpath,'/scrubbing_goodvols.npz'])  
     goodvols = np.load(fname) 

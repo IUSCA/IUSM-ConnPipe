@@ -304,7 +304,7 @@ if $fMRI_A; then
 	# Two options that the user can select from:
 	# 1) configs_PhysiolReg="aCompCorr" - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
 	# 2) configs_PhysiolReg=meanPhysReg - mean WM and CSF signal regression
-		export configs_PhysiolReg="meanPhysReg"  
+		export configs_PhysiolReg="aCompCor"  
 
 			if [[ ${configs_PhysiolReg} == "aCompCor" ]]; then  ### if using aCompCorr
 
@@ -332,7 +332,7 @@ if $fMRI_A; then
 	#================================ FREQUENCY FILTERING =================================# 
 	export flags_EPI_FreqFilt=false  # compute Frequency filtering
 
-		export configs_FreqFilt="BPF"   # Options are one of the following:
+		export configs_FreqFilt="DCT"   # Options are one of the following:
 		#										DCT - Discrete Cosine Transfrom for a high-pass filter 
 	    # 										BPF - Bandpass Butterworth Filter 
 

@@ -418,27 +418,20 @@ for ((i=0; i<${#epiList[@]}; i++)); do
 ######################################################################################
     if ${flags_EPI_ROIs}; then
 
-        if [[ ${configs_scrub} != "no_scrub" ]]; then
+        if [[ ${configs_scrub} == "no_scrub" ]]; then
             if ${configs_EPI_despike}; then
                 export post_nR="${nR}_despiked"
             else 
                 export post_nR="${nR}"
             fi     
-        elif [[ ${configs_scrub} != "stat_DVARS" ]] || [[ ${configs_scrub} != "fsl_fd_dvars" ]] ; then
+        elif [[ ${configs_scrub} == "stat_DVARS" ]] || [[ ${configs_scrub} == "fsl_fd_dvars" ]] ; then
             if ! ${configs_EPI_despike}; then
                 export post_nR="${nR}_scrubbed"
             else 
                 export post_nR="${nR}_despiked"
             fi 
         fi 
-        
-        # if ${configs_EPI_despike}; then
-        #     export post_nR="${nR}_despiked"
-        # elif ${flags_EPI_scrub}; then
-        #     export post_nR="${nR}_scrubbed"
-        # else
-        #     export post_nR="${nR}"
-        # fi
+    
 
         cmd="${EXEDIR}/src/scripts/fMRI_A_EPI_ROIs.sh"
         echo $cmd

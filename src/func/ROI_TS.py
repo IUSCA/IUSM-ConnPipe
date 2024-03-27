@@ -33,7 +33,6 @@ flog.write("\n dvars_despike "+ dvars_despike)
 # load appropriate residuals
 fileIn=sys.argv[1]
 print("fileIn ",fileIn)
-# fname_post = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',post_nR,'.npz'])
 print("Loading post-regression residuals from ",fileIn)
 flog.write("\n Loading post-regression residuals "+fileIn)
 data = np.load(fileIn) 

@@ -127,21 +127,6 @@ if physReg == "aCompCor":
     numphys = np.load(fname) 
     print("-- aCompCor PC of WM & CSF regressors")
     flog.write("\n -- aCompCor PC of WM & CSF regressors" )
-    # zRegressMat = []
-
-    # if configs_numPhys > 5:
-    #     print("  -- Applying all levels of PCA removal")
-    #     flog.write("\n -- Applying all levels of PCA removal" )
-    #     for ic in range(6):
-    #         if ic == 0:
-    #             zRegressMat.append(stats.zscore(regressors,axis=1));                
-    #         else:
-    #             regMat = np.vstack((regressors,\
-    #                                     numphys['CSFpca'][:ic,:],\
-    #                                     numphys['WMpca'][:ic,:]))
-    #             zRegressMat.append(stats.zscore(regMat,axis=1));
-    #             print("    -- PCA %d" % ic)
-    #             flog.write("\n    -- PCA " + str(ic))
 
     if 0 < configs_numPhys < 6:
         print("-- Writing prespecified removal of %d components ----" % configs_numPhys)
@@ -236,8 +221,6 @@ elif physReg == "meanPhysReg":
         print("regressors shape ",regressors.shape) 
         flog.write("\n regressors shape " + str(regressors.shape))
     
-    # zRegressMat = []
-    # zRegressMat.append(stats.zscore(regressors,axis=1))
 
 # Global signal regression
 if numGS > 0:
@@ -324,23 +307,10 @@ for i in range(0,numTimePoints):
     rv[volBrain_vol==0]=0
     resting_vol[:,:,:,i] = rv
 
-
-# resid = []
-
-# this loop is if all pc steps for acompcor are written out
-# otherwise zRegressMat is length 1
-# for r in range(0,len(zRegressMat)):
-
-# rr = f_apply_reg(resting_vol,volBrain_vol,zRegressMat[r])
 rr = f_apply_reg(resting_vol,volBrain_vol,regressors)
 
-# resid.append(rr)
-
 # save nifti image
-# if len(zRegressMat)==1:
 fileOut = "/7_epi_%s.nii.gz" % nRc 
-# else:
-#     fileOut = "/7_epi_%s%d.nii.gz" % (nRc,pc)
 
 fileOut = ''.join([NuisancePhysReg_out,fileOut])
 print("Nifti file to be saved is: ",fileOut)
@@ -414,14 +384,17 @@ fname = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',nRc,'.npz'])
 
 if dvars_despike == 'true':
     print("apply_reg: saving despiked regressors in file"+fname)
-    np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol, \
-    regressors=regressors,despiking=despiking,resid=rr,resid_despike=rr_despike, \
-    nR=nRc,DVARS_Inference_Hprac=DVARSout["Inference"]["H"],vols2scrub=vols2despike)
+    np.savez(fname, nR=nRc, \
+    regressors=regressors,despiking=despiking, \
+    resid=rr,resid_despike=rr_despike, \
+    DVARS_Inference_Hprac=DVARSout["Inference"]["H"], \
+    vols2scrub=vols2despike)
 else:
     print("apply_reg: saving despiked regressors in file"+fname)
-    np.savez(fname,resting_vol=resting_vol,volBrain_vol=volBrain_vol, \
-    regressors=regressors,resid=rr,nR=nRc, \
-    DVARS_Inference_Hprac=DVARSout["Inference"]["H"],vols2scrub=vols2despike)
+    np.savez(fname,nR=nRc, \
+    regressors=regressors,resid=rr, \
+    DVARS_Inference_Hprac=DVARSout["Inference"]["H"], \
+    vols2scrub=vols2despike)
 
 
 print("Saved residuals")
