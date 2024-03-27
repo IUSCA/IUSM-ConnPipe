@@ -39,6 +39,27 @@ if ${configs_T1_addsubcort} && ! ${configs_T1_subcortUser}; then  # default FSL 
     fi
 fi
 
-cmd="python ${EXEDIR}/src/func/ROI_TS.py ${NuisancePhysReg_out}"
+
+log "nR is ${nR}"
+
+# Identify what files to load
+
+if [[ ${configs_scrub} != "no_scrub" ]]; then
+    # if ${configs_EPI_despike}; then
+    fileIn="${NuisancePhysReg_out}/NuisanceRegression_${nR}.npz"
+    # else
+elif [[ ${configs_scrub} != "stat_DVARS" ]] || [[ ${configs_scrub} != "fsl_fd_dvars" ]] ; then
+    if ! ${configs_EPI_despike}; then
+        fileIn="${NuisancePhysReg_out}/NuisanceRegression_${nR}_scrubbed.npz"
+    else 
+        fileIn="${NuisancePhysReg_out}/NuisanceRegression_${nR}.npz"
+    fi 
+fi 
+
+log --no-datetime "Computing ROI Time Series on ${fileIn}"
+
+checkisfile ${fileIn}    
+
+cmd="python ${EXEDIR}/src/func/ROI_TS.py ${fileIn}"
 log $cmd
 eval $cmd

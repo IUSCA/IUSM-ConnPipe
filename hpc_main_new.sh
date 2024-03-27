@@ -173,14 +173,12 @@ if ${fMRI_A}; then
 
 # DVARS-based time point scrubbing (Pham, ..., Mejia. NeuroImage 2023 and Afyouni $ Nichols, 2018)
 #============================================================================
-    if ${configs_EPI_despike}; then
-        # nR=nR_despiked -- this gets updated in fMRI_A
-        # after regression is applied. This allows us to save both
-        # sets of residuals with and without DVARS.
-        export configs_EPI_path2DVARS="${EXEDIR}/src/func/"
-    fi
+export configs_EPI_path2DVARS="${EXEDIR}/src/func/"
 
-    export nR 
+# Export the name of the file with user-selected configurations   
+#============================================================================
+export nR 
+
 fi
 
 #################################################################################

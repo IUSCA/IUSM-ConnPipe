@@ -21,13 +21,8 @@ log --no-datetime "# =========================================================="
 if [[ $nR == *_BPF ]]; then
     # Crop out "_BPF" and save the new string into nRc
     nRc="${nR%_BPF}"
-    if ${configs_EPI_despike}; then
-        fileIn="${NuisancePhysReg_out}/NuisanceRegression_${nRc}_despiked.npz"
-        fileOut="${NuisancePhysReg_out}/NuisanceRegression_${nR}_despiked"
-    else
-        fileIn="${NuisancePhysReg_out}/NuisanceRegression_${nRc}.npz"
-        fileOut="${NuisancePhysReg_out}/NuisanceRegression_${nR}"
-    fi
+    fileIn="${NuisancePhysReg_out}/NuisanceRegression_${nRc}.npz"
+    fileOut="${NuisancePhysReg_out}/NuisanceRegression_${nR}"
 fi
 
 if [[ ! -e "${fileIn}" ]]; then  

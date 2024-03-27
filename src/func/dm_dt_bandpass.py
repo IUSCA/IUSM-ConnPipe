@@ -15,7 +15,8 @@ flog.write("\n *** python apply_bandpass **** ")
 
 EPIpath=os.environ['EPIrun_out']
 print("EPIpath ",EPIpath)
-
+dvars_despike=os.environ['configs_EPI_despike']
+flog.write("\n dvars_despike "+ dvars_despike)
 fileIn=sys.argv[1]
 print("fileIn ",fileIn)
 fileOut=sys.argv[2]
@@ -32,10 +33,14 @@ print("resting_file ",resting_file)
 print("loading resid for Demean and Detrend")
 data = np.load(fileIn)
 
-resid=data['resid']
+if dvars_despike == 'true':
+    resid=data['resid_despike']
+else:
+    resid=data['resid']
+
 volBrain_vol=data['volBrain_vol']
 resting_vol=data['resting_vol']
-regressors=data['regressors']
+# regressors=data['regressors']
 print("resting_vol.shape: ",resting_vol.shape)
 [sizeX,sizeY,sizeZ,numTimePoints] = resting_vol.shape
 
@@ -105,8 +110,10 @@ tsf=tsf.T
 for ind in range(0,numTimePoints):
     resid[GSmask[0],GSmask[1],GSmask[2],ind] = tsf[ind,:]
 
-
-fileNii = "/8_epi_%s.nii.gz" % nR 
+if dvars_despike == 'true':
+    fileNii = "/8_epi_%s_despiked.nii.gz" % nR 
+else:
+    fileNii = "/8_epi_%s.nii.gz" % nR 
 
 fileNii = ''.join([NuisancePhysReg_out,fileNii])
 print("Nifti file to be saved is: ",fileNii)
@@ -115,14 +122,15 @@ print("Nifti file to be saved is: ",fileNii)
 resting_new = nib.Nifti1Image(resid.astype(np.float32),resting.affine,resting.header)
 nib.save(resting_new,fileNii) 
 
-
 ## save data 
 ff = ''.join([fileOut,'.npz'])
-
-# np.savez(ff,resid=resid)
-# JENYA: added more stuff to safe for the scrubbing
-np.savez(ff,resting_vol=resting_vol,volBrain_vol=volBrain_vol, \
-regressors=regressors,resid=resid,nR=nR)
+if dvars_despike == 'true':
+    np.savez(ff,resid_despike=resid)
+else:
+    np.savez(ff,resid=resid)
+# # JENYA: added more stuff to safe for the scrubbing
+# np.savez(ff,resting_vol=resting_vol,volBrain_vol=volBrain_vol, \
+# regressors=regressors,resid=resid,nR=nR)
 
 print("Saved bandpass filtered residuals")
 

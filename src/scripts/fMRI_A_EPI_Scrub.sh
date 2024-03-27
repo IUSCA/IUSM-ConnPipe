@@ -29,13 +29,16 @@ if ! $configs_EPI_despike; then
      log --no-datetime "Applying scrubbing on Regression output ${fileIn}"
 
      checkisfile ${fileIn}    
+
      fileOut="${NuisancePhysReg_out}/NuisanceRegression_${nR}_scrubbed.npz"
      log "Output file will be named ${fileOut}"
      
      cmd="python ${EXEDIR}/src/func/scrub_vols.py \
-          ${NuisancePhysReg_out}"
+          ${fileIn} ${fileOut}"
      log $cmd
      eval $cmd
 else
-     log "Scubbing is bypassed because configs_EPI_despike=true"
+     log "WARNING: Scubbing cannot be performed on despiked data! \
+          To generated scrubbed data, set configs_EPI_despike=false \
+          and rerun the pipeline starting at the regression step, ApplyReg"
 fi

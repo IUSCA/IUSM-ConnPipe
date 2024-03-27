@@ -13,24 +13,34 @@ fqc=open(QCfile_name, "a+")
 logfile_name = ''.join([os.environ['logfile_name'],'.log'])
 flog=open(logfile_name, "a+")
 
-NuisancePhysReg_out = sys.argv[1]
+flog.write("\n *** python ROI_TS **** ")
+
+NuisancePhysReg_out = os.environ['NuisancePhysReg_out']
 flog.write("\n NuisancePhysReg_out "+ NuisancePhysReg_out)
 
-flog.write("\n *** python ROI_TS **** ")
 numParcs = int(os.environ['numParcs'])
 flog.write("\n numParcs "+ str(numParcs))
+
 EPIpath=os.environ['EPIrun_out']
 flog.write("\n EPIpath "+ EPIpath)
 
 post_nR=os.environ['post_nR']
 flog.write("\n post_nR "+ post_nR)
 
+dvars_despike=os.environ['configs_EPI_despike']
+flog.write("\n dvars_despike "+ dvars_despike)
+
 # load appropriate residuals
-fname_post = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',post_nR,'.npz'])
-print("Loading post-regression residuals from ",fname_post)
-flog.write("\n Loading post-regression residuals "+fname_post)
-data_postreg = np.load(fname_post) 
-resid = data_postreg['resid'] 
+fileIn=sys.argv[1]
+print("fileIn ",fileIn)
+# fname_post = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',post_nR,'.npz'])
+print("Loading post-regression residuals from ",fileIn)
+flog.write("\n Loading post-regression residuals "+fileIn)
+data = np.load(fileIn) 
+if dvars_despike == 'true':
+    resid=data['resid_despike']
+else:
+    resid=data['resid']
 
 ### read nifti data
  # find the correct WM mask
@@ -48,102 +58,97 @@ fname = ''.join([EPIpath,'/rT1_brain_mask_FC.nii.gz'])
 volBrain_vol = np.asanyarray(nib.load(fname).dataobj)
 volBrain_mask = (volBrain_vol != 0).astype(int)
 
-for pc in range(0,len(resid)):
+mtype = "/TimeSeries_%s" % post_nR
 
-    if len(resid)==1:
-        mtype = "/TimeSeries_%s" % post_nR
-    else:
-        mtype = "/TimeSeries_%s%d" % (post_nR,pc)
+path_EPI_Mats = ''.join([NuisancePhysReg_out,mtype])
+CHECK_FOLDER = os.path.isdir(path_EPI_Mats)
 
-    path_EPI_Mats = ''.join([NuisancePhysReg_out,mtype])
-    CHECK_FOLDER = os.path.isdir(path_EPI_Mats)
+# If folder doesn't exist, then create it.
+if not CHECK_FOLDER:
+    os.makedirs(path_EPI_Mats)
+    print("created folder : ", path_EPI_Mats)
+else:
+    print(path_EPI_Mats, "folder already exists.")
 
-    # If folder doesn't exist, then create it.
-    if not CHECK_FOLDER:
-        os.makedirs(path_EPI_Mats)
-        print("created folder : ", path_EPI_Mats)
-    else:
-        print(path_EPI_Mats, "folder already exists.")
-
-    [sizeX,sizeY,sizeZ,numTimePoints] = resid[pc].shape
-    print("resid shape is ",sizeX,sizeY,sizeZ,numTimePoints)
+[sizeX,sizeY,sizeZ,numTimePoints] = resid.shape
+print("resid shape is ",sizeX,sizeY,sizeZ,numTimePoints)
 
 
-    print(numParcs)
+print(numParcs)
 
 
-    for k in range(1,numParcs+1):
-        parc_label=os.environ["PARC%d" % k]
-        parc_nodal=os.environ["PARC%dpnodal" % k]
-        parc_subcortonly=os.environ["PARC%dpsubcortonly" % k]
-        parc_crblmonly=os.environ["PARC%dpcrblmonly" % k]
+for k in range(1,numParcs+1):
+    parc_label=os.environ["PARC%d" % k]
+    parc_nodal=os.environ["PARC%dpnodal" % k]
+    parc_subcortonly=os.environ["PARC%dpsubcortonly" % k]
+    parc_crblmonly=os.environ["PARC%dpcrblmonly" % k]
 
-        if parc_nodal == "1":
-            print(" Processing nodes for %s parcellation" % parc_label)
-            flog.write("\n Processing nodes for %s parcellation"+ parc_label)
+    if parc_nodal == "1":
+        print(" Processing nodes for %s parcellation" % parc_label)
+        flog.write("\n Processing nodes for %s parcellation"+ parc_label)
 
-            if parc_crblmonly == "1":
-                parcGM_file = ''.join([EPIpath,'/rT1_parc_',parc_label,'_clean.nii.gz'])
-            else:
-                parcGM_file = ''.join([EPIpath,'/rT1_GM_parc_',parc_label,'_clean.nii.gz'])
-
-            parcGM = np.asanyarray(nib.load(parcGM_file).dataobj)
-            parcGM = parcGM * volWM_mask * volCSF_mask * volBrain_mask
-
-            numROIs = int(np.amax(parcGM))
-            print(" number of ROIs - ",numROIs)
-            fqc.write("\n number of ROIs - " + str(numROIs))
-            ROIs_numVoxels = np.empty((numROIs,1))
-        
-            restingROIs = np.empty((numROIs,numTimePoints))
-            restingROIs[:] = np.NaN
-            ROIs_numNans = np.empty((numROIs,numTimePoints))
-            ROIs_numNans[:] = np.NaN
-
-            tic = time.perf_counter()
-            for roi in range(0,numROIs): 
-                voxelsROI = (parcGM == (roi+1))
-                ROIs_numVoxels[roi] = np.count_nonzero(voxelsROI)
-
-                print("ROI %d  - %d voxels" % (roi+1, ROIs_numVoxels[roi]))
-                flog.write("\n ROI " + str(roi+1) + " - "+ str(ROIs_numVoxels[roi]) + " voxels")
-
-                if ROIs_numVoxels[roi] > 0:
-                    
-                    for tp in range(0,numTimePoints):
-
-                        vol_tp = resid[pc][:,:,:,tp]
-                        vx = vol_tp[voxelsROI]
-                        restingROIs[roi,tp] = np.nanmean(vx)
-                        
-                        if np.isnan(restingROIs[roi,tp]):
-                            fqc.write("\n WARNING ROI "+str(roi)+" T "+str(tp)+ " is NAN")
-                        ROIs_numNans[roi,tp] = np.isnan(vx).sum()
-                else:
-                    fqc.write("\n WARNING ROI "+str(roi)+ " has zero voxels")
-                    
-            toc = time.perf_counter()
-            print(toc-tic)
-
-
-            fileOut = "/8_epi_%s_ROIs.npz" % parc_label
-            fileOut = ''.join([path_EPI_Mats,fileOut])
-
-            ## ROIs_numVOxels is the number of voxels belonging to each node in a partition
-            ## restingROIs is the average timeseries of each region
-            np.savez(fileOut,restingROIs=restingROIs,ROIs_numVoxels=ROIs_numVoxels,ROIs_numNans=ROIs_numNans)
-            print("Saved ROI resting data to: ",fileOut)
-            flog.write("\n Saved ROI resting data to: "+fileOut)
-
-            fileOut = "/8_epi_%s_ROIs.mat" % parc_label
-            fileOut = ''.join([path_EPI_Mats,fileOut])
-            print("savign MATLAB file ", fileOut)
-            mdic = {"restingROIs":restingROIs,"ROIs_numVoxels":ROIs_numVoxels,"ROIs_numNans":ROIs_numNans}
-            savemat(fileOut, mdic)
-
+        if parc_crblmonly == "1":
+            parcGM_file = ''.join([EPIpath,'/rT1_parc_',parc_label,'_clean.nii.gz'])
         else:
-            print(" Skipping %s parcellation - Not a nodal parcellation" % parc_label)
-            flog.write("\n Skipping "+parc_label+" - Not a nodal parcellation")
+            parcGM_file = ''.join([EPIpath,'/rT1_GM_parc_',parc_label,'_clean.nii.gz'])
+
+        parcGM = np.asanyarray(nib.load(parcGM_file).dataobj)
+        parcGM = parcGM * volWM_mask * volCSF_mask * volBrain_mask
+
+        numROIs = int(np.amax(parcGM))
+        print(" number of ROIs - ",numROIs)
+        fqc.write("\n number of ROIs - " + str(numROIs))
+        ROIs_numVoxels = np.empty((numROIs,1))
+    
+        restingROIs = np.empty((numROIs,numTimePoints))
+        restingROIs[:] = np.NaN
+        ROIs_numNans = np.empty((numROIs,numTimePoints))
+        ROIs_numNans[:] = np.NaN
+
+        tic = time.perf_counter()
+        for roi in range(0,numROIs): 
+            voxelsROI = (parcGM == (roi+1))
+            ROIs_numVoxels[roi] = np.count_nonzero(voxelsROI)
+
+            print("ROI %d  - %d voxels" % (roi+1, ROIs_numVoxels[roi]))
+            flog.write("\n ROI " + str(roi+1) + " - "+ str(ROIs_numVoxels[roi]) + " voxels")
+
+            if ROIs_numVoxels[roi] > 0:
+                
+                for tp in range(0,numTimePoints):
+
+                    vol_tp = resid[:,:,:,tp]
+                    vx = vol_tp[voxelsROI]
+                    restingROIs[roi,tp] = np.nanmean(vx)
+                    
+                    if np.isnan(restingROIs[roi,tp]):
+                        fqc.write("\n WARNING ROI "+str(roi)+" T "+str(tp)+ " is NAN")
+                    ROIs_numNans[roi,tp] = np.isnan(vx).sum()
+            else:
+                fqc.write("\n WARNING ROI "+str(roi)+ " has zero voxels")
+                
+        toc = time.perf_counter()
+        print(toc-tic)
+
+
+        fileOut = "/8_epi_%s_ROIs.npz" % parc_label
+        fileOut = ''.join([path_EPI_Mats,fileOut])
+
+        ## ROIs_numVOxels is the number of voxels belonging to each node in a partition
+        ## restingROIs is the average timeseries of each region
+        np.savez(fileOut,restingROIs=restingROIs,ROIs_numVoxels=ROIs_numVoxels,ROIs_numNans=ROIs_numNans)
+        print("Saved ROI resting data to: ",fileOut)
+        flog.write("\n Saved ROI resting data to: "+fileOut)
+
+        fileOut = "/8_epi_%s_ROIs.mat" % parc_label
+        fileOut = ''.join([path_EPI_Mats,fileOut])
+        print("savign MATLAB file ", fileOut)
+        mdic = {"restingROIs":restingROIs,"ROIs_numVoxels":ROIs_numVoxels,"ROIs_numNans":ROIs_numNans}
+        savemat(fileOut, mdic)
+
+    else:
+        print(" Skipping %s parcellation - Not a nodal parcellation" % parc_label)
+        flog.write("\n Skipping "+parc_label+" - Not a nodal parcellation")
 
 fqc.close()
 flog.close()

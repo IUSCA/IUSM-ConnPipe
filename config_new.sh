@@ -332,11 +332,11 @@ if $fMRI_A; then
 	#================================ FREQUENCY FILTERING =================================# 
 	export flags_EPI_FreqFilt=false  # compute Frequency filtering
 
-		export configs_FreqFilt="BPF"   # Options are:
+		export configs_FreqFilt="BPF"   # Options are one of the following:
 		#										DCT - Discrete Cosine Transfrom for a high-pass filter 
 	    # 										BPF - Bandpass Butterworth Filter 
 
-		# Perform highpass filtering within regression using Discrete Cosine Transforms.
+				# DCT: Perform highpass filtering within regression using Discrete Cosine Transforms.
 				if [[ ${configs_FreqFilt} == "DCT" ]]; then 
 					export configs_EPI_dctfMin=0.009  # Specify level of high-pass filtering in Hz, 
 												# i.e. the lowest frequency signals that will be retained 
@@ -344,11 +344,10 @@ if $fMRI_A; then
 												# k = fMin * 2 * TR * numTimePoints 
 				fi
 
-				# Demeans and detrends the data.
-				# Performs Butterworth filtering on residuals (i.e. after regression step, below). 
-				# Post regression filtering can potentially 
-				# reintroduce artifacts to the signal - see Lindquist et al. 2019 Hum Brain Mapp 
-				## WARNING BandPass cannot be applied if DCTs were included in regression.
+				# Demeans and detrends the data. Performs Butterworth filtering on residuals
+				## NOTE that BPF will be applied to residuals AFTER the regression step (ApplyReg).
+				# Post regression filtering can potentially reintroduce artifacts to the signal 
+				#  		=> see Lindquist et al. 2019 Hum Brain Mapp 
 				if [[ ${configs_FreqFilt} == "BPF" ]]; then   
 					export configs_EPI_fMin=0.009
 					export configs_EPI_fMax=0.08
@@ -357,16 +356,23 @@ if $fMRI_A; then
     #==================================== APPLY REGRESSION ===================================#
 	## Apply regression using all previously specified regressors
 	export flags_EPI_ApplyReg=false
-		# Despike and Scrub are mutually exculise!!! IF both are set to true, scrubbing will only be done on NONdespiked data with despike=false.
-		export configs_EPI_despike=true # dual-approach regression (Mejia 2023) based on statistical DVARS selection (Afyouni & Nichols 2018)
+		
+		export configs_EPI_despike=false # Dual-approach regression (Mejia 2023) 
+										# based on statistical DVARS selection (Afyouni & Nichols 2018)
+										# WARNING: Despike and Scrub are mutually exculise!!! 
+										# IF both are set to true, scrubbing will be skipped.
 									   
 	#=============================== POST REGRESSION SCRUBBING =================================# 
-	
-	export flags_EPI_scrub=false # delaults to statisitical DVARS; if not done then scrubbing is based on FSL's FD & DVARS 		
+	## Run one of the scrubbing methods
+	export flags_EPI_scrub=true 
+		export configs_scrub="stat_DVARS"   # User can select scrubbing based on:
+											#    stat_DVARS: statisitical DVARS (Afyouni & Nichols 2018)
+											#    fsl_fd_dvars: FSL's FD & DVARS 	
+											#	 no_scrub: data will not be scrubbed	
 
 	#================ COMPUTE ROI TIME-SERIES FOR EACH NODAL PARCELLATION ===================#
 	# Make sure the parcellation relevant multi-seciton flags at the top are set as desired. 
-	export flags_EPI_ROIs=false
+	export flags_EPI_ROIs=true
 
 #=================================================================================================#
 #=================================================================================================#
