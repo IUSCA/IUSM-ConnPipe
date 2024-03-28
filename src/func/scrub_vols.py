@@ -41,13 +41,13 @@ print("resid.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 # load DVARS / FD
 # if 'DVARS_Inference_Hprac' in data:
 if configs_scrub == "stat_DVARS":
-    flog.write("\n *** Scrubbing with Statisitical DVARS **** ")
+    flog.write("\n *** Scrubbing with Statisitical DVARS **** \n\n")
     dvars=data['DVARS_Inference_Hprac']
     print("DVARS: ",dvars)
     goodvols = np.ones(numTimePoints, dtype=int)
     goodvols[dvars]=0
 elif configs_scrub == "fsl_fd_dvars":
-    flog.write("\n *** Scrubbing with FSL's dvars and fd *** ")
+    flog.write("\n *** Scrubbing with FSL's dvars and fd *** \n\n")
     fname=''.join([EPIpath,'/scrubbing_goodvols.npz'])  
     goodvols = np.load(fname) 
     goodvols = goodvols['good_vols'] 

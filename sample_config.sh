@@ -330,9 +330,9 @@ if $fMRI_A; then
 										#           4 - regress mean signal+deriv+sq
 
 	#================================ FREQUENCY FILTERING =================================# 
-	export flags_EPI_FreqFilt=false  # compute Frequency filtering
+	export flags_EPI_FreqFilt=true  # compute Frequency filtering
 
-		export configs_FreqFilt="DCT"   # Options are one of the following:
+		export configs_FreqFilt="BPF"   # Options are one of the following:
 		#										DCT - Discrete Cosine Transfrom for a high-pass filter 
 	    # 										BPF - Bandpass Butterworth Filter 
 
@@ -361,14 +361,23 @@ if $fMRI_A; then
 										# based on statistical DVARS selection (Afyouni & Nichols 2018)
 										# WARNING: Despike and Scrub are mutually exculise!!! 
 										# IF both are set to true, scrubbing will be skipped.
-									   
+
+	#### We've designed the pipeline so that various configurations can be tested without needing to rerun everything.
+	#### If user wants to test both approaches, despiking and scrubbing, run the regression first (flags_EPI_ApplyReg=true)  
+	#		with configs_EPI_despike=true and configs_scrub="no_scrub". Then, to generate scrubbed (non-despiked) data
+	#		simply set flags_EPI_FreqFilt=false, flags_EPI_ApplyReg=false (i.e no need to repeat regression and filtering),
+	#		configs_EPI_despike=false (no despiking) and set flags_EPI_scrub=true and configs_scrub="stat_DVARS"/"fsl_fd_dvars"								   
 	#=============================== POST REGRESSION SCRUBBING =================================# 
 	## Run one of the scrubbing methods
 	export flags_EPI_scrub=true 
 		export configs_scrub="stat_DVARS"   # User can select scrubbing based on:
 											#    stat_DVARS: statisitical DVARS (Afyouni & Nichols 2018)
 											#    fsl_fd_dvars: FSL's FD & DVARS 	
-											#	 no_scrub: data will not be scrubbed	
+											#	 no_scrub: data will not be scrubbed. 	
+	# WARNING: Scrubbing and Despiking are mutually exclusive. If configs_EPI_despike=true, then scrubbing will not be applied. 
+	#		   The flag flags_EPI_scrub indicates whether or not to run the scrubbing step. The value of the config variable
+	#		   configs_scrub is always used by the ROIs step (below) to find the approprate time-series file, even when
+	#		   flags_EPI_scrub=false. Therefore, configs_scrub must be set to "no_scrub" if user does not want scrubbed data. 
 
 	#================ COMPUTE ROI TIME-SERIES FOR EACH NODAL PARCELLATION ===================#
 	# Make sure the parcellation relevant multi-seciton flags at the top are set as desired. 
