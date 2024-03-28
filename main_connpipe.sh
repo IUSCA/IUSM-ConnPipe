@@ -1,8 +1,8 @@
 #!/bin/bash
 
-module load fsl/6.0.5.1
-module load ants/2.3.1
-
+#module load python/3.11.4
+module load fsl/6.0.5.2
+module load ants/2.3.5
 
 # Checking input arguments:
 if (($# != 2)); then
@@ -403,7 +403,6 @@ for ((i = 0; i < nsubj; i++)); do
 
     ######################################################################################
     log "# ############################ DWI_B ############################################"
-
 
         if $DWI_B; then
 
