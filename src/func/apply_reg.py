@@ -357,8 +357,7 @@ if dvars_despike == 'true':
 
     else:
         rr_despike = rr   
-        print("WARNING: There are no volumes to despike!") 
-        print("file 7_epi_",nRc,"_despiked.nii.gz will be a copy of ","7_epi_",nRc)
+        print("WARNING: No volumes were despiked!") 
 
     fileOut = "/7_epi_%s_despiked.nii.gz" % nRc 
     matlabfilename = ''.join([NuisancePhysReg_out,'/volumes2scrub_',nRc,'_despiked.mat'])

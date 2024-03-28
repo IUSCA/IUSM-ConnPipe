@@ -116,11 +116,11 @@ for ra in resid_array:
 
     if dvars_despike == 'true' and ra == "resid_despike":
         fileNii = "/8_epi_%s_despiked.nii.gz" % nR 
-        print("Saving despiked demeaned and detrended data as"+fileNii)
+        print("Saving despiked demeaned and detrended data as "+fileNii)
         resid_despike = resid
     else:
         fileNii = "/8_epi_%s.nii.gz" % nR 
-        print("Saving demeaned and detrended data as"+fileNii)
+        print("Saving demeaned and detrended data as "+fileNii)
         resid_nd = resid
         
 
@@ -134,10 +134,14 @@ for ra in resid_array:
 
 ## save data 
 ff = ''.join([fileOut,'.npz'])
+# save DVARS in case user wants to scrub bandpassed data
+DVARS_Inference_Hprac=data['DVARS_Inference_Hprac']
 if dvars_despike == 'true':
-    np.savez(ff,resid=resid_nd,resid_despike=resid_despike)
+    np.savez(ff,resid=resid_nd,resid_despike=resid_despike, \
+        DVARS_Inference_Hprac=DVARS_Inference_Hprac)
 else:
-    np.savez(ff,resid=resid_nd)
+    np.savez(ff,resid=resid_nd, \
+        DVARS_Inference_Hprac=DVARS_Inference_Hprac)
 
 
 print("Saved bandpass filtered residuals")
