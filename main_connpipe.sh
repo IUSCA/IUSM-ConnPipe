@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #module load python/3.11.4
-module load fsl/6.0.5.2
-module load ants/2.3.5
+module load fsl/6.0.5.1
+module load ants/2.3.1
 
 # Checking input arguments:
 if (($# != 2)); then
@@ -24,6 +24,16 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 source $config
 
 # Exporting path/file dependencies.
+#===========================================================================
+# If FSL is not in the path, exit now
+if [[ -n "${FSLDIR}" ]]; then
+    echo "FSLDIR is ${FSLDIR}"
+else
+    echo "### $dateTime - FSLDIR is not set. Exiting...." >> ${ERRfile_name}.log
+    echo "FSLDIR is not set. Exiting...."
+    exit 1
+fi
+
 #============================================================================
 export pathMNItmplates="${pathSM}/MNI_templates"
 export pathBrainmaskTemplates="${pathSM}/brainmask_templates"
@@ -76,7 +86,7 @@ if ${fMRI_A}; then
  # Checking that ony one UNWARP option is selected.
  #============================================================================
     if ${flags_EPI_SpinEchoUnwarp} && ${flags_EPI_GREFMUnwarp}; then
-        log "ERROR --	Please select one option only: Spin Echo Unwarp or Gradient Echo Unwarp. Exiting... "
+        echo "ERROR --	Please select one option only: Spin Echo Unwarp or Gradient Echo Unwarp. Exiting... "
         exit 1
     fi
 
@@ -88,7 +98,7 @@ if ${fMRI_A}; then
         nR="hmp${configs_EPI_numHMP}"   # set filename postfix for output image
         
         if [[ "${configs_EPI_numHMP}" -ne 12 && "${configs_EPI_numHMP}" -ne 24 ]]; then
-            log "ERROR The variable config_EPI_numReg must have values '12' or '24'. \
+            echo "ERROR The variable config_EPI_numReg must have values '12' or '24'. \
                 Please set the corect value in the config.sh file"
                 exit 1
         fi	
@@ -122,13 +132,13 @@ if ${fMRI_A}; then
         export configs_EPI_resting_file='/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'
         
         if [[ "${configs_EPI_numHMP}" -ne 12 && "${configs_EPI_numHMP}" -ne 24 ]]; then
-            log "ERROR The variable config_EPI_numReg must have values '12' or '24'. \
+            echo "ERROR The variable config_EPI_numReg must have values '12' or '24'. \
                 Please set the corect value in the config.sh file"
                 exit 1
         fi	
 
     else
-        log "ERROR - flag_NuisanceReg must be either AROMA or HMPreg or AROMA_HMP"
+        echo "ERROR - flag_NuisanceReg must be either AROMA or HMPreg or AROMA_HMP"
         exit 1
     fi
 
@@ -149,7 +159,7 @@ if ${fMRI_A}; then
         if [[ "${configs_EPI_numPhys}" -ne 2 \
             && "${configs_EPI_numPhys}" -ne 4 \
             && "${configs_EPI_numPhys}" -ne 8 ]]; then
-                log "ERROR the variable configs_EPI_numPhys must have values '2', '4' or '8'. \
+                echo "ERROR the variable configs_EPI_numPhys must have values '2', '4' or '8'. \
                     Please set the corect value in the config.sh file"
                 exit 1
         fi	
@@ -200,10 +210,8 @@ while IFS=" " read -r col1 col2; do
 done < "${subj2run}"
 
 
-# IFS=$'\r\n' GLOBIGNORE='*' command eval 'SUBJECTS=($(cat ${subj2run}))'
-log --no-datetime "subjects: ${SUBJECTS[@]}"
-log --no-datetime "sessions: ${SESSIONS[@]}"
-
+echo "### $dateTime - subjects: ${SUBJECTS[@]}" >> ${ERRfile_name}.log
+echo "### $dateTime - subjects: ${SESSIONS[@]}" >> ${ERRfile_name}.log
 
 echo "##################"
 
@@ -213,14 +221,11 @@ nsubj=${#SUBJECTS[@]}
 
 # Loop through both arrays with a counter
 for ((i = 0; i < nsubj; i++)); do
-    log "Processing ${SUBJECTS[i]}_${SESSIONS[i]}"
 
     start=`date +%s`
 
     export SUBJ=${SUBJECTS[i]}  #${SUBJdir}
-    log "Subject ${SUBJ}"
     export SESS=${SESSIONS[i]}  #${SUBJdir}
-    log "Session ${SESS}"
 
     # create sub-ses directory so that log files can be written
     export path2ses="${path2derivs}/${SUBJ}/${SESS}"
@@ -233,6 +238,8 @@ for ((i = 0; i < nsubj; i++)); do
     export logfile_name="${path2ses}/out_${today}"
     export QCfile_name="${path2ses}/qc"
     export ERRfile_name="${path2derivs}/error_report"
+
+    log "Processing ${SUBJ}_${SESS}"
 
 
     log "############################ T1_PREPARE_A #####################################"

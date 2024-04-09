@@ -26,16 +26,12 @@ export path2derivs="/N/project/connpipe/Data/derivatives"
 # "ses-"" is the BIDS standard tag 
 # export configs_session="ses-test"  
 
-################################################################################
-#####################  SET UP DIRECTORY STRUCTURE  #############################
+# ################# RESIDUAL CODE FROM GMEFM UNWARP. NEEDS TO BE UPDATED ###################
+# export configs_grefmFolder="GREFM"  # Reserved for Gradient Field Mapping series
+# 	export configs_GREmagdcm="MAG_DICOMS" # Gradient echo FM magnitude series
+# 	export configs_GREphasedcm="PHASE_DICOMS" # Gradient echo FM phase map series
+############################################################################################
 
-export configs_dcmFiles="dcm" # dicoms extension if there is reliance on source data.
-
-export configs_grefmFolder="GREFM"  # Reserved for Gradient Field Mapping series
-	export configs_GREmagdcm="MAG_DICOMS" # Gradient echo FM magnitude series
-	export configs_GREphasedcm="PHASE_DICOMS" # Gradient echo FM phase map series
-
-################################################################################
 ################################ PARCELLATIONS #################################
 
 # required
@@ -272,7 +268,7 @@ if $fMRI_A; then
 	# If running them in pieces, make sure that the subflags under each section are set to the options,
 	# which have already been ran and for which you want the time series extracted.
 	#================================== MOTION AND OUTLIER CORRECTION ================================#
-	export flags_EPI_NuisanceReg=false
+	export flags_EPI_NuisanceReg=true
 	## Nuisance Regressors. There are three options that user can select from to set the configs_NuisanceReg variable:
 	# 1) configs_NuisanceReg="AROMA": ICA-based denoising; WARNING: This will smooth your data.
 	# 2) configs_NuisanceReg="HMPreg": Head Motion Parameter Regression.  
@@ -288,7 +284,7 @@ if $fMRI_A; then
 				export config_AROMA_dim=
 
 				# If AROMA has already been run, save computation time by skipping this step. 
-				export run_AROMA=false
+				export run_AROMA=true
 			fi
 
 			# if using Head Motion Parameters or ICA-AROMA followed by HMP
@@ -300,7 +296,7 @@ if $fMRI_A; then
 			fi
 
 	#================================ PHYSIOLOGICAL REGRESSORS =================================#
-	export flags_EPI_PhysiolReg=false
+	export flags_EPI_PhysiolReg=true
 	# Two options that the user can select from:
 	# 1) configs_PhysiolReg="aCompCorr" - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
 	# 2) configs_PhysiolReg=meanPhysReg - mean WM and CSF signal regression
@@ -320,9 +316,9 @@ if $fMRI_A; then
 			fi
 	
 	#================================ GLOBAL SIGNAL REGRESSION =================================#
-	export flags_EPI_GS=false # compute global signal regressors 
+	export flags_EPI_GS=true # compute global signal regressors 
 			
-		export configs_EPI_numGS=4 # define number of global signal regressors
+		export configs_EPI_numGS=0 # define number of global signal regressors
 										# Options are  
 										#			0 - No global signal regression.
 										#           1 - regress mean signal; 
@@ -332,7 +328,7 @@ if $fMRI_A; then
 	#================================ FREQUENCY FILTERING =================================# 
 	export flags_EPI_FreqFilt=true  # compute Frequency filtering
 
-		export configs_FreqFilt="BPF"   # Options are one of the following:
+		export configs_FreqFilt="DCT"   # Options are one of the following:
 		#										DCT - Discrete Cosine Transfrom for a high-pass filter 
 	    # 										BPF - Bandpass Butterworth Filter 
 
@@ -355,9 +351,9 @@ if $fMRI_A; then
 
     #==================================== APPLY REGRESSION ===================================#
 	## Apply regression using all previously specified regressors
-	export flags_EPI_ApplyReg=false
+	export flags_EPI_ApplyReg=true
 		
-		export configs_EPI_despike=false # Dual-approach regression (Mejia 2023) 
+		export configs_EPI_despike=true # Dual-approach regression (Mejia 2023) 
 										# based on statistical DVARS selection (Afyouni & Nichols 2018)
 										# WARNING: Despike and Scrub are mutually exculise!!! 
 										# IF both are set to true, scrubbing will be skipped.
@@ -379,7 +375,8 @@ if $fMRI_A; then
 	#		   configs_scrub is always used by the ROIs step (below) to find the approprate time-series file, even when
 	#		   flags_EPI_scrub=false. Therefore, configs_scrub must be set to "no_scrub" if user does not want scrubbed data. 
 
-	#================ COMPUTE ROI TIME-SERIES FOR EACH NODAL PARCELLATION ===================#
+
+	#================ COMPUTE ROI TIME-SERIES FOR EACH NODAL PARCELLATION ======================#
 	# Make sure the parcellation relevant multi-seciton flags at the top are set as desired. 
 	export flags_EPI_ROIs=true
 
