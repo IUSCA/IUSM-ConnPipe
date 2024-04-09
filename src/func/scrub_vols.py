@@ -61,9 +61,9 @@ print("shape resid after scrubbing ", resid.shape)
 # for pc in range(0,len(resid)):
 
     # if len(resid)==1:
-fileNii = "/8_epi_%s_scrubbed.nii.gz" % nR 
+fileNii = "/6_epi_%s_scrubbed.nii.gz" % nR 
     # else:
-    #     fileNii = "/8_epi_%s%d_scrubbed.nii.gz" % (nR,pc)
+    #     fileNii = "/6_epi_%s%d_scrubbed.nii.gz" % (nR,pc)
 
 fileNii = ''.join([NuisancePhysReg_out,fileNii])
 print("Nifti file to be saved is: ",fileNii)

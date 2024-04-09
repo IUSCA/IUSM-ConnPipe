@@ -115,11 +115,11 @@ for ra in resid_array:
         resid[GSmask[0],GSmask[1],GSmask[2],ind] = tsf[ind,:]
 
     if dvars_despike == 'true' and ra == "resid_despike":
-        fileNii = "/8_epi_%s_despiked.nii.gz" % nR 
+        fileNii = "/6_epi_%s_despiked.nii.gz" % nR 
         print("Saving despiked demeaned and detrended data as "+fileNii)
         resid_despike = resid
     else:
-        fileNii = "/8_epi_%s.nii.gz" % nR 
+        fileNii = "/6_epi_%s.nii.gz" % nR 
         print("Saving demeaned and detrended data as "+fileNii)
         resid_nd = resid
         

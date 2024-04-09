@@ -2,7 +2,11 @@
 
 #module load python/3.11.4
 module load fsl/6.0.5.1
-module load ants/2.3.1
+module load ants/2.3.1  #module load ants/2.3.5
+module load mrtrix/3.0.4  #mrtrix3/3.0.4
+
+python --version
+which python
 
 # Checking input arguments:
 if (($# != 2)); then
@@ -58,30 +62,33 @@ elif [[ "${configs_T1_denoised}" == "NONE" ]]; then  # do not perform denoising
 	export configs_fslanat="anat"
 fi
 
-# Defining scanner specific header tags for [func] f_MRI_A.
+# Defining scanner specific header tags f_MRI_A and DWI_A.
+#============================================================================
+if [[ ${scanner} == "SIEMENS" ]]; then
+    export scanner_param_TR="RepetitionTime"  # "RepetitionTime" for Siemens; "tr" for GE
+    export scanner_param_TE="EchoTime"  # "EchoTime" for Siemens; "te" for GE
+    export scanner_param_FlipAngle="FlipAngle"  # "FlipAngle" for Siemens; "flip_angle" for GE
+    export scanner_param_EffectiveEchoSpacing="EffectiveEchoSpacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
+    export scanner_param_BandwidthPerPixelPhaseEncode="BandwidthPerPixelPhaseEncode"  # "BandwidthPerPixelPhaseEncode" for Siemens; unknown for GE
+    export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
+    export scanner_param_TotalReadoutTime="TotalReadoutTime"
+    export scammer_param_AcquisitionMatrix="AcquisitionMatrixPE"
+    export scanner_param_PhaseEncodingDirection="PhaseEncodingDirection"
+elif [[ ${scanner} == "GE" ]]; then
+    export scanner_param_TR="tr"  # "RepetitionTime" for Siemens; "tr" for GE
+    export scanner_param_TE="te"  # "EchoTime" for Siemens; "te" for GE
+    export scanner_param_FlipAngle="flip_angle"  # "FlipAngle" for Siemens; "flip_angle" for GE
+    export scanner_param_EffectiveEchoSpacing="effective_echo_spacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
+    export scanner_param_BandwidthPerPixelPhaseEncode="pixel_bandwidth"  # "BandwidthPerPixelPhaseEncode" for Siemens; unknown for GE
+    export scanner_param_slice_fractimes="slice_timing"  # "SliceTiming" for Siemens; "slice_timing" for GE
+    export scanner_param_TotalReadoutTime="TotalReadoutTime"
+    export scammer_param_AcquisitionMatrix="acquisition_matrix"
+    export scanner_param_PhaseEncodingDirection="phase_encode_direction"
+fi
+
+# f_MRI_A settings
 #============================================================================
 if ${fMRI_A}; then
-    if [[ ${scanner} == "SIEMENS" ]]; then
-        export scanner_param_TR="RepetitionTime"  # "RepetitionTime" for Siemens; "tr" for GE
-        export scanner_param_TE="EchoTime"  # "EchoTime" for Siemens; "te" for GE
-        export scanner_param_FlipAngle="FlipAngle"  # "FlipAngle" for Siemens; "flip_angle" for GE
-        export scanner_param_EffectiveEchoSpacing="EffectiveEchoSpacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
-        export scanner_param_BandwidthPerPixelPhaseEncode="BandwidthPerPixelPhaseEncode"  # "BandwidthPerPixelPhaseEncode" for Siemens; unknown for GE
-        export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
-        export scanner_param_TotalReadoutTime="TotalReadoutTime"
-        export scammer_param_AcquisitionMatrix="AcquisitionMatrixPE"
-        export scanner_param_PhaseEncodingDirection="PhaseEncodingDirection"
-    elif [[ ${scanner} == "GE" ]]; then
-        export scanner_param_TR="tr"  # "RepetitionTime" for Siemens; "tr" for GE
-        export scanner_param_TE="te"  # "EchoTime" for Siemens; "te" for GE
-        export scanner_param_FlipAngle="flip_angle"  # "FlipAngle" for Siemens; "flip_angle" for GE
-        export scanner_param_EffectiveEchoSpacing="effective_echo_spacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
-        export scanner_param_BandwidthPerPixelPhaseEncode="pixel_bandwidth"  # "BandwidthPerPixelPhaseEncode" for Siemens; unknown for GE
-        export scanner_param_slice_fractimes="slice_timing"  # "SliceTiming" for Siemens; "slice_timing" for GE
-        export scanner_param_TotalReadoutTime="TotalReadoutTime"
-        export scammer_param_AcquisitionMatrix="acquisition_matrix"
-        export scanner_param_PhaseEncodingDirection="phase_encode_direction"
-    fi
 
  # Checking that ony one UNWARP option is selected.
  #============================================================================
@@ -183,11 +190,11 @@ if ${fMRI_A}; then
 
 # DVARS-based time point scrubbing (Pham, ..., Mejia. NeuroImage 2023 and Afyouni $ Nichols, 2018)
 #============================================================================
-export configs_EPI_path2DVARS="${EXEDIR}/src/func/"
+    export configs_EPI_path2DVARS="${EXEDIR}/src/func/"
 
 # Export the name of the file with user-selected configurations   
 #============================================================================
-export nR 
+    export nR 
 
 fi
 
@@ -372,6 +379,10 @@ for ((i = 0; i < nsubj; i++)); do
         if $DWI_A; then
 
             export DWIpath_raw="${path2data}/${SUBJ}/${SESS}/dwi"
+            
+            echo "======= ${DWIpath_raw}"
+
+            log --no-datetime "USER SET SCANNER MANUFACTURER: ${scanner}"
 
             ## Path to derivatives
             export DWIpath="${path2ses}/dwi"

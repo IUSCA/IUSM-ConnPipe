@@ -14,9 +14,9 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ###############################################################################
 # Load IU Quartz supercomuter modules
-module load ants/2.3.5
-module load mrtrix3/3.0.4
-module load python/3.11.4
+# module load ants/2.3.5
+# module load mrtrix3/3.0.4
+# module load python/3.11.4
 
 # define the number of threads you want mrtrix to use
     # setting environmentally to avoid accidentally using all cores

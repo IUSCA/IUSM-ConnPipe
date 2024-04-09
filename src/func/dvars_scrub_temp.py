@@ -119,9 +119,9 @@ if dvars_scrub == 'true':
         from DSE import DSE_Calc, DVARS_Calc, CleanNIFTI
 
         if len(zRegressMat)==1:
-            fileOut = "/7_epi_%s.nii.gz" % nR 
+            fileOut = "/5_epi_%s.nii.gz" % nR 
         else:
-            fileOut = "/7_epi_%s%d.nii.gz" % (nR,pc)
+            fileOut = "/5_epi_%s%d.nii.gz" % (nR,pc)
 
         DVARSout = DVARS_Calc(fileOut,dd=1,WhichExpVal='median',WhichVar='hIQRd',scl=0.001, \
                         demean=True,DeltapDvarThr=5)
@@ -146,10 +146,10 @@ if dvars_scrub == 'true':
 
         # save nifti image
         if len(zRegressMat)==1:
-            fileOut = "/7_epi_%s_DVARS.nii.gz" % nR 
+            fileOut = "/5_epi_%s_DVARS.nii.gz" % nR 
             matlabfilename = ''.join([NuisancePhysReg_out,'/volumes2scrub_',nR,'_DVARS.mat'])
         else:
-            fileOut = "/7_epi_%s%d_DVARS.nii.gz" % (nR,pc)
+            fileOut = "/5_epi_%s%d_DVARS.nii.gz" % (nR,pc)
             matlabfilename = ''.join([NuisancePhysReg_out,'/volumes2scrub_',nR,pc,'_DVARS.mat'])
 
         fileOut = ''.join([NuisancePhysReg_out,fileOut])

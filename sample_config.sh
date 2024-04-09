@@ -187,7 +187,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export fMRI_A=true
+export fMRI_A=false
 
 if $fMRI_A; then
 
@@ -287,7 +287,7 @@ if $fMRI_A; then
 				export config_AROMA_dim=
 
 				# If AROMA has already been run, save computation time by skipping this step. 
-				export run_AROMA=true
+				export run_AROMA=false
 			fi
 
 			# if using Head Motion Parameters or ICA-AROMA followed by HMP
@@ -321,7 +321,7 @@ if $fMRI_A; then
 	#================================ GLOBAL SIGNAL REGRESSION =================================#
 	export flags_EPI_GS=true # compute global signal regressors 
 			
-		export configs_EPI_numGS=0 # define number of global signal regressors
+		export configs_EPI_numGS=4 # define number of global signal regressors
 										# Options are  
 										#			0 - No global signal regression.
 										#           1 - regress mean signal; 
@@ -369,8 +369,8 @@ if $fMRI_A; then
 
 	#=============================== POST REGRESSION SCRUBBING =================================# 
 	## Run one of the scrubbing methods
-	export flags_EPI_scrub=true 
-		export configs_scrub="stat_DVARS"   # User can select scrubbing based on:
+	export flags_EPI_scrub=false 
+		export configs_scrub="no_scrub"   # User can select scrubbing based on:
 											#    stat_DVARS: statisitical DVARS (Afyouni & Nichols 2018)
 											#    fsl_fd_dvars: FSL's FD & DVARS 	
 											#	 no_scrub: data will not be scrubbed. 	
@@ -386,11 +386,12 @@ if $fMRI_A; then
 
 #=================================================================================================#
 #=================================================================================================#
-
+		log $nR
+		log $post_nR
 	#=======################################ EXTRAS ###############################=========#
 	
 	export flags_EPI_ReHo=false  # COMPUTE ReHo	
-		export configs_ReHo_input="7_epi_hmp24_mPhys2_Gs2.nii.gz"
+		export configs_ReHo_input="5_epi_hmp24_mPhys2_Gs2.nii.gz"
 		export configs_ReHo_neigh="-neigh_RAD 3"  # Specify the neighborhood in voxels or in millimiters. Options are:
 										# " "  Leave string empty (e.g. "") for default, 27 voxels (face/edge/corner)
 										# "-nneigh 7"  face adjacent voxels
@@ -407,7 +408,7 @@ if $fMRI_A; then
 
 
 	export flags_EPI_ALFF=false  # COMPUTE ALFF/fALFFo	
-		export configs_ALFF_input="7_epi_hmp24_mPhys2.nii.gz"
+		export configs_ALFF_input="5_epi_hmp24_mPhys2.nii.gz"
 
 		export configs_ALFF_blur="-blur 6"  # Specify size of smoothing kernel. 
 												# Leave string empty (e.g. "") for no blurying
@@ -432,31 +433,31 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export DWI_A=false
+export DWI_A=true
 
 if $DWI_A; then
 
-	export scanner="SIEMENS" #  SIEMENS or GE
-	log "SCANNER ${scanner}"
+	# export scanner="SIEMENS" #  SIEMENS or GE
+	# log "SCANNER ${scanner}"
 
-	if [[ ${scanner} == "SIEMENS" ]]; then
-		export scanner_param_EffectiveEchoSpacing="EffectiveEchoSpacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
-		export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
-		export scanner_param_TotalReadoutTime="TotalReadoutTime"
-		export scammer_param_AcquisitionMatrix="AcquisitionMatrixPE"
-		export scanner_param_PhaseEncodingDirection="PhaseEncodingDirection"
-	elif [[ ${scanner} == "GE" ]]; then
-		export scanner_param_EffectiveEchoSpacing="effective_echo_spacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
-		export scanner_param_slice_fractimes="slice_timing"  # "SliceTiming" for Siemens; "slice_timing" for GE
-		export scanner_param_TotalReadoutTime="TotalReadoutTime"
-		export scammer_param_AcquisitionMatrix="acquisition_matrix"
-		export scanner_param_PhaseEncodingDirection="phase_encode_direction"
-	fi
+	# if [[ ${scanner} == "SIEMENS" ]]; then
+	# 	export scanner_param_EffectiveEchoSpacing="EffectiveEchoSpacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
+	# 	export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
+	# 	export scanner_param_TotalReadoutTime="TotalReadoutTime"
+	# 	export scammer_param_AcquisitionMatrix="AcquisitionMatrixPE"
+	# 	export scanner_param_PhaseEncodingDirection="PhaseEncodingDirection"
+	# elif [[ ${scanner} == "GE" ]]; then
+	# 	export scanner_param_EffectiveEchoSpacing="effective_echo_spacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
+	# 	export scanner_param_slice_fractimes="slice_timing"  # "SliceTiming" for Siemens; "slice_timing" for GE
+	# 	export scanner_param_TotalReadoutTime="TotalReadoutTime"
+	# 	export scammer_param_AcquisitionMatrix="acquisition_matrix"
+	# 	export scanner_param_PhaseEncodingDirection="phase_encode_direction"
+	# fi
 	
-	export flags_DWI_topup=false # FSL topup destortion field estimation
+	export flags_DWI_topup=true # FSL topup destortion field estimation
 		export configs_DWI_b0cut=1 # maximum B-value to be considered B0
-	export flags_DWI_eddy=false # FSL EDDY distortion correction
-		export flags_EDDY_prep=false # Generatates eddy input files
+	export flags_DWI_eddy=true # FSL EDDY distortion correction
+		export flags_EDDY_prep=true # Generatates eddy input files
 			export configs_DWI_EDDYf='0.17' # fsl bet threshold for b0 brain mask used by EDDY
 		export flags_EDDY_run=true # Runs EDDY openmp
 			export configs_DWI_repolON=true # use eddy_repol to interpolate missing/outlier data
