@@ -26,16 +26,12 @@ export path2derivs="/N/project/connpipe/Data/derivatives"
 # "ses-"" is the BIDS standard tag 
 # export configs_session="ses-test"  
 
-################################################################################
-#####################  SET UP DIRECTORY STRUCTURE  #############################
+# ################# RESIDUAL CODE FROM GMEFM UNWARP. NEEDS TO BE UPDATED ###################
+# export configs_grefmFolder="GREFM"  # Reserved for Gradient Field Mapping series
+# 	export configs_GREmagdcm="MAG_DICOMS" # Gradient echo FM magnitude series
+# 	export configs_GREphasedcm="PHASE_DICOMS" # Gradient echo FM phase map series
+############################################################################################
 
-export configs_dcmFiles="dcm" # dicoms extension if there is reliance on source data.
-
-export configs_grefmFolder="GREFM"  # Reserved for Gradient Field Mapping series
-	export configs_GREmagdcm="MAG_DICOMS" # Gradient echo FM magnitude series
-	export configs_GREphasedcm="PHASE_DICOMS" # Gradient echo FM phase map series
-
-################################################################################
 ################################ PARCELLATIONS #################################
 
 # required
@@ -191,7 +187,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export fMRI_A=true
+export fMRI_A=false
 
 if $fMRI_A; then
 
@@ -266,13 +262,16 @@ if $fMRI_A; then
 
 	#=================================================================================================#
 	#=================================================================================================#
-	# RECOMMENDED TO RUN [NuisanceReg, PhysiolReg, regressOthers, ApplyReg, postRegress, and ROIs] TOGETHER.
-	# There is interdependence among them and it will mitigate chance of error to run them together.
-
-	# If running them in pieces, make sure that the subflags under each section are set to the options,
-	# which have already been ran and for which you want the time series extracted.
+	### The following sectin has been designed to allow the user to test various processing configuraitons.
+	#   Each flag (e.g. flag_EPI_*) is a boolean variable that should be used to indicate whether a particular
+	#	section of the pipeline should be executed or not. 
+	#   NOTE that, regardless of whether a section is being executed or not (i.e. the flag is set to false), 
+	#   the configuration parameters within all sections are being used by the pipeline to read/write file 
+	#   the intermediary output files. 
+	#   For example: if flags_EPI_NuisanceReg=false, but user intends to generate time-series for data processed
+	#   with AROMA, then user must be sure to set configs_NuisanceReg="AROMA" (assuming AROMA has been ran before).
 	#================================== MOTION AND OUTLIER CORRECTION ================================#
-	export flags_EPI_NuisanceReg=false
+	export flags_EPI_NuisanceReg=true
 	## Nuisance Regressors. There are three options that user can select from to set the configs_NuisanceReg variable:
 	# 1) configs_NuisanceReg="AROMA": ICA-based denoising; WARNING: This will smooth your data.
 	# 2) configs_NuisanceReg="HMPreg": Head Motion Parameter Regression.  
@@ -300,7 +299,7 @@ if $fMRI_A; then
 			fi
 
 	#================================ PHYSIOLOGICAL REGRESSORS =================================#
-	export flags_EPI_PhysiolReg=false
+	export flags_EPI_PhysiolReg=true
 	# Two options that the user can select from:
 	# 1) configs_PhysiolReg="aCompCorr" - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
 	# 2) configs_PhysiolReg=meanPhysReg - mean WM and CSF signal regression
@@ -320,7 +319,7 @@ if $fMRI_A; then
 			fi
 	
 	#================================ GLOBAL SIGNAL REGRESSION =================================#
-	export flags_EPI_GS=false # compute global signal regressors 
+	export flags_EPI_GS=true # compute global signal regressors 
 			
 		export configs_EPI_numGS=4 # define number of global signal regressors
 										# Options are  
@@ -332,7 +331,7 @@ if $fMRI_A; then
 	#================================ FREQUENCY FILTERING =================================# 
 	export flags_EPI_FreqFilt=true  # compute Frequency filtering
 
-		export configs_FreqFilt="BPF"   # Options are one of the following:
+		export configs_FreqFilt="DCT"   # Options are one of the following:
 		#										DCT - Discrete Cosine Transfrom for a high-pass filter 
 	    # 										BPF - Bandpass Butterworth Filter 
 
@@ -355,22 +354,23 @@ if $fMRI_A; then
 
     #==================================== APPLY REGRESSION ===================================#
 	## Apply regression using all previously specified regressors
-	export flags_EPI_ApplyReg=false
+	export flags_EPI_ApplyReg=true
 		
-		export configs_EPI_despike=false # Dual-approach regression (Mejia 2023) 
+		export configs_EPI_despike=true # Dual-approach regression (Mejia 2023) 
 										# based on statistical DVARS selection (Afyouni & Nichols 2018)
 										# WARNING: Despike and Scrub are mutually exculise!!! 
 										# IF both are set to true, scrubbing will be skipped.
 
 	#### We've designed the pipeline so that various configurations can be tested without needing to rerun everything.
 	#### If user wants to test both approaches, despiking and scrubbing, run the regression first (flags_EPI_ApplyReg=true)  
-	#		with configs_EPI_despike=true and configs_scrub="no_scrub". Then, to generate scrubbed (non-despiked) data
-	#		simply set flags_EPI_FreqFilt=false, flags_EPI_ApplyReg=false (i.e no need to repeat regression and filtering),
-	#		configs_EPI_despike=false (no despiking) and set flags_EPI_scrub=true and configs_scrub="stat_DVARS"/"fsl_fd_dvars"								   
+	#	 with configs_EPI_despike=true and configs_scrub="no_scrub". Then, to generate scrubbed (non-despiked) data
+	#	 simply set flags_EPI_FreqFilt=false, flags_EPI_ApplyReg=false (i.e no need to repeat regression and filtering),
+	#	 configs_EPI_despike=false (no despiking) and set flags_EPI_scrub=true and select the desired configs_scrub option
+
 	#=============================== POST REGRESSION SCRUBBING =================================# 
 	## Run one of the scrubbing methods
-	export flags_EPI_scrub=true 
-		export configs_scrub="stat_DVARS"   # User can select scrubbing based on:
+	export flags_EPI_scrub=false 
+		export configs_scrub="no_scrub"   # User can select scrubbing based on:
 											#    stat_DVARS: statisitical DVARS (Afyouni & Nichols 2018)
 											#    fsl_fd_dvars: FSL's FD & DVARS 	
 											#	 no_scrub: data will not be scrubbed. 	
@@ -379,17 +379,19 @@ if $fMRI_A; then
 	#		   configs_scrub is always used by the ROIs step (below) to find the approprate time-series file, even when
 	#		   flags_EPI_scrub=false. Therefore, configs_scrub must be set to "no_scrub" if user does not want scrubbed data. 
 
-	#================ COMPUTE ROI TIME-SERIES FOR EACH NODAL PARCELLATION ===================#
+
+	#================ COMPUTE ROI TIME-SERIES FOR EACH NODAL PARCELLATION ======================#
 	# Make sure the parcellation relevant multi-seciton flags at the top are set as desired. 
 	export flags_EPI_ROIs=true
 
 #=================================================================================================#
 #=================================================================================================#
-
+		log $nR
+		log $post_nR
 	#=======################################ EXTRAS ###############################=========#
 	
 	export flags_EPI_ReHo=false  # COMPUTE ReHo	
-		export configs_ReHo_input="7_epi_hmp24_mPhys2_Gs2.nii.gz"
+		export configs_ReHo_input="5_epi_hmp24_mPhys2_Gs2.nii.gz"
 		export configs_ReHo_neigh="-neigh_RAD 3"  # Specify the neighborhood in voxels or in millimiters. Options are:
 										# " "  Leave string empty (e.g. "") for default, 27 voxels (face/edge/corner)
 										# "-nneigh 7"  face adjacent voxels
@@ -406,7 +408,7 @@ if $fMRI_A; then
 
 
 	export flags_EPI_ALFF=false  # COMPUTE ALFF/fALFFo	
-		export configs_ALFF_input="7_epi_hmp24_mPhys2.nii.gz"
+		export configs_ALFF_input="5_epi_hmp24_mPhys2.nii.gz"
 
 		export configs_ALFF_blur="-blur 6"  # Specify size of smoothing kernel. 
 												# Leave string empty (e.g. "") for no blurying
@@ -431,31 +433,31 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export DWI_A=false
+export DWI_A=true
 
 if $DWI_A; then
 
-	export scanner="SIEMENS" #  SIEMENS or GE
-	log "SCANNER ${scanner}"
+	# export scanner="SIEMENS" #  SIEMENS or GE
+	# log "SCANNER ${scanner}"
 
-	if [[ ${scanner} == "SIEMENS" ]]; then
-		export scanner_param_EffectiveEchoSpacing="EffectiveEchoSpacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
-		export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
-		export scanner_param_TotalReadoutTime="TotalReadoutTime"
-		export scammer_param_AcquisitionMatrix="AcquisitionMatrixPE"
-		export scanner_param_PhaseEncodingDirection="PhaseEncodingDirection"
-	elif [[ ${scanner} == "GE" ]]; then
-		export scanner_param_EffectiveEchoSpacing="effective_echo_spacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
-		export scanner_param_slice_fractimes="slice_timing"  # "SliceTiming" for Siemens; "slice_timing" for GE
-		export scanner_param_TotalReadoutTime="TotalReadoutTime"
-		export scammer_param_AcquisitionMatrix="acquisition_matrix"
-		export scanner_param_PhaseEncodingDirection="phase_encode_direction"
-	fi
+	# if [[ ${scanner} == "SIEMENS" ]]; then
+	# 	export scanner_param_EffectiveEchoSpacing="EffectiveEchoSpacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
+	# 	export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
+	# 	export scanner_param_TotalReadoutTime="TotalReadoutTime"
+	# 	export scammer_param_AcquisitionMatrix="AcquisitionMatrixPE"
+	# 	export scanner_param_PhaseEncodingDirection="PhaseEncodingDirection"
+	# elif [[ ${scanner} == "GE" ]]; then
+	# 	export scanner_param_EffectiveEchoSpacing="effective_echo_spacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
+	# 	export scanner_param_slice_fractimes="slice_timing"  # "SliceTiming" for Siemens; "slice_timing" for GE
+	# 	export scanner_param_TotalReadoutTime="TotalReadoutTime"
+	# 	export scammer_param_AcquisitionMatrix="acquisition_matrix"
+	# 	export scanner_param_PhaseEncodingDirection="phase_encode_direction"
+	# fi
 	
-	export flags_DWI_topup=false # FSL topup destortion field estimation
+	export flags_DWI_topup=true # FSL topup destortion field estimation
 		export configs_DWI_b0cut=1 # maximum B-value to be considered B0
-	export flags_DWI_eddy=false # FSL EDDY distortion correction
-		export flags_EDDY_prep=false # Generatates eddy input files
+	export flags_DWI_eddy=true # FSL EDDY distortion correction
+		export flags_EDDY_prep=true # Generatates eddy input files
 			export configs_DWI_EDDYf='0.17' # fsl bet threshold for b0 brain mask used by EDDY
 		export flags_EDDY_run=true # Runs EDDY openmp
 			export configs_DWI_repolON=true # use eddy_repol to interpolate missing/outlier data

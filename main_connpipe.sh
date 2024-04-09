@@ -1,8 +1,12 @@
 #!/bin/bash
 
 #module load python/3.11.4
-module load fsl/6.0.5.2
-module load ants/2.3.5
+module load fsl/6.0.5.1
+module load ants/2.3.1  #module load ants/2.3.5
+module load mrtrix/3.0.4  #mrtrix3/3.0.4
+
+python --version
+which python
 
 # Checking input arguments:
 if (($# != 2)); then
@@ -24,6 +28,16 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 source $config
 
 # Exporting path/file dependencies.
+#===========================================================================
+# If FSL is not in the path, exit now
+if [[ -n "${FSLDIR}" ]]; then
+    echo "FSLDIR is ${FSLDIR}"
+else
+    echo "### $dateTime - FSLDIR is not set. Exiting...." >> ${ERRfile_name}.log
+    echo "FSLDIR is not set. Exiting...."
+    exit 1
+fi
+
 #============================================================================
 export pathMNItmplates="${pathSM}/MNI_templates"
 export pathBrainmaskTemplates="${pathSM}/brainmask_templates"
@@ -48,35 +62,38 @@ elif [[ "${configs_T1_denoised}" == "NONE" ]]; then  # do not perform denoising
 	export configs_fslanat="anat"
 fi
 
-# Defining scanner specific header tags for [func] f_MRI_A.
+# Defining scanner specific header tags f_MRI_A and DWI_A.
+#============================================================================
+if [[ ${scanner} == "SIEMENS" ]]; then
+    export scanner_param_TR="RepetitionTime"  # "RepetitionTime" for Siemens; "tr" for GE
+    export scanner_param_TE="EchoTime"  # "EchoTime" for Siemens; "te" for GE
+    export scanner_param_FlipAngle="FlipAngle"  # "FlipAngle" for Siemens; "flip_angle" for GE
+    export scanner_param_EffectiveEchoSpacing="EffectiveEchoSpacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
+    export scanner_param_BandwidthPerPixelPhaseEncode="BandwidthPerPixelPhaseEncode"  # "BandwidthPerPixelPhaseEncode" for Siemens; unknown for GE
+    export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
+    export scanner_param_TotalReadoutTime="TotalReadoutTime"
+    export scammer_param_AcquisitionMatrix="AcquisitionMatrixPE"
+    export scanner_param_PhaseEncodingDirection="PhaseEncodingDirection"
+elif [[ ${scanner} == "GE" ]]; then
+    export scanner_param_TR="tr"  # "RepetitionTime" for Siemens; "tr" for GE
+    export scanner_param_TE="te"  # "EchoTime" for Siemens; "te" for GE
+    export scanner_param_FlipAngle="flip_angle"  # "FlipAngle" for Siemens; "flip_angle" for GE
+    export scanner_param_EffectiveEchoSpacing="effective_echo_spacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
+    export scanner_param_BandwidthPerPixelPhaseEncode="pixel_bandwidth"  # "BandwidthPerPixelPhaseEncode" for Siemens; unknown for GE
+    export scanner_param_slice_fractimes="slice_timing"  # "SliceTiming" for Siemens; "slice_timing" for GE
+    export scanner_param_TotalReadoutTime="TotalReadoutTime"
+    export scammer_param_AcquisitionMatrix="acquisition_matrix"
+    export scanner_param_PhaseEncodingDirection="phase_encode_direction"
+fi
+
+# f_MRI_A settings
 #============================================================================
 if ${fMRI_A}; then
-    if [[ ${scanner} == "SIEMENS" ]]; then
-        export scanner_param_TR="RepetitionTime"  # "RepetitionTime" for Siemens; "tr" for GE
-        export scanner_param_TE="EchoTime"  # "EchoTime" for Siemens; "te" for GE
-        export scanner_param_FlipAngle="FlipAngle"  # "FlipAngle" for Siemens; "flip_angle" for GE
-        export scanner_param_EffectiveEchoSpacing="EffectiveEchoSpacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
-        export scanner_param_BandwidthPerPixelPhaseEncode="BandwidthPerPixelPhaseEncode"  # "BandwidthPerPixelPhaseEncode" for Siemens; unknown for GE
-        export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
-        export scanner_param_TotalReadoutTime="TotalReadoutTime"
-        export scammer_param_AcquisitionMatrix="AcquisitionMatrixPE"
-        export scanner_param_PhaseEncodingDirection="PhaseEncodingDirection"
-    elif [[ ${scanner} == "GE" ]]; then
-        export scanner_param_TR="tr"  # "RepetitionTime" for Siemens; "tr" for GE
-        export scanner_param_TE="te"  # "EchoTime" for Siemens; "te" for GE
-        export scanner_param_FlipAngle="flip_angle"  # "FlipAngle" for Siemens; "flip_angle" for GE
-        export scanner_param_EffectiveEchoSpacing="effective_echo_spacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
-        export scanner_param_BandwidthPerPixelPhaseEncode="pixel_bandwidth"  # "BandwidthPerPixelPhaseEncode" for Siemens; unknown for GE
-        export scanner_param_slice_fractimes="slice_timing"  # "SliceTiming" for Siemens; "slice_timing" for GE
-        export scanner_param_TotalReadoutTime="TotalReadoutTime"
-        export scammer_param_AcquisitionMatrix="acquisition_matrix"
-        export scanner_param_PhaseEncodingDirection="phase_encode_direction"
-    fi
 
  # Checking that ony one UNWARP option is selected.
  #============================================================================
     if ${flags_EPI_SpinEchoUnwarp} && ${flags_EPI_GREFMUnwarp}; then
-        log "ERROR --	Please select one option only: Spin Echo Unwarp or Gradient Echo Unwarp. Exiting... "
+        echo "ERROR --	Please select one option only: Spin Echo Unwarp or Gradient Echo Unwarp. Exiting... "
         exit 1
     fi
 
@@ -88,7 +105,7 @@ if ${fMRI_A}; then
         nR="hmp${configs_EPI_numHMP}"   # set filename postfix for output image
         
         if [[ "${configs_EPI_numHMP}" -ne 12 && "${configs_EPI_numHMP}" -ne 24 ]]; then
-            log "ERROR The variable config_EPI_numReg must have values '12' or '24'. \
+            echo "ERROR The variable config_EPI_numReg must have values '12' or '24'. \
                 Please set the corect value in the config.sh file"
                 exit 1
         fi	
@@ -122,13 +139,13 @@ if ${fMRI_A}; then
         export configs_EPI_resting_file='/AROMA/AROMA-output/denoised_func_data_nonaggr.nii.gz'
         
         if [[ "${configs_EPI_numHMP}" -ne 12 && "${configs_EPI_numHMP}" -ne 24 ]]; then
-            log "ERROR The variable config_EPI_numReg must have values '12' or '24'. \
+            echo "ERROR The variable config_EPI_numReg must have values '12' or '24'. \
                 Please set the corect value in the config.sh file"
                 exit 1
         fi	
 
     else
-        log "ERROR - flag_NuisanceReg must be either AROMA or HMPreg or AROMA_HMP"
+        echo "ERROR - flag_NuisanceReg must be either AROMA or HMPreg or AROMA_HMP"
         exit 1
     fi
 
@@ -149,7 +166,7 @@ if ${fMRI_A}; then
         if [[ "${configs_EPI_numPhys}" -ne 2 \
             && "${configs_EPI_numPhys}" -ne 4 \
             && "${configs_EPI_numPhys}" -ne 8 ]]; then
-                log "ERROR the variable configs_EPI_numPhys must have values '2', '4' or '8'. \
+                echo "ERROR the variable configs_EPI_numPhys must have values '2', '4' or '8'. \
                     Please set the corect value in the config.sh file"
                 exit 1
         fi	
@@ -173,11 +190,11 @@ if ${fMRI_A}; then
 
 # DVARS-based time point scrubbing (Pham, ..., Mejia. NeuroImage 2023 and Afyouni $ Nichols, 2018)
 #============================================================================
-export configs_EPI_path2DVARS="${EXEDIR}/src/func/"
+    export configs_EPI_path2DVARS="${EXEDIR}/src/func/"
 
 # Export the name of the file with user-selected configurations   
 #============================================================================
-export nR 
+    export nR 
 
 fi
 
@@ -200,10 +217,8 @@ while IFS=" " read -r col1 col2; do
 done < "${subj2run}"
 
 
-# IFS=$'\r\n' GLOBIGNORE='*' command eval 'SUBJECTS=($(cat ${subj2run}))'
-log --no-datetime "subjects: ${SUBJECTS[@]}"
-log --no-datetime "sessions: ${SESSIONS[@]}"
-
+echo "### $dateTime - subjects: ${SUBJECTS[@]}" >> ${ERRfile_name}.log
+echo "### $dateTime - subjects: ${SESSIONS[@]}" >> ${ERRfile_name}.log
 
 echo "##################"
 
@@ -213,14 +228,11 @@ nsubj=${#SUBJECTS[@]}
 
 # Loop through both arrays with a counter
 for ((i = 0; i < nsubj; i++)); do
-    log "Processing ${SUBJECTS[i]}_${SESSIONS[i]}"
 
     start=`date +%s`
 
     export SUBJ=${SUBJECTS[i]}  #${SUBJdir}
-    log "Subject ${SUBJ}"
     export SESS=${SESSIONS[i]}  #${SUBJdir}
-    log "Session ${SESS}"
 
     # create sub-ses directory so that log files can be written
     export path2ses="${path2derivs}/${SUBJ}/${SESS}"
@@ -234,12 +246,14 @@ for ((i = 0; i < nsubj; i++)); do
     export QCfile_name="${path2ses}/qc"
     export ERRfile_name="${path2derivs}/error_report"
 
-
-    log "############################ T1_PREPARE_A #####################################"
+    log "Processing ${SUBJ}_${SESS}"
 
     export T1path="${path2ses}/anat"
 
+    log "############################ T1_PREPARE_A #####################################"
+
     if $T1_PREPARE_A; then
+    
         ## Path to raw data
         export T1path_raw="${path2data}/${SUBJ}/${SESS}/anat"
 
@@ -365,6 +379,10 @@ for ((i = 0; i < nsubj; i++)); do
         if $DWI_A; then
 
             export DWIpath_raw="${path2data}/${SUBJ}/${SESS}/dwi"
+            
+            echo "======= ${DWIpath_raw}"
+
+            log --no-datetime "USER SET SCANNER MANUFACTURER: ${scanner}"
 
             ## Path to derivatives
             export DWIpath="${path2ses}/dwi"

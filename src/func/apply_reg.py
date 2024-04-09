@@ -310,7 +310,7 @@ for i in range(0,numTimePoints):
 rr = f_apply_reg(resting_vol,volBrain_vol,regressors)
 
 # save nifti image
-fileOut = "/7_epi_%s.nii.gz" % nRc 
+fileOut = "/5_epi_%s.nii.gz" % nRc 
 
 fileOut = ''.join([NuisancePhysReg_out,fileOut])
 print("Nifti file to be saved is: ",fileOut)
@@ -359,7 +359,7 @@ if dvars_despike == 'true':
         rr_despike = rr   
         print("WARNING: No volumes were despiked!") 
 
-    fileOut = "/7_epi_%s_despiked.nii.gz" % nRc 
+    fileOut = "/5_epi_%s_despiked.nii.gz" % nRc 
     matlabfilename = ''.join([NuisancePhysReg_out,'/volumes2scrub_',nRc,'_despiked.mat'])
 
 

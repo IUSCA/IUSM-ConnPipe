@@ -130,7 +130,7 @@ for k in range(1,numParcs+1):
         print(toc-tic)
 
 
-        fileOut = "/8_epi_%s_ROIs.npz" % parc_label
+        fileOut = "/6_epi_%s_ROIs.npz" % parc_label
         fileOut = ''.join([path_EPI_Mats,fileOut])
 
         ## ROIs_numVOxels is the number of voxels belonging to each node in a partition
@@ -139,7 +139,7 @@ for k in range(1,numParcs+1):
         print("Saved ROI resting data to: ",fileOut)
         flog.write("\n Saved ROI resting data to: "+fileOut)
 
-        fileOut = "/8_epi_%s_ROIs.mat" % parc_label
+        fileOut = "/6_epi_%s_ROIs.mat" % parc_label
         fileOut = ''.join([path_EPI_Mats,fileOut])
         print("savign MATLAB file ", fileOut)
         mdic = {"restingROIs":restingROIs,"ROIs_numVoxels":ROIs_numVoxels,"ROIs_numNans":ROIs_numNans}

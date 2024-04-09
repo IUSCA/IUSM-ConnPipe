@@ -25,7 +25,7 @@ if [[ -d ${DWIpath_raw} ]]; then
     declare -a dwiList
     while IFS= read -r -d $'\0' REPLY; do 
         dwiList+=( "$REPLY" )
-    done < <(find ${DWIpath_raw} -maxdepth 1 -type f -iname "*_dir-*nii.gz" -print0 | sort -z)
+    done < <(find ${DWIpath_raw} -maxdepth 1 -type f -iname "*_dir-*.nii.gz" -print0 | sort -z)
     
     if [ ${#dwiList[@]} -eq 0 ]; then 
         echo "No raw dwi files with _dir- tag found for subject ${SUBJ}_${SESS}. Check that dir- Phase Encoding is in bids naming."
@@ -86,7 +86,7 @@ if [[ -d ${DWIpath_raw} ]]; then
     done
 
     if [ -n "$AP" ]; then
-        FileRaw="${AP%???????}"
+        FileRaw="${AP%%.*}" # remove extension after first . (works for .nii and .nii.gz)
 
         PhaseEncodingDirection=`cat ${FileRaw}.json | ${EXEDIR}/src/func/jq-linux64 '.PhaseEncodingDirection'`
         echo "PhaseEncodingDirection from ${FileRaw}.json is ${PhaseEncodingDirection}"  
@@ -101,7 +101,7 @@ if [[ -d ${DWIpath_raw} ]]; then
             fi        
 
         if [ -n "$PA" ]; then
-            FileRawPA="${PA%???????}"
+            FileRawPA="${PA%%.*}"
             export rtag=1
 
             PhaseEncodingDirection=`cat ${FileRawPA}.json | ${EXEDIR}/src/func/jq-linux64 '.PhaseEncodingDirection'`
@@ -122,8 +122,8 @@ if [[ -d ${DWIpath_raw} ]]; then
                 exit 1
             fi  
 
-        elif [ -n  "$b0PA" ]; then
-            FileRawb0="$b0PA%???????"
+        elif [ -n "$b0PA" ]; then
+            FileRawb0=${b0PA%%.*}
             export rtag=2
 
             PhaseEncodingDirection=`cat ${FileRawb0}.json | ${EXEDIR}/src/func/jq-linux64 '.PhaseEncodingDirection'`
@@ -170,6 +170,7 @@ export fileBvec="${FileRaw}.bvec"
 export fileNifti="${FileRaw}.nii.gz"
 export fileJson="${FileRaw}.json"
 
+
 if [[ ! -e "${fileBval}" ]] && [[ ! -e "${fileBvec}" ]]; then
     log "WARNING Bvec and/or Bval files do not exist. Skipping further analyses"
     exit 1
@@ -189,7 +190,7 @@ if [[ "$rtag" -eq 1 ]]; then
     export fileNiftiPA="${FileRawPA}.nii.gz"
 
     if [[ ! -e "${fileBvalPA}" ]] && [[ ! -e "${fileBvecPA}" ]]; then
-        log "WARNING Bvec and/or Bval PA files do not exist. Skipping further analyses"
+        log "WARNING Bvec and/or Bval or PA files do not exist. Skipping further analyses"
         exit 1
     else
         cmd="python ${EXEDIR}/src/func/read_bvals_bvecs.py \

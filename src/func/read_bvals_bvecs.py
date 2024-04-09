@@ -1,6 +1,7 @@
 import os
 import sys
-from dipy.io import read_bvals_bvecs
+#from dipy.io import read_bvals_bvecs
+from dipy import read_bvals_bvecs
 import nibabel as nib
 import numpy as np
 
