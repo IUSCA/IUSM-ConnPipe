@@ -241,12 +241,12 @@ for ((i = 0; i < nsubj; i++)); do
 
     log "Processing ${SUBJ}_${SESS}"
 
+    export T1path="${path2ses}/anat"
 
     log "############################ T1_PREPARE_A #####################################"
 
-    export T1path="${path2ses}/anat"
-
     if $T1_PREPARE_A; then
+    
         ## Path to raw data
         export T1path_raw="${path2data}/${SUBJ}/${SESS}/anat"
 

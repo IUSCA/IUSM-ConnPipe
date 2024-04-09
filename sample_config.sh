@@ -262,11 +262,14 @@ if $fMRI_A; then
 
 	#=================================================================================================#
 	#=================================================================================================#
-	# RECOMMENDED TO RUN [NuisanceReg, PhysiolReg, regressOthers, ApplyReg, postRegress, and ROIs] TOGETHER.
-	# There is interdependence among them and it will mitigate chance of error to run them together.
-
-	# If running them in pieces, make sure that the subflags under each section are set to the options,
-	# which have already been ran and for which you want the time series extracted.
+	### The following sectin has been designed to allow the user to test various processing configuraitons.
+	#   Each flag (e.g. flag_EPI_*) is a boolean variable that should be used to indicate whether a particular
+	#	section of the pipeline should be executed or not. 
+	#   NOTE that, regardless of whether a section is being executed or not (i.e. the flag is set to false), 
+	#   the configuration parameters within all sections are being used by the pipeline to read/write file 
+	#   the intermediary output files. 
+	#   For example: if flags_EPI_NuisanceReg=false, but user intends to generate time-series for data processed
+	#   with AROMA, then user must be sure to set configs_NuisanceReg="AROMA" (assuming AROMA has been ran before).
 	#================================== MOTION AND OUTLIER CORRECTION ================================#
 	export flags_EPI_NuisanceReg=true
 	## Nuisance Regressors. There are three options that user can select from to set the configs_NuisanceReg variable:
@@ -360,9 +363,10 @@ if $fMRI_A; then
 
 	#### We've designed the pipeline so that various configurations can be tested without needing to rerun everything.
 	#### If user wants to test both approaches, despiking and scrubbing, run the regression first (flags_EPI_ApplyReg=true)  
-	#		with configs_EPI_despike=true and configs_scrub="no_scrub". Then, to generate scrubbed (non-despiked) data
-	#		simply set flags_EPI_FreqFilt=false, flags_EPI_ApplyReg=false (i.e no need to repeat regression and filtering),
-	#		configs_EPI_despike=false (no despiking) and set flags_EPI_scrub=true and configs_scrub="stat_DVARS"/"fsl_fd_dvars"								   
+	#	 with configs_EPI_despike=true and configs_scrub="no_scrub". Then, to generate scrubbed (non-despiked) data
+	#	 simply set flags_EPI_FreqFilt=false, flags_EPI_ApplyReg=false (i.e no need to repeat regression and filtering),
+	#	 configs_EPI_despike=false (no despiking) and set flags_EPI_scrub=true and select the desired configs_scrub option
+
 	#=============================== POST REGRESSION SCRUBBING =================================# 
 	## Run one of the scrubbing methods
 	export flags_EPI_scrub=true 
