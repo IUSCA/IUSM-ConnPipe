@@ -180,6 +180,13 @@ else
     log $cmd
     eval $cmd
 
+    if [ $? -eq 0 ]; then
+        echo "bvals and bvecs read and stored as ${DWIpath}/0_DWI.bval and ${DWIpath}/0_DWI.bvec"
+    else
+        echo "Unable to wrtie bvals/bvecs to ${DWIpath}/0_DWI.bval and ${DWIpath}/0_DWI.bvec. Exiting..."
+        exit 1
+    fi
+
     export fileBval="${DWIpath}/0_DWI.bval"
     export fileBvec="${DWIpath}/0_DWI.bvec"
 fi 
@@ -197,6 +204,13 @@ if [[ "$rtag" -eq 1 ]]; then
          ${fileBvalPA} ${fileBvecPA} ${fileNiftiPA} ${DWIpath} "PA""
         log $cmd
         eval $cmd
+
+        if [ $? -eq 0 ]; then
+            echo "bvals and bvecs read and stored as ${DWIpath}/0_DWI_PA.bval and ${DWIpath}/0_DWI_PA.bvec"
+        else
+            echo "Unable to wrtie bvals/bvecs to ${DWIpath}/0_DWI_PA.bval and ${DWIpath}/0_DWI_PA.bvec. Exiting..."
+            exit 1
+        fi
 
         export fileBvalPA="${DWIpath}/0_DWI_PA.bval"
         export fileBvecPA="${DWIpath}/0_DWI_PA.bvec"
@@ -262,7 +276,7 @@ if ${flags_DWI_DTIfit}; then
     eval $cmd
     exitcode=$?
 
-    if [[ ${exitcode} -ne 0 ]] ; then
+    if [[ ${exitcode} -ne 0 ]]; then
         echoerr "problem at DWI_A_eddy. exiting."
         exit 1
     fi  
