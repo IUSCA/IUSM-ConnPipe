@@ -433,7 +433,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export DWI_A=true
+export DWI_A=false
 
 if $DWI_A; then
 
@@ -466,12 +466,14 @@ if $DWI_A; then
 		export configs_DWI_DTIfitf='0.17' # brain extraction (FSL bet -f) parameter 
 fi 
 
-export DWI_B=false
+export DWI_B=true
 
 if $DWI_B; then
 
 	export flags_DWI_regT1=false
-	export flags_DWI_MRtrix=false
+	export flags_DWI_MRtrix=true
+		# if streamline file has been created, you can skip this step
+		export configs_DWI_skip_streamlines=false
         # Number of threads must be <= --ntasks-per-node of your Slurm jobs
         export configs_DWI_nthreads=4 # for mrtrix tckgen
 		export configs_DWI_seeding="wm" # 'wm'-white matter OR 'dyn'-dynamic
@@ -482,5 +484,5 @@ if $DWI_B; then
         export configs_DWI_max_angles="30 45 60" # fine coverage if you ask me!
 		# filtering options
 		export configs_DWI_sift_term_number="1000" 
-	export flags_DWI_connMatrix=true # generate connectivity matrices  
+	export flags_DWI_connMatrix=false # generate connectivity matrices  
 fi 
