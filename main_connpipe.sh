@@ -33,8 +33,7 @@ source $config
 if [[ -n "${FSLDIR}" ]]; then
     echo "FSLDIR is ${FSLDIR}"
 else
-    echo "### $dateTime - FSLDIR is not set. Exiting...." >> ${ERRfile_name}.log
-    echo "FSLDIR is not set. Exiting...."
+    echo -e "\033[33m#  ERROR. FSLDIR is not set. Exiting \033[0m"
     exit 1
 fi
 
@@ -217,8 +216,8 @@ while IFS=" " read -r col1 col2; do
 done < "${subj2run}"
 
 
-echo "### $dateTime - subjects: ${SUBJECTS[@]}" >> ${ERRfile_name}.log
-echo "### $dateTime - subjects: ${SESSIONS[@]}" >> ${ERRfile_name}.log
+echo "### SUBJECTS: ${SUBJECTS[@]}" 
+echo "### SESSIONS: ${SESSIONS[@]}" 
 
 echo "##################"
 

@@ -7,8 +7,6 @@
 # source bash funcs
 source ${EXEDIR}/src/func/bash_funcs.sh
 
-## Path to Supplementary Materials. Please download from: 
-# https://drive.google.com/drive/folders/1b7S9UcWDeDXVx3NUjuO8NJxxmChgNQ1G?usp=sharing 
 export pathSM="/N/project/connpipe/fMRI_proc_utils"
 
 ################################################################################
