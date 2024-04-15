@@ -178,7 +178,7 @@ else
     cmd="python ${EXEDIR}/src/func/read_bvals_bvecs.py \
      ${fileBval} ${fileBvec} ${fileNifti} ${DWIpath}"
     log $cmd
-    eval $cmd
+    eval $cmd 2>&1 | tee -a ${logfile_name}.log
 
     if [ $? -eq 0 ]; then
         echo "bvals and bvecs read and stored as ${DWIpath}/0_DWI.bval and ${DWIpath}/0_DWI.bvec"
@@ -203,7 +203,7 @@ if [[ "$rtag" -eq 1 ]]; then
         cmd="python ${EXEDIR}/src/func/read_bvals_bvecs.py \
          ${fileBvalPA} ${fileBvecPA} ${fileNiftiPA} ${DWIpath} "PA""
         log $cmd
-        eval $cmd
+        eval $cmd 2>&1 | tee -a ${logfile_name}.log
 
         if [ $? -eq 0 ]; then
             echo "bvals and bvecs read and stored as ${DWIpath}/0_DWI_PA.bval and ${DWIpath}/0_DWI_PA.bvec"

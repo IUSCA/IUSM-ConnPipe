@@ -5,23 +5,15 @@ import numpy as np
 import nibabel as nib
 from scipy.io import savemat
 
-###### print to log files #######
-QCfile_name = ''.join([os.environ['QCfile_name'],'.log'])
-fqc=open(QCfile_name, "a+")
-logfile_name = ''.join([os.environ['logfile_name'],'.log'])
-flog=open(logfile_name, "a+")
 
-
-flog.write("\n *** python DCT regressors **** ")
+print("\n *** python DCT regressors **** ")
 # EPIpath=os.environ['EPIrun_out']
 fileIN=sys.argv[1]
-flog.write("\n"+"fileIN "+ fileIN)
+print("fileIN ", fileIN)
 NuisancePhysReg_out=sys.argv[2]
-flog.write("\n NuisancePhysReg_out "+ NuisancePhysReg_out)
-# configs_EPI_numGS=int(os.environ['configs_EPI_numGS'])
-# flog.write("\n configs_EPI_numGS "+ str(configs_EPI_numGS))
+print("\n NuisancePhysReg_out ", NuisancePhysReg_out)
 configs_EPI_dctfMin=float(os.environ['configs_EPI_dctfMin'])
-flog.write("\n configs_EPI_dctfMin "+ str(configs_EPI_dctfMin))
+print("\n configs_EPI_dctfMin ", configs_EPI_dctfMin)
 
 ### load data and masks
 resting = nib.load(fileIN)
@@ -38,10 +30,10 @@ if 0 < configs_EPI_dctfMin:
     # compute K for kDCT bases to filter fMin Hertz -- k = fMin * 2 * TR * numTimePoints
     numDCT = int(np.ceil(configs_EPI_dctfMin * 2 * TR * numTimePoints))
     print("numDCT is ",numDCT)
-    flog.write("\n numDCT "+ str(numDCT))
+    print("\n numDCT ",numDCT)
     actualFmin = numDCT/(2*TR*numTimePoints)
     print("actualFmin is ",actualFmin)
-    flog.write("\n actualFmin "+ str(actualFmin)+"\n")
+    print("\n actualFmin ",actualFmin)
 
     dct = np.zeros((numTimePoints,numDCT))
     print("dct shape is ",dct.shape)
@@ -63,10 +55,7 @@ if 0 < configs_EPI_dctfMin:
 
 else:
     print("ERROR - CANNOT COMPUTE DCT WITH configs_EPI_dctfMin = ",configs_EPI_dctfMin)
-    flog.write("\n ERROR - CANNOT COMPUTE DCT WITH configs_EPI_dctfMin =  "+ str(configs_EPI_dctfMin)+"\n")
 
 
-fqc.close()
-flog.close()
 
 

@@ -66,8 +66,8 @@ cmd="flirt -in ${fileT1} \
 -omat ${filedof12mat} \
 -dof 12 -cost mutualinfo \
 -interp spline -out ${filedof12img}"
-log --no-datetime $cmd
-eval $cmd 
+log $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log
 
 fileWarpImg="${AROMAreg_path}/rT1_warped_2mm.nii.gz"
 fileWarpField="${AROMAreg_path}/T1_2_MNI2mm_warpfield.nii.gz" 
@@ -79,7 +79,7 @@ cmd="fnirt \
 --iout=${fileWarpImg} \
 --cout=${fileWarpField}"
 log $cmd
-eval $cmd 
+eval $cmd 2>&1 | tee -a ${logfile_name}.log
 
 # 6mm FWHM EPI data smoothing
 log "### Smoothing EPI data by 6mm FWHM"
@@ -89,7 +89,7 @@ fileSmooth="${AROMApath}/s6_4_epi.nii.gz"
 cmd="fslmaths ${fileEPI} \
 -kernel gauss 2.547965400864057 \
 -fmean ${fileSmooth}"
-log --no-datetime $cmd
+log $cmd
 eval $cmd 
 
 
@@ -141,9 +141,8 @@ cmd="${run_ICA_AROMA} \
 -affmat ${fileMat} \
 -warp ${fileWarpField} ${AROMA_dim}"
 log $cmd 
-eval $cmd
-# out=`$cmd`
-# log "$out"
+eval $cmd 2>&1 | tee -a ${logfile_name}.log
+
 
 if [[ ! -e "${AROMAout}/denoised_func_data_nonaggr.nii.gz" ]]; then
 
@@ -162,6 +161,6 @@ motionICs="${AROMAout}/classified_motion_ICs.txt"
 
 cmd="python ${EXEDIR}/src/func/percent_variance.py \
     ${ICstats} ${motionICs}"
-log --no-datetime $cmd
-eval $cmd
+log $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log
 

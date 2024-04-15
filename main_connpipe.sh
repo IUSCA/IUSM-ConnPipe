@@ -233,6 +233,13 @@ for ((i = 0; i < nsubj; i++)); do
     export SUBJ=${SUBJECTS[i]}  #${SUBJdir}
     export SESS=${SESSIONS[i]}  #${SUBJdir}
 
+    if [ -z "$variable" ]; then
+        echo "There are no sessions"
+    else
+        echo "Subjects have sessions. "
+    fi
+
+
     # create sub-ses directory so that log files can be written
     export path2ses="${path2derivs}/${SUBJ}/${SESS}"
     if [[ ! -d "${path2ses}" ]]; then
@@ -489,5 +496,5 @@ done
 # ################################################################################
 # ## run it
 
-main "$@" 2>&1 | tee -a test_log_main.log 
+main "$@"  
 

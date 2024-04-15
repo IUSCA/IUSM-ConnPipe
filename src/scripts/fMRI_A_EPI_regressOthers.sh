@@ -43,4 +43,4 @@ fi
 cmd="python ${EXEDIR}/src/func/other_regressors.py \
      ${fileIN} ${NuisancePhysReg_out}"
 log $cmd
-eval $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log

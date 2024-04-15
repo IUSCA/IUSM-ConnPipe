@@ -96,8 +96,8 @@ if ${flags_T1_anat}; then
 	if [[ -e "${file4fslanat}.nii.gz" ]]; then
 		log --no-datetime "Running fsl_anat on ${file4fslanat}.nii.gz"
 		cmd="fsl_anat --noreg --nononlinreg --noseg ${T1args} -i ${file4fslanat}.nii.gz"
-		log --no-datetime ${cmd}
-		eval ${cmd}
+		log ${cmd}
+		eval ${cmd} 2>&1 | tee -a ${logfile_name}.log
 	else
 		log "${file4fslanat}.nii.gz not found"
 		exit 1
@@ -185,9 +185,9 @@ if ${flags_T1_extract_and_mask}; then
 			cmd="${antsBrainExtraction} -d 3 -a ${fileIn} \
 			-e ${fileTemplate} \
 			-m ${fileProbability} \
-			-o ${fileOutroot} > ${ANTSlog}"
+			-o ${fileOutroot}"
 			log --no-datetime $cmd
-			eval $cmd 					
+			eval $cmd 2>&1 | tee -a ${ANTSlog}			
 
 			cmd="mv $T1path/T1_BrainExtractionMask.nii.gz ${fileIn2}"
 			log --no-datetime $cmd

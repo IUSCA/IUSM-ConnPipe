@@ -37,7 +37,7 @@ if ! $configs_EPI_despike; then
           cmd="python ${EXEDIR}/src/func/scrub_vols.py \
                ${fileIn} ${fileOut}"
           log $cmd
-          eval $cmd
+          eval $cmd 2>&1 | tee -a ${logfile_name}.log
      else
           echoerr "Scrubbing parameter configs_scrub not recognized. Options are: stat_DVARS, fsl_fd_dvars or no_scrub"
           exit 1

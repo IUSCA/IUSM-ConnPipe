@@ -16,13 +16,10 @@ export pathSM="/N/project/connpipe/fMRI_proc_utils"
 #	path2data directory must contain subject subdirectories in BIDS-compliant format. 
 #   path2derivs directory is where a "connpipe" directory will be created (if it doesn't exist already)
 #               connpipe will create a subdirectory path2derivs/connpipe/sub-ID/ses-ID to store all output
-export path2data="/N/project/connpipe/Data/rawdata"
+export path2data="/N/project/YoderNAN/rawdata"
 
-export path2derivs="/N/project/connpipe/Data/derivatives"
-
-# USER INSTRUCTIONS- Please set this to the bids style session name you want to run.
-# "ses-"" is the BIDS standard tag 
-# export configs_session="ses-test"  
+export path2derivs="/N/project/YoderNAN/derivatives"
+ 
 
 # ################# RESIDUAL CODE FROM GMEFM UNWARP. NEEDS TO BE UPDATED ###################
 # export configs_grefmFolder="GREFM"  # Reserved for Gradient Field Mapping series
@@ -110,7 +107,7 @@ export configs_T1_addcrblm=true
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export T1_PREPARE_A=false
+export T1_PREPARE_A=true
 
 if $T1_PREPARE_A; then
 		
@@ -144,7 +141,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export T1_PREPARE_B=false
+export T1_PREPARE_B=true
 
 if $T1_PREPARE_B; then
 
@@ -185,7 +182,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export fMRI_A=false
+export fMRI_A=true
 
 if $fMRI_A; then
 
@@ -200,7 +197,7 @@ if $fMRI_A; then
 	export configs_EPI_runMax= # maximum run-# to be processed
 
 	# Obtain pertinent scan information from json file.
-	export flags_EPI_ReadJson=false
+	export flags_EPI_ReadJson=true
 		# If there is no json file with the functional data: 
 		# set flag to false and run the pipeline to receive instructions to manually enter epi acquisition parameters
 	#==============================================================================#
@@ -211,7 +208,7 @@ if $fMRI_A; then
 	# 2) Gradient echo field maps -- uses FUGE
 	
 	#============================ OPTION 1: SPIN ECO UNWARP =======================#
-	export flags_EPI_SpinEchoUnwarp=false # Requires raw fmap directory and approporiate files.
+	export flags_EPI_SpinEchoUnwarp=true # Requires raw fmap directory and approporiate files.
 		## FSL-topup
 		export flags_EPI_RunTopup=true # 1=Run topup (1st pass), 0=Run applyTopup only. (saves time if topup output exists). 
 
@@ -243,20 +240,20 @@ if $fMRI_A; then
 	#==================================================================================#
 	#==================================================================================#
 
-	export flags_EPI_SliceTimingCorr=false		
+	export flags_EPI_SliceTimingCorr=true		
 		export configs_EPI_minTR=1.6   # perform Slice Timing correction only if TR > configs_EPI_minTR
 		export configs_EPI_UseTcustom=1   # 1: use header-extracted slice times (suggested)
 
-	export flags_EPI_MotionCorr=false   # head motion estimation with FSL's mcflirt; generates 6 motion param for each BOLD image
+	export flags_EPI_MotionCorr=true   # head motion estimation with FSL's mcflirt; generates 6 motion param for each BOLD image
 
-	export flags_EPI_RegT1=false
+	export flags_EPI_RegT1=true
 		export configs_EPI_epibetF=0.3000;
 
-	export flags_EPI_RegOthers=false
+	export flags_EPI_RegOthers=true
 		export configs_EPI_GMprobthr=0.2 # Threshold the GM probability image; change from 0.25 to 0.2 or 0.15										
 		export configs_EPI_minVoxelsClust=8 
 
-	export flags_EPI_IntNorm4D=false # Intensity normalization to global 4D mean of 1000
+	export flags_EPI_IntNorm4D=true # Intensity normalization to global 4D mean of 1000
 
 	#=================================================================================================#
 	#=================================================================================================#
@@ -285,7 +282,7 @@ if $fMRI_A; then
 				export config_AROMA_dim=
 
 				# If AROMA has already been run, save computation time by skipping this step. 
-				export run_AROMA=false
+				export run_AROMA=true
 			fi
 
 			# if using Head Motion Parameters or ICA-AROMA followed by HMP
@@ -464,7 +461,7 @@ if $DWI_A; then
 		export configs_DWI_DTIfitf='0.17' # brain extraction (FSL bet -f) parameter 
 fi 
 
-export DWI_B=true
+export DWI_B=false
 
 if $DWI_B; then
 

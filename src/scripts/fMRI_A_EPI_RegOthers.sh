@@ -236,7 +236,7 @@ if ${configs_T1_addsubcort} && ! ${configs_T1_subcortUser}; then  # default FSL 
         cmd="python ${EXEDIR}/src/func/get_largest_clusters.py \
             ${fileIn} ${fileOut} ${configs_EPI_minVoxelsClust}"                     
         log $cmd
-        eval $cmd  
+        eval $cmd 2>&1 | tee -a ${logfile_name}.log
     fi
 fi
 
@@ -289,7 +289,7 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
         cmd="python ${EXEDIR}/src/func/get_largest_clusters.py \
             ${fileIn} ${fileOut} ${configs_EPI_minVoxelsClust}"                     
         log $cmd
-        eval $cmd           
+        eval $cmd 2>&1 | tee -a ${logfile_name}.log          
 
     elif [ ${psubcortonly} -eq 1 ] && [ ${pcrblmonly} -ne 1 ]; then      
         log "psubcortonly -eq 1 -- ${parc} parcellation"
@@ -324,7 +324,7 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
         cmd="python ${EXEDIR}/src/func/get_largest_clusters.py \
             ${fileIn} ${fileOut} ${configs_EPI_minVoxelsClust}"                     
         log $cmd
-        eval $cmd  
+        eval $cmd 2>&1 | tee -a ${logfile_name}.log
 
     elif [ ${psubcortonly} -ne 1 ] && [ ${pcrblmonly} -eq 1 ]; then      
         log "psubcortonly -ne 1 -- ${parc} parcellation"
@@ -349,7 +349,7 @@ for ((p=1; p<=numParcs; p++)); do  # exclude PARC0 - CSF - here
         cmd="python ${EXEDIR}/src/func/get_largest_clusters.py \
             ${fileIn} ${fileOut} ${configs_EPI_minVoxelsClust}"                     
         log $cmd
-        eval $cmd         
+        eval $cmd 2>&1 | tee -a ${logfile_name}.log        
     fi
 
 done 

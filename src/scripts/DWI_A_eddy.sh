@@ -142,7 +142,7 @@ if ${flags_EDDY_prep}; then
         # Index file
         cmd="python ${EXEDIR}/src/func/get_B0_temporal_info.py ${fileIn} ${B0_indices}"
         log $cmd
-        eval $cmd
+        eval $cmd 2>&1 | tee -a ${logfile_name}.log
         fileInIndex="${EDDYpath}/index.txt"
 
     ## If there are two full reverse phase encoding runs
@@ -201,7 +201,7 @@ if ${flags_EDDY_prep}; then
         # Index file
         cmd="python ${EXEDIR}/src/func/get_B0_temporal_info.py ${fileIn} ${B0_indices}"
         log $cmd
-        eval $cmd
+        eval $cmd 2>&1 | tee -a ${logfile_name}.log
         fileInIndex="${EDDYpath}/index.txt"
     fi
 fi
@@ -295,7 +295,7 @@ if ${flags_EDDY_run}; then
         log "Computing Delta Eddy image"
         cmd="python ${EXEDIR}/src/func/delta_EDDY.py ${fileOut} ${fileIn}"
         log $cmd
-        eval $cmd
+        eval $cmd 2>&1 | tee -a ${logfile_name}.log
         log "Delta Eddy saved"
     fi 
 fi

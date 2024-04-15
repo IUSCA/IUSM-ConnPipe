@@ -94,12 +94,12 @@ cmd="python ${EXEDIR}/src/func/add_parc.py \
     ${FileIn} 1 \
     ${fileparcSUBC}"
 log $cmd
-eval $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log
 cmd="python ${EXEDIR}/src/func/add_parc.py \
     ${FileIn} 0 \
     ${fileparcCRBLM}"
 log $cmd
-eval $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log
 
 fileConnMatrix="${path_DWI_matrices}/1M_2radial_density${pcname}.csv"
 

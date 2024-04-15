@@ -62,4 +62,4 @@ checkisfile ${fileIn}
 
 cmd="python ${EXEDIR}/src/func/ROI_TS.py ${fileIn}"
 log $cmd
-eval $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log
