@@ -1,9 +1,9 @@
 #!/bin/bash
 
 #module load python/3.11.4
-module load fsl/6.0.5.1
-module load ants/2.3.1  #module load ants/2.3.5
-# module load mrtrix/3.0.4  #mrtrix3/3.0.4
+module load fsl/6.0.5.1  #module load fsl/6.0.5.2
+module load ants/2.3.1  # module load ants/2.3.5
+# mrtrix3/3.0.4
 
 python --version
 which python
@@ -18,11 +18,8 @@ fi
 config=$1
 subj2run=$2
 
-# Location of package and scripts [if hpc_main is in pipeline directory]:
+# Location of package and scripts:
  export EXEDIR=$(dirname "$(readlink -f "$0")")
-
-# This change allows me to run the pipeline from any directory.
-# export EXEDIR="/N/project/kbase-imaging/connpipe_job_test/IUSM-ConnPipe"
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 source $config

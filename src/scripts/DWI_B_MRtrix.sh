@@ -19,7 +19,6 @@ msg2file "2. MRtrix Streamline Tractography"
 msg2file "=================================="
 
 which python
-# conda deactivate 
 module load mrtrix/3.0.4
 which python
 
@@ -79,7 +78,7 @@ log "2.3 Anatomically Constrained Tractography"
 #=============================================================================
 # brainIN FILE DOES NOT EXIST. CONNPIPE WILL FAIL FROM HERE ON. 
 #=============================================================================
-brainIN="${DWIpath}/rT1_dof6.nii.gz"
+brainIN="${DWIpath}/rT1_qSyn_Warped.nii.gz"
 
 file5tt="${path_DWI_mrtrix}/fsl5tt.nii.gz"
     # act needs distortion corrected data; should work with no dist corr,
@@ -226,8 +225,6 @@ log $cmd
 eval $cmd 
 
 
-module unload mrtrix/3.0.4
-which python
+module unload mrtrix/3.0.4  #mrtrix3/3.0.4
 module unload python
-# conda activate /N/project/connpipe/fMRI_proc_utils/python-envs/env_fmri_proc/
 which python

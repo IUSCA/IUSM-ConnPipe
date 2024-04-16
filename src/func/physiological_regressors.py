@@ -12,7 +12,7 @@ print("fileIN "+ fileIN)
 physReg=sys.argv[2]
 print("physReg "+ physReg)
 num_comp=int(sys.argv[3])
-print("um_comp "+ num_comp)
+print("um_comp ", num_comp)
 NuisancePhysReg_out=sys.argv[4]
 print("NuisancePhysReg_out "+ NuisancePhysReg_out)
 

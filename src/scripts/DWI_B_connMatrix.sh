@@ -101,12 +101,15 @@ cmd="python ${EXEDIR}/src/func/add_parc.py \
 log $cmd
 eval $cmd 2>&1 | tee -a ${logfile_name}.log
 
-fileConnMatrix="${path_DWI_matrices}/1M_2radial_density${pcname}.csv"
+fileConnMatrix="${path_DWI_matrices}/${configs_DWI_sift_term_number}_2radial_density${pcname}.csv"
 
 # CONFIG assignment_radial_search can be user set
 # CONFIG scale_invnodevol: other options are available for edge assignment
 # CONFIG symmetric could be optional, but its good practive to have it
 # CONFIG: zero_diagonal can be optional
+
+module load mrtrix/3.0.4 #mrtrix3/3.0.4
+
 
 cmd="tck2connectome -assignment_radial_search 2 \
     -scale_invnodevol -symmetric \
@@ -114,3 +117,7 @@ cmd="tck2connectome -assignment_radial_search 2 \
     -force ${fileFiltStreamlines} ${FileIn} ${fileConnMatrix}"
 log $cmd
 eval $cmd
+
+module unload mrtrix/3.0.4  #mrtrix3/3.0.4
+which python
+module unload python

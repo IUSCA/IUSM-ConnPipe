@@ -20,11 +20,11 @@ def get_ts(vol,numTP,rest):
 print("\n *** python global signal calculation **** ")
 EPIpath=os.environ['EPIrun_out']
 fileIN=sys.argv[1]
-print("fileIN "+ fileIN)
+print("fileIN ", fileIN)
 NuisancePhysReg_out=sys.argv[2]
-print("NuisancePhysReg_out "+ NuisancePhysReg_out)
+print("NuisancePhysReg_out ", NuisancePhysReg_out)
 compute_gs=int(sys.argv[3])
-print("compute_gs "+ compute_gs)
+print("compute_gs ", compute_gs)
 
 
 ### load data and masks

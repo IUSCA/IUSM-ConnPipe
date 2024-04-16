@@ -66,7 +66,7 @@ print("numVoxels - ",numVoxels)
 print("Resuduals array elements: ",len(resid_array))
 
 for ra in resid_array:
-    print("---- iterating over "+ra)
+    print("---- iterating over ",ra)
 
     resid = data[ra]
 
