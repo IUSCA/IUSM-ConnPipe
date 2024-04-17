@@ -4,12 +4,15 @@
 ################################################################################
 ## GLOBALS & dependencies
 
-# source bash funcs
-source ${EXEDIR}/src/func/bash_funcs.sh
-
 export pathSM="/N/project/connpipe/fMRI_proc_utils"
 
-################################################################################
+# Location where IUSM-ConnPipe package has been installed/cloned:
+#    setting this path allows user to run pipeline from any path
+ export EXEDIR="/N/project/connpipe/ConnPipe/IUSM-ConnPipe"  #$(dirname "$(readlink -f "$0")")
+
+ # source bash funcs
+source ${EXEDIR}/src/func/bash_funcs.sh
+
 #########################  SET DATA VARIABLES  #################################
 
 # USER INSTRUCTIONS- Set these paths to your bids rawdata directory and your derivatives directory.
@@ -21,14 +24,20 @@ export path2data="/N/project/YoderNAN/rawdata"
 
 # export path2derivs="/N/project/connpipe/Data/derivatives"  
 export path2derivs="/N/project/YoderNAN/derivatives"
- 
 
-# ################# RESIDUAL CODE FROM GMEFM UNWARP. NEEDS TO BE UPDATED ###################
-# export configs_grefmFolder="GREFM"  # Reserved for Gradient Field Mapping series
-# 	export configs_GREmagdcm="MAG_DICOMS" # Gradient echo FM magnitude series
-# 	export configs_GREphasedcm="PHASE_DICOMS" # Gradient echo FM phase map series
-############################################################################################
+#########################  SOFTWARE SETTINGS  #################################
+# Indicate what versions to use for each software package. 
+export fsl="fsl/6.0.5.1"  # Must be > 6.0.1  => 6.0.5.1 for colo nodes; 6.0.5.2 for quartz
+export ants="ants/2.3.1"  # Must be > 2.0  => 2.3.1 for colo nodes; 2.3.5 for quartz
+export mrtrix="mrtrix/3.0.4"  # Must be > 3.0  => mrtrix/3.0.4 for colo nodes; mrtrix3/3.0.4 for quartz
 
+## Indiacate if using HPC's native python. 
+export flag_HPC_python=false
+	export HPC_python="python/3.11.4"
+#### We recommned using the provided conda environment with stable python package versions.
+#    If using conda environment, activate env before running main_connpipe.sh
+
+################################################################################
 ################################ PARCELLATIONS #################################
 
 # required
@@ -109,7 +118,7 @@ export configs_T1_addcrblm=true
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export T1_PREPARE_A=true
+export T1_PREPARE_A=false
 
 if $T1_PREPARE_A; then
 		
@@ -143,7 +152,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export T1_PREPARE_B=true
+export T1_PREPARE_B=false
 
 if $T1_PREPARE_B; then
 
@@ -199,7 +208,7 @@ if $fMRI_A; then
 	export configs_EPI_runMax= # maximum run-# to be processed
 
 	# Obtain pertinent scan information from json file.
-	export flags_EPI_ReadJson=true
+	export flags_EPI_ReadJson=false
 		# If there is no json file with the functional data: 
 		# set flag to false and run the pipeline to receive instructions to manually enter epi acquisition parameters
 	#==============================================================================#
@@ -210,7 +219,7 @@ if $fMRI_A; then
 	# 2) Gradient echo field maps -- uses FUGE
 	
 	#============================ OPTION 1: SPIN ECO UNWARP =======================#
-	export flags_EPI_SpinEchoUnwarp=true # Requires raw fmap directory and approporiate files.
+	export flags_EPI_SpinEchoUnwarp=false # Requires raw fmap directory and approporiate files.
 		## FSL-topup
 		export flags_EPI_RunTopup=true # 1=Run topup (1st pass), 0=Run applyTopup only. (saves time if topup output exists). 
 
@@ -242,20 +251,20 @@ if $fMRI_A; then
 	#==================================================================================#
 	#==================================================================================#
 
-	export flags_EPI_SliceTimingCorr=true		
+	export flags_EPI_SliceTimingCorr=false		
 		export configs_EPI_minTR=1.6   # perform Slice Timing correction only if TR > configs_EPI_minTR
 		export configs_EPI_UseTcustom=1   # 1: use header-extracted slice times (suggested)
 
-	export flags_EPI_MotionCorr=true   # head motion estimation with FSL's mcflirt; generates 6 motion param for each BOLD image
+	export flags_EPI_MotionCorr=false   # head motion estimation with FSL's mcflirt; generates 6 motion param for each BOLD image
 
-	export flags_EPI_RegT1=true
+	export flags_EPI_RegT1=false
 		export configs_EPI_epibetF=0.3000;
 
-	export flags_EPI_RegOthers=true
+	export flags_EPI_RegOthers=false
 		export configs_EPI_GMprobthr=0.2 # Threshold the GM probability image; change from 0.25 to 0.2 or 0.15										
 		export configs_EPI_minVoxelsClust=8 
 
-	export flags_EPI_IntNorm4D=true # Intensity normalization to global 4D mean of 1000
+	export flags_EPI_IntNorm4D=false # Intensity normalization to global 4D mean of 1000
 
 	#=================================================================================================#
 	#=================================================================================================#
@@ -383,8 +392,7 @@ if $fMRI_A; then
 
 #=================================================================================================#
 #=================================================================================================#
-		log $nR
-		log $post_nR
+		
 	#=======################################ EXTRAS ###############################=========#
 	
 	export flags_EPI_ReHo=false  # COMPUTE ReHo	

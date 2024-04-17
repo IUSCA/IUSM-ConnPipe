@@ -1,13 +1,5 @@
 #!/bin/bash
 
-#module load python/3.11.4
-module load fsl/6.0.5.1  #module load fsl/6.0.5.2
-module load ants/2.3.1  # module load ants/2.3.5
-# mrtrix3/3.0.4
-
-python --version
-which python
-
 # Checking input arguments:
 if (($# != 2)); then
 	echo "Incorrect number of input arguments:"	
@@ -18,14 +10,27 @@ fi
 config=$1
 subj2run=$2
 
-# Location of package and scripts:
- export EXEDIR=$(dirname "$(readlink -f "$0")")
+# # Location of package and scripts:
+#  export EXEDIR=$(dirname "$(readlink -f "$0")")
 
-source ${EXEDIR}/src/func/bash_funcs.sh
 source $config
+source ${EXEDIR}/src/func/bash_funcs.sh
 
-# Exporting path/file dependencies.
+# Load packages/modules
 #===========================================================================
+if ${flag_HPC_python}; then
+    echo "Loading HPC native python"
+    module load ${HPC_python}
+fi 
+module load ${fsl} #fsl/6.0.5.1  #module load fsl/6.0.5.2
+module load ${ants}  #ants/2.3.1  # module load ants/2.3.5
+
+py_ver=$(python --version)
+echo "****** ${py_ver} ******"
+py_which=$(which python)
+echo "****** ${py_which} ******"
+
+
 # If FSL is not in the path, exit now
 if [[ -n "${FSLDIR}" ]]; then
     echo "FSLDIR is ${FSLDIR}"
@@ -34,6 +39,7 @@ else
     exit 1
 fi
 
+# Exporting path/file dependencies.
 #============================================================================
 export pathMNItmplates="${pathSM}/MNI_templates"
 export pathBrainmaskTemplates="${pathSM}/brainmask_templates"
@@ -229,13 +235,6 @@ for ((i = 0; i < nsubj; i++)); do
 
     export SUBJ=${SUBJECTS[i]}  #${SUBJdir}
     export SESS=${SESSIONS[i]}  #${SUBJdir}
-
-    if [ -z "$variable" ]; then
-        echo "There are no sessions"
-    else
-        echo "Subjects have sessions. "
-    fi
-
 
     # create sub-ses directory so that log files can be written
     export path2ses="${path2derivs}/${SUBJ}/${SESS}"

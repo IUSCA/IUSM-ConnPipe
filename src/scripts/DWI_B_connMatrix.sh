@@ -108,7 +108,7 @@ fileConnMatrix="${path_DWI_matrices}/${configs_DWI_sift_term_number}_2radial_den
 # CONFIG symmetric could be optional, but its good practive to have it
 # CONFIG: zero_diagonal can be optional
 
-module load mrtrix/3.0.4 #mrtrix3/3.0.4
+module load ${mrtrix}  #mrtrix/3.0.4 #mrtrix3/3.0.4
 
 
 cmd="tck2connectome -assignment_radial_search 2 \
@@ -118,6 +118,12 @@ cmd="tck2connectome -assignment_radial_search 2 \
 log $cmd
 eval $cmd
 
-module unload mrtrix/3.0.4  #mrtrix3/3.0.4
-which python
-module unload python
+module unload ${mrtrix}  #mrtrix/3.0.4  #mrtrix3/3.0.4
+if ! ${flag_HPC_python}; then
+    echo "Unloading HPC python loaded with MRtrix"
+    module unload python
+fi 
+py_ver=$(python --version)
+log "****** ${py_ver} ******"
+py_which=$(which python)
+log "****** ${py_which} ******"
