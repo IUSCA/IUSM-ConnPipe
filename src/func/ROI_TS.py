@@ -7,34 +7,31 @@ from scipy.io import savemat
 import time
 
 
-###### print to log files #######
+###### print to qc file #######
 QCfile_name = ''.join([os.environ['QCfile_name'],'.log'])
 fqc=open(QCfile_name, "a+")
-logfile_name = ''.join([os.environ['logfile_name'],'.log'])
-flog=open(logfile_name, "a+")
 
-flog.write("\n *** python ROI_TS **** ")
+print("\n *** python ROI_TS **** ")
 
 NuisancePhysReg_out = os.environ['NuisancePhysReg_out']
-flog.write("\n NuisancePhysReg_out "+ NuisancePhysReg_out)
+print("NuisancePhysReg_out "+ NuisancePhysReg_out)
 
 numParcs = int(os.environ['numParcs'])
-flog.write("\n numParcs "+ str(numParcs))
+print("umParcs "+ str(numParcs))
 
 EPIpath=os.environ['EPIrun_out']
-flog.write("\n EPIpath "+ EPIpath)
+print("PIpath "+ EPIpath)
 
 post_nR=os.environ['post_nR']
-flog.write("\n post_nR "+ post_nR)
+print("post_nR "+ post_nR)
 
 dvars_despike=os.environ['configs_EPI_despike']
-flog.write("\n dvars_despike "+ dvars_despike)
+print("dvars_despike "+ dvars_despike)
 
 # load appropriate residuals
 fileIn=sys.argv[1]
 print("fileIn ",fileIn)
 print("Loading post-regression residuals from ",fileIn)
-flog.write("\n Loading post-regression residuals "+fileIn)
 data = np.load(fileIn) 
 if dvars_despike == 'true':
     resid=data['resid_despike']
@@ -84,7 +81,6 @@ for k in range(1,numParcs+1):
 
     if parc_nodal == "1":
         print(" Processing nodes for %s parcellation" % parc_label)
-        flog.write("\n Processing nodes for %s parcellation"+ parc_label)
 
         if parc_crblmonly == "1":
             parcGM_file = ''.join([EPIpath,'/rT1_parc_',parc_label,'_clean.nii.gz'])
@@ -96,7 +92,6 @@ for k in range(1,numParcs+1):
 
         numROIs = int(np.amax(parcGM))
         print(" number of ROIs - ",numROIs)
-        fqc.write("\n number of ROIs - " + str(numROIs))
         ROIs_numVoxels = np.empty((numROIs,1))
     
         restingROIs = np.empty((numROIs,numTimePoints))
@@ -110,7 +105,6 @@ for k in range(1,numParcs+1):
             ROIs_numVoxels[roi] = np.count_nonzero(voxelsROI)
 
             print("ROI %d  - %d voxels" % (roi+1, ROIs_numVoxels[roi]))
-            flog.write("\n ROI " + str(roi+1) + " - "+ str(ROIs_numVoxels[roi]) + " voxels")
 
             if ROIs_numVoxels[roi] > 0:
                 
@@ -137,7 +131,6 @@ for k in range(1,numParcs+1):
         ## restingROIs is the average timeseries of each region
         np.savez(fileOut,restingROIs=restingROIs,ROIs_numVoxels=ROIs_numVoxels,ROIs_numNans=ROIs_numNans)
         print("Saved ROI resting data to: ",fileOut)
-        flog.write("\n Saved ROI resting data to: "+fileOut)
 
         fileOut = "/6_epi_%s_ROIs.mat" % parc_label
         fileOut = ''.join([path_EPI_Mats,fileOut])
@@ -147,7 +140,5 @@ for k in range(1,numParcs+1):
 
     else:
         print(" Skipping %s parcellation - Not a nodal parcellation" % parc_label)
-        flog.write("\n Skipping "+parc_label+" - Not a nodal parcellation")
 
 fqc.close()
-flog.close()

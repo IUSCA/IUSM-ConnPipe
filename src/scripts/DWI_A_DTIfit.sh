@@ -48,9 +48,10 @@ elif [[ "$rtag" -gt 1 ]]; then
 fi
 
 # Format Bval file (row format)
-cmd="python ${EXEDIR}/src/func/format_row_bval.py ${DTpath} ${fileInBval::-5}"
+cmd="python ${EXEDIR}/src/func/format_row_bval.py ${DTpath} ${fileInBval%%.*}"  
 log $cmd
-eval $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log
+
 fileDTIfitBval="${DTpath}/3_DWI.bval"
 
 # Rotated Bvec from EDDY will be used here.
@@ -58,7 +59,7 @@ fileEddyBvec="${EDDYpath}/eddy_output.eddy_rotated_bvecs"
 
 # Create a brain mask of EDDY corrected data
 cmd="python ${EXEDIR}/src/func/extract_b0_1st.py \
-${fileDTIfitBval}"
+    ${fileDTIfitBval}"
 log $cmd
 b0_1st=$(eval $cmd)
 log "b0_1st is ${b0_1st}"

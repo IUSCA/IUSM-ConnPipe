@@ -61,7 +61,6 @@ anofel=dim1/AccF
 # Total Readout Time (s)
 RT=(anofel-1)*ees
 print(RT)
-#sys.stdout.write(str(RT))
 END
 )
 }

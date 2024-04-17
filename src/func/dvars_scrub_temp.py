@@ -34,53 +34,33 @@ def f_apply_reg(data, mask, regressors):
 
     return resid
 
-###### print to log files #######
-QCfile_name = ''.join([os.environ['QCfile_name'],'.log'])
-fqc=open(QCfile_name, "a+")
-logfile_name = ''.join([os.environ['logfile_name'],'.log'])
-flog=open(logfile_name, "a+")
 
-flog.write("\n *** python dvars-based scrubbbing **** ")
+print("\n *** python dvars-based scrubbbing **** ")
 EPIpath=os.environ['EPIrun_out']
 nuisanceReg=sys.argv[1]  
 print("nuisanceReg is ",nuisanceReg)
-flog.write("\n nuisanceReg "+ nuisanceReg)
 physReg=sys.argv[2] 
 print("physReg is ",physReg)
-flog.write("\n physReg "+ physReg)
 NuisancePhysReg_out = ''.join([EPIpath,'/',nuisanceReg,'/',physReg])
 print("NuisancePhysReg_out is ",NuisancePhysReg_out)
-flog.write("\n NuisancePhysReg_out "+ NuisancePhysReg_out )
-
-# configs_numPhys=int(os.environ['configs_EPI_numPhys'])
-# print("configs_numPhys is ",configs_numPhys)
-# flog.write("\n configs_numPhys "+ str(configs_numPhys))
-# numReg=int(os.environ['configs_EPI_numHMP'])
-# flog.write("\n numReg "+ str(numReg))
-# print("numReg is ",numReg)
-# numGS=int(os.environ['configs_EPI_numGS'])
-# flog.write("\n numGS "+ str(numGS))
-# print("numGS is ",numGS)
 
 nR=os.environ['nR']
-flog.write("\n nR "+ nR)
 print("nR is ",nR)
 dvars_scrub=os.environ['configs_EPI_DVARS']
-flog.write("\n dvars_scrub "+ dvars_scrub)
+print("dvars_scrub ", dvars_scrub)
 
 resting_file=os.environ['configs_EPI_resting_file']
-flog.write("\n resting_file "+ resting_file)
+print("resting_file "+ resting_file)
 resting_file = ''.join([EPIpath,resting_file]) 
-flog.write("\n full resting file is "+ resting_file)
+print("full resting file is "+ resting_file)
 
 
 resting = nib.load(resting_file)
 
 fname = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',nR,'.npz'])
 
-flog.write("\n REGRESSORS -- Loading regressor matrix:") 
+print("\n REGRESSORS -- Loading regressor matrix:") 
 print("Loading regressor matrix:") 
-flog.write("\n " + str(fname))
 print(fname)
 
 resid_data=np.load(fname)
@@ -107,7 +87,6 @@ if dvars_scrub == 'true':
 
         print("=== Calculating DVARS from residuals ===")
         configs_EPI_path2DVARS=os.environ['configs_EPI_path2DVARS']
-        flog.write("\n configs_EPI_path2DVARS "+ str(configs_EPI_path2DVARS))
         print("configs_EPI_path2dvars ",configs_EPI_path2DVARS)
 
         # Define file name where DVARS info will be printed
@@ -128,10 +107,8 @@ if dvars_scrub == 'true':
 
         vols2scrub = DVARSout["Inference"]["H"]
         print("vols to scrub: ",vols2scrub)
-        fdvars.write("\n vols to scrub: "+ str(vols2scrub))
         nvols2scrub = vols2scrub.shape[0]
         print("num vols to be scrubbed: ",nvols2scrub)
-        fdvars.write("\n vols to be scrubbed: "+ str(nvols2scrub))
         scrubbing = np.zeros((nvols2scrub,numTimePoints), dtype=int)
 
         if nvols2scrub > 0:
@@ -180,8 +157,3 @@ elif dvars_scrub == 'false':
     print("=== Scrubbing with FSL's FD and DVARS ===")
     
 
-
-
-
-flog.close()
-fqc.close()

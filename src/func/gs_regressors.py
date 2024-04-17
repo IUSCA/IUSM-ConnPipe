@@ -5,13 +5,6 @@ import numpy as np
 import nibabel as nib
 from scipy.io import savemat
 
-###### print to log files #######
-QCfile_name = ''.join([os.environ['QCfile_name'],'.log'])
-fqc=open(QCfile_name, "a+")
-logfile_name = ''.join([os.environ['logfile_name'],'.log'])
-flog=open(logfile_name, "a+")
-
-
 def get_ts(vol,numTP,rest):
     numVoxels = np.count_nonzero(vol)
     print("numVoxels - ",numVoxels)
@@ -24,14 +17,14 @@ def get_ts(vol,numTP,rest):
     return ts,mask
 
 
-flog.write("\n *** python global signal calculation **** ")
+print("\n *** python global signal calculation **** ")
 EPIpath=os.environ['EPIrun_out']
 fileIN=sys.argv[1]
-flog.write("\n"+"fileIN "+ fileIN)
+print("fileIN ", fileIN)
 NuisancePhysReg_out=sys.argv[2]
-flog.write("\n NuisancePhysReg_out "+ NuisancePhysReg_out)
+print("NuisancePhysReg_out ", NuisancePhysReg_out)
 compute_gs=int(sys.argv[3])
-flog.write("\n compute_gs "+ str(compute_gs))
+print("compute_gs ", compute_gs)
 
 
 ### load data and masks
@@ -60,6 +53,3 @@ if 0 < compute_gs < 5:
     savemat(fname, mdic)
     print("saved global signal regressors")    
 
-
-fqc.close()
-flog.close()

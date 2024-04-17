@@ -5,22 +5,16 @@ import numpy as np
 import nibabel as nib
 from scipy.io import savemat
 
-###### print to log files #######
-QCfile_name = ''.join([os.environ['QCfile_name'],'.log'])
-fqc=open(QCfile_name, "a+")
-logfile_name = ''.join([os.environ['logfile_name'],'.log'])
-flog=open(logfile_name, "a+")
-
-flog.write("\n *** python physiological regressors **** ")
+print("\n *** python physiological regressors **** ")
 EPIpath=os.environ['EPIrun_out']
 fileIN=sys.argv[1]
-flog.write("\n"+"fileIN "+ fileIN)
+print("fileIN "+ fileIN)
 physReg=sys.argv[2]
-flog.write("\n physReg "+ physReg)
+print("physReg "+ physReg)
 num_comp=int(sys.argv[3])
-flog.write("\n num_comp "+ str(num_comp))
+print("um_comp ", num_comp)
 NuisancePhysReg_out=sys.argv[4]
-flog.write("\n NuisancePhysReg_out "+ NuisancePhysReg_out)
+print("NuisancePhysReg_out "+ NuisancePhysReg_out)
 
 
 def get_ts(vol,numTP,rest):
@@ -75,14 +69,12 @@ numVoxels = np.count_nonzero(volWM_vol)
 
 
 if physReg == 'aCompCor':
-    print("-------------aCompCorr--------------")
-    flog.write("\n Physiological Reg: aCompCorr.\n")
-    
+    print("-------------aCompCorr--------------")    
     [CSFpca,CSFvar] = get_pca(CSFts,num_comp)
-    flog.write("\n Running PCA on CSF time-series.\n")
+    print("\n Running PCA on CSF time-series.\n")
 
     [WMpca,WMvar] = get_pca(WMts,num_comp)
-    flog.write("\n Running PCA on WM time-series.\n")
+    print("\n Running PCA on WM time-series.\n")
     
     # save the data
     fname = ''.join([NuisancePhysReg_out,'/dataPCA',str(num_comp),'_WM-CSF.npz'])
@@ -95,7 +87,6 @@ if physReg == 'aCompCor':
 
 elif physReg == 'meanPhysReg':
     print("-------------Mean CSF and WM Regression--------------")
-    flog.write("\n Physiological Reg: Mean CSF and WM Regression.\n")
     CSFavg = np.mean(CSFts,axis=0)
     CSFderiv = np.append(0,np.diff(CSFavg))
     CSFavg_sq = np.power(CSFavg,2)
@@ -117,5 +108,3 @@ elif physReg == 'meanPhysReg':
 else:
     print("ERROR physReg value not recognized!")
 
-fqc.close()
-flog.close()

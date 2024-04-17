@@ -8,15 +8,10 @@ from scipy import signal
 from scipy.io import savemat
 
 
-logfile_name = ''.join([os.environ['logfile_name'],'.log'])
-flog=open(logfile_name, "a+")
-flog.write("\n *** python apply_bandpass **** ")
-
-
 EPIpath=os.environ['EPIrun_out']
 print("EPIpath ",EPIpath)
 dvars_despike=os.environ['configs_EPI_despike']
-flog.write("\n dvars_despike "+ dvars_despike)
+print("\n dvars_despike ", dvars_despike)
 fileIn=sys.argv[1]
 print("fileIn ",fileIn)
 fileOut=sys.argv[2]
@@ -71,7 +66,7 @@ print("numVoxels - ",numVoxels)
 print("Resuduals array elements: ",len(resid_array))
 
 for ra in resid_array:
-    print("---- iterating over "+ra)
+    print("---- iterating over ",ra)
 
     resid = data[ra]
 
@@ -145,5 +140,3 @@ else:
 
 
 print("Saved bandpass filtered residuals")
-
-flog.close()

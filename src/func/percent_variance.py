@@ -4,9 +4,6 @@ import os
 import sys
 import numpy as np
 
-###### print to log files #######
-logfile_name = ''.join([os.environ['logfile_name'],'.log'])
-flog=open(logfile_name, "a+")
 
 fIn1=sys.argv[1]
 
@@ -32,10 +29,7 @@ peVar = np.sum(peVar)
 ptVar = np.sum(ptVar)
 
 print("%.2f percent of explained variance in removed motion components" % peVar)
-flog.write("\n "+ str(peVar)+ " percent of explained variance in removed motion components")
 
 print("%.2f percent of total variance in removed motion components" % ptVar)
-flog.write("\n "+ str(ptVar)+ " percent of total variance in removed motion components \n\n")
 
-flog.close()
 

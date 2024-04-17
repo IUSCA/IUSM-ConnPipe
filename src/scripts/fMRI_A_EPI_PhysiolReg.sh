@@ -66,7 +66,7 @@ fi
 # read in data and masks 
 cmd="python ${EXEDIR}/src/func/read_physiol_data.py"
 log $cmd
-eval $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log
 
 # fill holes in the brain mask, without changing FOV
 fileOut="${EPIrun_out}/rT1_brain_mask_FC.nii.gz"
@@ -78,4 +78,4 @@ cmd="python ${EXEDIR}/src/func/physiological_regressors.py \
     ${fileIN} ${configs_PhysiolReg} \
     ${configs_EPI_numPhys} ${NuisancePhysReg_out}"
 log $cmd
-eval $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log

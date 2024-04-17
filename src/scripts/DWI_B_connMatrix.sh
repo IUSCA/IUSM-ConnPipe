@@ -94,19 +94,22 @@ cmd="python ${EXEDIR}/src/func/add_parc.py \
     ${FileIn} 1 \
     ${fileparcSUBC}"
 log $cmd
-eval $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log
 cmd="python ${EXEDIR}/src/func/add_parc.py \
     ${FileIn} 0 \
     ${fileparcCRBLM}"
 log $cmd
-eval $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log
 
-fileConnMatrix="${path_DWI_matrices}/1M_2radial_density${pcname}.csv"
+fileConnMatrix="${path_DWI_matrices}/${configs_DWI_sift_term_number}_2radial_density${pcname}.csv"
 
 # CONFIG assignment_radial_search can be user set
 # CONFIG scale_invnodevol: other options are available for edge assignment
 # CONFIG symmetric could be optional, but its good practive to have it
 # CONFIG: zero_diagonal can be optional
+
+module load ${mrtrix}  #mrtrix/3.0.4 #mrtrix3/3.0.4
+
 
 cmd="tck2connectome -assignment_radial_search 2 \
     -scale_invnodevol -symmetric \
@@ -114,3 +117,13 @@ cmd="tck2connectome -assignment_radial_search 2 \
     -force ${fileFiltStreamlines} ${FileIn} ${fileConnMatrix}"
 log $cmd
 eval $cmd
+
+module unload ${mrtrix}  #mrtrix/3.0.4  #mrtrix3/3.0.4
+if ! ${flag_HPC_python}; then
+    echo "Unloading HPC python loaded with MRtrix"
+    module unload python
+fi 
+py_ver=$(python --version)
+log "****** ${py_ver} ******"
+py_which=$(which python)
+log "****** ${py_which} ******"

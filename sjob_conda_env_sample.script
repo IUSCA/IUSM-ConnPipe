@@ -1,0 +1,22 @@
+#!/bin/bash
+#SBATCH -A r00XXX
+#SBATCH --time=5:00:00
+#SBATCH --mail-user=USER@iu.edu
+#SBATCH --mail-type=ALL
+#SBATCH -o out_%j.txt
+#SBATCH -e err_%j.txt
+#SBATCH -J SAMPLE_CONDA_ENV
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=8
+
+module unload python
+module load miniconda
+
+conda activate /N/project/connpipe/fMRI_proc_utils/python-envs/env_fmri_proc_py311 
+
+cd /N/project/connpipe/ConnPipe/IUSM-ConnPipe
+
+srun ./main_connpipe.sh /N/path2project/HPCjobs/sample_config.sh /N/path2project/HPCjobs/subj2run.txt
+
+
+

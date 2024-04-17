@@ -18,10 +18,11 @@ msg2file "=================================="
 msg2file "2. MRtrix Streamline Tractography"
 msg2file "=================================="
 
-which python
-# conda deactivate 
-module load mrtrix/3.0.4
-which python
+module load ${mrtrix}  #mrtrix/3.0.4 #mrtrix3/3.0.4
+py_ver=$(python --version)
+log --no-datetime "****** ${py_ver} ******"
+py_which=$(which python)
+log --no-datetime "****** ${py_which} ******"
 
 
 if [[ ! -d "${path_DWI_mrtrix}" ]]; then
@@ -79,7 +80,7 @@ log "2.3 Anatomically Constrained Tractography"
 #=============================================================================
 # brainIN FILE DOES NOT EXIST. CONNPIPE WILL FAIL FROM HERE ON. 
 #=============================================================================
-brainIN="${DWIpath}/rT1_dof6.nii.gz"
+brainIN="${DWIpath}/rT1_qSyn_Warped.nii.gz"
 
 file5tt="${path_DWI_mrtrix}/fsl5tt.nii.gz"
     # act needs distortion corrected data; should work with no dist corr,
@@ -108,8 +109,8 @@ log "Streamlines file: ${fileStreamlines}"
 IFS=' ' read -r -a step_sizes <<< "$configs_DWI_step_sizes"
 IFS=' ' read -r -a max_angles <<< "$configs_DWI_max_angles"
 
-echo "step sizes: ${step_sizes[@]}"
-echo "max angles: ${max_angles[@]}"
+log --no-datetime "step sizes: ${step_sizes[@]}"
+log --no-datetime "max angles: ${max_angles[@]}"
 
 if [[ ! -e ${fileStreamlines} ]]; then 
     create_streamlines=true
@@ -211,7 +212,7 @@ log "rm ${combo_list}"
 eval "rm ${combo_list}"
 
 ## filter streamlines
-echo "2.5 Running SIFT Filtering"
+log "2.5 Running SIFT Filtering"
 
 fileFiltStreamlines="${path_DWI_mrtrix}/${configs_DWI_sift_term_number}_sift_streamlines.tck"
     # For SIFT ACT is pretty much a requirement, so if ACT cant be done, then 
@@ -226,8 +227,12 @@ log $cmd
 eval $cmd 
 
 
-module unload mrtrix/3.0.4
-which python
-module unload python
-# conda activate /N/project/connpipe/fMRI_proc_utils/python-envs/env_fmri_proc/
-which python
+module unload ${mrtrix}  #mrtrix/3.0.4  #mrtrix3/3.0.4
+if ! ${flag_HPC_python}; then
+    echo "Unloading HPC python loaded with MRtrix"
+    module unload python
+fi 
+py_ver=$(python --version)
+log "****** ${py_ver} ******"
+py_which=$(which python)
+log "****** ${py_which} ******"

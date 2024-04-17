@@ -103,8 +103,6 @@ log() {
     echo -e "${msg[@]}"
     echo -e ${NC_}
 
-	# echo "### $dateTime -" >> ${EXEDIR}/pipeline.log
-    # echo "${msg[@]}" >> ${EXEDIR}/pipeline.log
     if [ "$suppressDateTime" = false ]; then
         echo "### $dateTime --->" >> ${logfile_name}.log
     fi

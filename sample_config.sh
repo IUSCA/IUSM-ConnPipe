@@ -4,34 +4,40 @@
 ################################################################################
 ## GLOBALS & dependencies
 
-# source bash funcs
-source ${EXEDIR}/src/func/bash_funcs.sh
-
-## Path to Supplementary Materials. Please download from: 
-# https://drive.google.com/drive/folders/1b7S9UcWDeDXVx3NUjuO8NJxxmChgNQ1G?usp=sharing 
 export pathSM="/N/project/connpipe/fMRI_proc_utils"
 
-################################################################################
+# Location where IUSM-ConnPipe package has been installed/cloned:
+#    setting this path allows user to run pipeline from any path
+ export EXEDIR="/N/project/connpipe/ConnPipe/IUSM-ConnPipe"  #$(dirname "$(readlink -f "$0")")
+
+ # source bash funcs
+source ${EXEDIR}/src/func/bash_funcs.sh
+
 #########################  SET DATA VARIABLES  #################################
 
 # USER INSTRUCTIONS- Set these paths to your bids rawdata directory and your derivatives directory.
 #	path2data directory must contain subject subdirectories in BIDS-compliant format. 
 #   path2derivs directory is where a "connpipe" directory will be created (if it doesn't exist already)
 #               connpipe will create a subdirectory path2derivs/connpipe/sub-ID/ses-ID to store all output
-export path2data="/N/project/connpipe/Data/rawdata"
+# export path2data="/N/project/connpipe/Data/rawdata"  
+export path2data="/N/project/YoderNAN/rawdata"
 
-export path2derivs="/N/project/connpipe/Data/derivatives"
+# export path2derivs="/N/project/connpipe/Data/derivatives"  
+export path2derivs="/N/project/YoderNAN/derivatives"
 
-# USER INSTRUCTIONS- Please set this to the bids style session name you want to run.
-# "ses-"" is the BIDS standard tag 
-# export configs_session="ses-test"  
+#########################  SOFTWARE SETTINGS  #################################
+# Indicate what versions to use for each software package. 
+export fsl="fsl/6.0.5.1"  # Must be > 6.0.1  => 6.0.5.1 for colo nodes; 6.0.5.2 for quartz
+export ants="ants/2.3.1"  # Must be > 2.0  => 2.3.1 for colo nodes; 2.3.5 for quartz
+export mrtrix="mrtrix/3.0.4"  # Must be > 3.0  => mrtrix/3.0.4 for colo nodes; mrtrix3/3.0.4 for quartz
 
-# ################# RESIDUAL CODE FROM GMEFM UNWARP. NEEDS TO BE UPDATED ###################
-# export configs_grefmFolder="GREFM"  # Reserved for Gradient Field Mapping series
-# 	export configs_GREmagdcm="MAG_DICOMS" # Gradient echo FM magnitude series
-# 	export configs_GREphasedcm="PHASE_DICOMS" # Gradient echo FM phase map series
-############################################################################################
+## Indiacate if using HPC's native python. 
+export flag_HPC_python=false
+	export HPC_python="python/3.11.4"
+#### We recommned using the provided conda environment with stable python package versions.
+#    If using conda environment, activate env before running main_connpipe.sh
 
+################################################################################
 ################################ PARCELLATIONS #################################
 
 # required
@@ -187,7 +193,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export fMRI_A=false
+export fMRI_A=true
 
 if $fMRI_A; then
 
@@ -271,7 +277,7 @@ if $fMRI_A; then
 	#   For example: if flags_EPI_NuisanceReg=false, but user intends to generate time-series for data processed
 	#   with AROMA, then user must be sure to set configs_NuisanceReg="AROMA" (assuming AROMA has been ran before).
 	#================================== MOTION AND OUTLIER CORRECTION ================================#
-	export flags_EPI_NuisanceReg=true
+	export flags_EPI_NuisanceReg=false
 	## Nuisance Regressors. There are three options that user can select from to set the configs_NuisanceReg variable:
 	# 1) configs_NuisanceReg="AROMA": ICA-based denoising; WARNING: This will smooth your data.
 	# 2) configs_NuisanceReg="HMPreg": Head Motion Parameter Regression.  
@@ -287,7 +293,7 @@ if $fMRI_A; then
 				export config_AROMA_dim=
 
 				# If AROMA has already been run, save computation time by skipping this step. 
-				export run_AROMA=false
+				export run_AROMA=true
 			fi
 
 			# if using Head Motion Parameters or ICA-AROMA followed by HMP
@@ -386,8 +392,7 @@ if $fMRI_A; then
 
 #=================================================================================================#
 #=================================================================================================#
-		log $nR
-		log $post_nR
+		
 	#=======################################ EXTRAS ###############################=========#
 	
 	export flags_EPI_ReHo=false  # COMPUTE ReHo	
@@ -433,27 +438,10 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export DWI_A=false
+export DWI_A=true
 
 if $DWI_A; then
 
-	# export scanner="SIEMENS" #  SIEMENS or GE
-	# log "SCANNER ${scanner}"
-
-	# if [[ ${scanner} == "SIEMENS" ]]; then
-	# 	export scanner_param_EffectiveEchoSpacing="EffectiveEchoSpacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
-	# 	export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
-	# 	export scanner_param_TotalReadoutTime="TotalReadoutTime"
-	# 	export scammer_param_AcquisitionMatrix="AcquisitionMatrixPE"
-	# 	export scanner_param_PhaseEncodingDirection="PhaseEncodingDirection"
-	# elif [[ ${scanner} == "GE" ]]; then
-	# 	export scanner_param_EffectiveEchoSpacing="effective_echo_spacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
-	# 	export scanner_param_slice_fractimes="slice_timing"  # "SliceTiming" for Siemens; "slice_timing" for GE
-	# 	export scanner_param_TotalReadoutTime="TotalReadoutTime"
-	# 	export scammer_param_AcquisitionMatrix="acquisition_matrix"
-	# 	export scanner_param_PhaseEncodingDirection="phase_encode_direction"
-	# fi
-	
 	export flags_DWI_topup=true # FSL topup destortion field estimation
 		export configs_DWI_b0cut=1 # maximum B-value to be considered B0
 	export flags_DWI_eddy=true # FSL EDDY distortion correction
@@ -470,10 +458,10 @@ export DWI_B=true
 
 if $DWI_B; then
 
-	export flags_DWI_regT1=false
+	export flags_DWI_regT1=true
 	export flags_DWI_MRtrix=true
 		# if streamline file has been created, you can skip this step
-		export configs_DWI_skip_streamlines=false
+		export configs_DWI_skip_streamlines=true
         # Number of threads must be <= --ntasks-per-node of your Slurm jobs
         export configs_DWI_nthreads=4 # for mrtrix tckgen
 		export configs_DWI_seeding="wm" # 'wm'-white matter OR 'dyn'-dynamic
@@ -484,5 +472,5 @@ if $DWI_B; then
         export configs_DWI_max_angles="30 45 60" # fine coverage if you ask me!
 		# filtering options
 		export configs_DWI_sift_term_number="1000" 
-	export flags_DWI_connMatrix=false # generate connectivity matrices  
+	export flags_DWI_connMatrix=true # generate connectivity matrices  
 fi 

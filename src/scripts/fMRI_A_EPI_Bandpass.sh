@@ -33,4 +33,4 @@ fi
 cmd="python ${EXEDIR}/src/func/dm_dt_bandpass.py \
      ${fileIn} ${fileOut}"
 log $cmd
-eval $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log

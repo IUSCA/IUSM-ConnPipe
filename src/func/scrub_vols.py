@@ -5,12 +5,11 @@ import numpy as np
 import nibabel as nib
 from scipy.io import savemat
 
-###### print to log files #######
-logfile_name = ''.join([os.environ['logfile_name'],'.log'])
-flog=open(logfile_name, "a+")
+print("\n *** python scrub_vols.py **** ")
 
 EPIpath=os.environ['EPIrun_out']
 print("EPIpath ",EPIpath)
+
 NuisancePhysReg_out=os.environ['NuisancePhysReg_out']
 print("NuisancePhysReg_out ",NuisancePhysReg_out)
 
@@ -18,12 +17,12 @@ nR=os.environ['nR']
 print("nR ",nR)
 
 configs_scrub=os.environ['configs_scrub']
-flog.write("\n configs_scrub "+ configs_scrub)
+print("configs_scrub "+ configs_scrub)
 
 # load resting vol image to use header for saving new image. 
 resting_file=os.environ['configs_EPI_resting_file']
 resting_file = ''.join([EPIpath,resting_file])    
-flog.write("\n resting_file "+ resting_file)
+print("resting_file "+ resting_file)
 resting = nib.load(resting_file)
 
 fileIn=sys.argv[1]
@@ -41,13 +40,13 @@ print("resid.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 # load DVARS / FD
 # if 'DVARS_Inference_Hprac' in data:
 if configs_scrub == "stat_DVARS":
-    flog.write("\n *** Scrubbing with Statisitical DVARS **** \n\n")
+    print("*** Scrubbing with Statisitical DVARS **** \n")
     dvars=data['DVARS_Inference_Hprac']
     print("DVARS: ",dvars)
     goodvols = np.ones(numTimePoints, dtype=int)
     goodvols[dvars]=0
 elif configs_scrub == "fsl_fd_dvars":
-    flog.write("\n *** Scrubbing with FSL's dvars and fd *** \n\n")
+    print("*** Scrubbing with FSL's dvars and fd *** \n")
     fname=''.join([EPIpath,'/scrubbing_goodvols.npz'])  
     goodvols = np.load(fname) 
     goodvols = goodvols['good_vols'] 
@@ -82,5 +81,3 @@ ff = ''.join([fileOut,'.mat'])
 print("savign MATLAB file ", ff)
 mdic = {"resid" : resid}
 savemat(ff, mdic)
-
-flog.close()

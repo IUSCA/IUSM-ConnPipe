@@ -39,4 +39,4 @@ fi
 cmd="python ${EXEDIR}/src/func/gs_regressors.py \
      ${fileIN} ${NuisancePhysReg_out} ${compute_gs}"
 log $cmd
-eval $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log

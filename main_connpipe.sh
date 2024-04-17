@@ -1,13 +1,5 @@
 #!/bin/bash
 
-#module load python/3.11.4
-module load fsl/6.0.5.1
-module load ants/2.3.1  #module load ants/2.3.5
-# module load mrtrix/3.0.4  #mrtrix3/3.0.4
-
-python --version
-which python
-
 # Checking input arguments:
 if (($# != 2)); then
 	echo "Incorrect number of input arguments:"	
@@ -18,26 +10,36 @@ fi
 config=$1
 subj2run=$2
 
-# Location of package and scripts [if hpc_main is in pipeline directory]:
- export EXEDIR=$(dirname "$(readlink -f "$0")")
+# # Location of package and scripts:
+#  export EXEDIR=$(dirname "$(readlink -f "$0")")
 
-# This change allows me to run the pipeline from any directory.
-# export EXEDIR="/N/project/kbase-imaging/connpipe_job_test/IUSM-ConnPipe"
-
-source ${EXEDIR}/src/func/bash_funcs.sh
 source $config
+source ${EXEDIR}/src/func/bash_funcs.sh
 
-# Exporting path/file dependencies.
+# Load packages/modules
 #===========================================================================
+if ${flag_HPC_python}; then
+    echo "Loading HPC native python"
+    module load ${HPC_python}
+fi 
+module load ${fsl} #fsl/6.0.5.1  #module load fsl/6.0.5.2
+module load ${ants}  #ants/2.3.1  # module load ants/2.3.5
+
+py_ver=$(python --version)
+echo "****** ${py_ver} ******"
+py_which=$(which python)
+echo "****** ${py_which} ******"
+
+
 # If FSL is not in the path, exit now
 if [[ -n "${FSLDIR}" ]]; then
     echo "FSLDIR is ${FSLDIR}"
 else
-    echo "### $dateTime - FSLDIR is not set. Exiting...." >> ${ERRfile_name}.log
-    echo "FSLDIR is not set. Exiting...."
+    echo -e "\033[33m#  ERROR. FSLDIR is not set. Exiting \033[0m"
     exit 1
 fi
 
+# Exporting path/file dependencies.
 #============================================================================
 export pathMNItmplates="${pathSM}/MNI_templates"
 export pathBrainmaskTemplates="${pathSM}/brainmask_templates"
@@ -217,8 +219,8 @@ while IFS=" " read -r col1 col2; do
 done < "${subj2run}"
 
 
-echo "### $dateTime - subjects: ${SUBJECTS[@]}" >> ${ERRfile_name}.log
-echo "### $dateTime - subjects: ${SESSIONS[@]}" >> ${ERRfile_name}.log
+echo "### SUBJECTS: ${SUBJECTS[@]}" 
+echo "### SESSIONS: ${SESSIONS[@]}" 
 
 echo "##################"
 
@@ -490,5 +492,5 @@ done
 # ################################################################################
 # ## run it
 
-main "$@" 2>&1 | tee -a test_log_main.log 
+main "$@"  
 
