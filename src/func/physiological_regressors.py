@@ -108,5 +108,3 @@ elif physReg == 'meanPhysReg':
 else:
     print("ERROR physReg value not recognized!")
 
-fqc.close()
-flog.close()

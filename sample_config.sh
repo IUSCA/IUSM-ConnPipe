@@ -277,7 +277,7 @@ if $fMRI_A; then
 	#   For example: if flags_EPI_NuisanceReg=false, but user intends to generate time-series for data processed
 	#   with AROMA, then user must be sure to set configs_NuisanceReg="AROMA" (assuming AROMA has been ran before).
 	#================================== MOTION AND OUTLIER CORRECTION ================================#
-	export flags_EPI_NuisanceReg=true
+	export flags_EPI_NuisanceReg=false
 	## Nuisance Regressors. There are three options that user can select from to set the configs_NuisanceReg variable:
 	# 1) configs_NuisanceReg="AROMA": ICA-based denoising; WARNING: This will smooth your data.
 	# 2) configs_NuisanceReg="HMPreg": Head Motion Parameter Regression.  

@@ -34,11 +34,6 @@ def f_apply_reg(data, mask, regressors):
 
     return resid
 
-###### print to log files #######
-QCfile_name = ''.join([os.environ['QCfile_name'],'.log'])
-fqc=open(QCfile_name, "a+")
-logfile_name = ''.join([os.environ['logfile_name'],'.log'])
-flog=open(logfile_name, "a+")
 
 print("\n *** python dvars-based scrubbbing **** ")
 EPIpath=os.environ['EPIrun_out']
@@ -162,8 +157,3 @@ elif dvars_scrub == 'false':
     print("=== Scrubbing with FSL's FD and DVARS ===")
     
 
-
-
-
-flog.close()
-fqc.close()
