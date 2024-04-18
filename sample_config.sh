@@ -8,10 +8,10 @@ export pathSM="/N/project/connpipe/fMRI_proc_utils"
 
 # Location where IUSM-ConnPipe package has been installed/cloned:
 #    setting this path allows user to run pipeline from any path
- export EXEDIR="/N/project/connpipe/ConnPipe/IUSM-ConnPipe"  #$(dirname "$(readlink -f "$0")")
+ export EXEDIR="/N/path2connpipe_install/IUSM-ConnPipe"  #$(dirname "$(readlink -f "$0")")
 
- # source bash funcs
-source ${EXEDIR}/src/func/bash_funcs.sh
+	# # source bash funcs (do not change this)
+	# source ${EXEDIR}/src/func/bash_funcs.sh
 
 #########################  SET DATA VARIABLES  #################################
 
@@ -19,11 +19,9 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 #	path2data directory must contain subject subdirectories in BIDS-compliant format. 
 #   path2derivs directory is where a "connpipe" directory will be created (if it doesn't exist already)
 #               connpipe will create a subdirectory path2derivs/connpipe/sub-ID/ses-ID to store all output
-# export path2data="/N/project/connpipe/Data/rawdata"  
-export path2data="/N/project/YoderNAN/rawdata"
+export path2data="/N/path2project/rawdata"
 
-# export path2derivs="/N/project/connpipe/Data/derivatives"  
-export path2derivs="/N/project/YoderNAN/derivatives"
+export path2derivs="/N/path2project/derivatives"
 
 #########################  SOFTWARE SETTINGS  #################################
 # Indicate what versions to use for each software package. 
@@ -31,11 +29,13 @@ export fsl="fsl/6.0.5.1"  # Must be > 6.0.1  => 6.0.5.1 for colo nodes; 6.0.5.2 
 export ants="ants/2.3.1"  # Must be > 2.0  => 2.3.1 for colo nodes; 2.3.5 for quartz
 export mrtrix="mrtrix/3.0.4"  # Must be > 3.0  => mrtrix/3.0.4 for colo nodes; mrtrix3/3.0.4 for quartz
 
-## Indiacate if using HPC's native python. 
+## Indiacate if using HPC's native python and what python version should be loaded 
 export flag_HPC_python=false
 	export HPC_python="python/3.11.4"
 #### We recommned using the provided conda environment with stable python package versions.
 #    If using conda environment, activate env before running main_connpipe.sh
+#    To actvate conda env: 
+#		conda activate /N/project/connpipe/fMRI_proc_utils/python-envs/env_fmri_proc_py311
 
 ################################################################################
 ################################ PARCELLATIONS #################################
@@ -193,7 +193,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export fMRI_A=true
+export fMRI_A=false
 
 if $fMRI_A; then
 
@@ -208,7 +208,7 @@ if $fMRI_A; then
 	export configs_EPI_runMax= # maximum run-# to be processed
 
 	# Obtain pertinent scan information from json file.
-	export flags_EPI_ReadJson=false
+	export flags_EPI_ReadJson=true
 		# If there is no json file with the functional data: 
 		# set flag to false and run the pipeline to receive instructions to manually enter epi acquisition parameters
 	#==============================================================================#
@@ -219,7 +219,7 @@ if $fMRI_A; then
 	# 2) Gradient echo field maps -- uses FUGE
 	
 	#============================ OPTION 1: SPIN ECO UNWARP =======================#
-	export flags_EPI_SpinEchoUnwarp=false # Requires raw fmap directory and approporiate files.
+	export flags_EPI_SpinEchoUnwarp=true # Requires raw fmap directory and approporiate files.
 		## FSL-topup
 		export flags_EPI_RunTopup=true # 1=Run topup (1st pass), 0=Run applyTopup only. (saves time if topup output exists). 
 
@@ -251,20 +251,20 @@ if $fMRI_A; then
 	#==================================================================================#
 	#==================================================================================#
 
-	export flags_EPI_SliceTimingCorr=false		
+	export flags_EPI_SliceTimingCorr=true		
 		export configs_EPI_minTR=1.6   # perform Slice Timing correction only if TR > configs_EPI_minTR
 		export configs_EPI_UseTcustom=1   # 1: use header-extracted slice times (suggested)
 
-	export flags_EPI_MotionCorr=false   # head motion estimation with FSL's mcflirt; generates 6 motion param for each BOLD image
+	export flags_EPI_MotionCorr=true   # head motion estimation with FSL's mcflirt; generates 6 motion param for each BOLD image
 
-	export flags_EPI_RegT1=false
+	export flags_EPI_RegT1=true
 		export configs_EPI_epibetF=0.3000;
 
-	export flags_EPI_RegOthers=false
+	export flags_EPI_RegOthers=true
 		export configs_EPI_GMprobthr=0.2 # Threshold the GM probability image; change from 0.25 to 0.2 or 0.15										
 		export configs_EPI_minVoxelsClust=8 
 
-	export flags_EPI_IntNorm4D=false # Intensity normalization to global 4D mean of 1000
+	export flags_EPI_IntNorm4D=true # Intensity normalization to global 4D mean of 1000
 
 	#=================================================================================================#
 	#=================================================================================================#
@@ -277,7 +277,7 @@ if $fMRI_A; then
 	#   For example: if flags_EPI_NuisanceReg=false, but user intends to generate time-series for data processed
 	#   with AROMA, then user must be sure to set configs_NuisanceReg="AROMA" (assuming AROMA has been ran before).
 	#================================== MOTION AND OUTLIER CORRECTION ================================#
-	export flags_EPI_NuisanceReg=false
+	export flags_EPI_NuisanceReg=true
 	## Nuisance Regressors. There are three options that user can select from to set the configs_NuisanceReg variable:
 	# 1) configs_NuisanceReg="AROMA": ICA-based denoising; WARNING: This will smooth your data.
 	# 2) configs_NuisanceReg="HMPreg": Head Motion Parameter Regression.  
@@ -438,7 +438,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
-export DWI_A=true
+export DWI_A=false
 
 if $DWI_A; then
 
@@ -454,7 +454,7 @@ if $DWI_A; then
 		export configs_DWI_DTIfitf='0.17' # brain extraction (FSL bet -f) parameter 
 fi 
 
-export DWI_B=true
+export DWI_B=false
 
 if $DWI_B; then
 
