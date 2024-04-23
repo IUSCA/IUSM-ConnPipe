@@ -18,12 +18,12 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 # Load packages/modules
 #===========================================================================
+module load ${fsl} #fsl/6.0.5.1  #module load fsl/6.0.5.2
+module load ${ants}  #ants/2.3.1  # module load ants/2.3.5
 if ${flag_HPC_python}; then
     echo "Loading HPC native python"
     module load ${HPC_python}
 fi 
-module load ${fsl} #fsl/6.0.5.1  #module load fsl/6.0.5.2
-module load ${ants}  #ants/2.3.1  # module load ants/2.3.5
 
 py_ver=$(python --version)
 echo "****** ${py_ver} ******"

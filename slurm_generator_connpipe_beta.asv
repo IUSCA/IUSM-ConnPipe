@@ -10,7 +10,7 @@ acct = 'r00216'; % this is Jenya's carbonate connproc acct
 
 %% resources requested:
 ppn = '8';
-walltime = '10:00:00';
+walltime = '6:00:00';
 vmem = '32G';
 
 %% data
@@ -19,7 +19,7 @@ path2deriv='/N/project/kbase-imaging/kbase1-bids/derivatives/connpipe';
 % path to raw data
 path2data='/N/project/kbase-imaging/kbase1-bids/raw';
 % number of subjects per job
-nS = 5; 
+nS = 3; 
 
 % where to write job, log, and error files
 batch_path = '/N/project/kbase-imaging/batch_files';
