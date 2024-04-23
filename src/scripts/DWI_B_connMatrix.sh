@@ -109,7 +109,7 @@ fileConnMatrix="${path_DWI_matrices}/${configs_DWI_sift_term_number}_2radial_den
 # CONFIG: zero_diagonal can be optional
 
 module load ${mrtrix}  #mrtrix/3.0.4 #mrtrix3/3.0.4
-
+export MRTRIX_TMPFILE_DIR=${config_mrtrix_tmpdir}
 
 cmd="tck2connectome -assignment_radial_search 2 \
     -scale_invnodevol -symmetric \

@@ -19,6 +19,7 @@ msg2file "2. MRtrix Streamline Tractography"
 msg2file "=================================="
 
 module load ${mrtrix}  #mrtrix/3.0.4 #mrtrix3/3.0.4
+export MRTRIX_TMPFILE_DIR=${config_mrtrix_tmpdir}
 py_ver=$(python --version)
 log --no-datetime "****** ${py_ver} ******"
 py_which=$(which python)
