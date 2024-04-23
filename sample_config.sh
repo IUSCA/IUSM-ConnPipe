@@ -129,7 +129,7 @@ if $T1_PREPARE_A; then
 	export flags_T1_applyDenoising=true
 
 	export flags_T1_anat=true # run FSL_anat
-		export configs_T1_bias=2 # 0 = no; 1 = weak; 2 = strong
+		export configs_T1_bias=1 # 0 = no; 1 = weak; 2 = strong
 		export configs_T1_crop=1 # 0 = no; 1 = yes (lots already done by dcm2niix)
 
 	export flags_T1_extract_and_mask=true # brain extraction and mask generation (only needed for double BET)
@@ -272,7 +272,7 @@ if $fMRI_A; then
 	#   Each flag (e.g. flag_EPI_*) is a boolean variable that should be used to indicate whether a particular
 	#	section of the pipeline should be executed or not. 
 	#   NOTE that, regardless of whether a section is being executed or not (i.e. the flag is set to false), 
-	#   the configuration parameters within all sections are being used by the pipeline to read/write file 
+	#   the configuration parameters within all sections are being used by the pipeline to read/write  
 	#   the intermediary output files. 
 	#   For example: if flags_EPI_NuisanceReg=false, but user intends to generate time-series for data processed
 	#   with AROMA, then user must be sure to set configs_NuisanceReg="AROMA" (assuming AROMA has been ran before).
