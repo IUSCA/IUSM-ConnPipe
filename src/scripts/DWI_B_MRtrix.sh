@@ -227,6 +227,9 @@ cmd="tcksift \
 log $cmd
 eval $cmd 
 
+## purge the all steamline trafile
+log "rm ${fileStreamlines}"
+eval "rm ${fileStreamlines}"
 
 module unload ${mrtrix}  #mrtrix/3.0.4  #mrtrix3/3.0.4
 if ! ${flag_HPC_python}; then

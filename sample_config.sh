@@ -459,6 +459,8 @@ export DWI_B=false
 if $DWI_B; then
 
 	export flags_DWI_regT1=true
+	# apply existing transformations to parcellations
+	export flags_DWI_regParc=true
 	export flags_DWI_MRtrix=true
 		# path to dir for holding temporary mrtrix directories
 		export config_mrtrix_tmpdir="/N/scratch/echumin/"
