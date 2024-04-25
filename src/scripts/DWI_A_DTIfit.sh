@@ -89,7 +89,9 @@ else
         -o ${fileOut} \
         -m ${fileMask} \
         -r ${fileEddyBvec} \
-        -b ${fileDTIfitBval} --save_tensor -V"
+        -b ${fileDTIfitBval} \
+        ${configs_DWI_DTIfitargs} --save_tensor -V"
+        
     log $cmd
     eval $cmd > "${DTpath}/dtifit.log"
 
