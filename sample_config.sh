@@ -467,8 +467,6 @@ if $DWI_B; then
 	# apply existing transformations to parcellations
 	export flags_DWI_regParc=true
 	export flags_DWI_MRtrix=true
-		# path to dir for holding temporary mrtrix directories
-		export config_mrtrix_tmpdir="/N/scratch/echumin/"
 		# if streamline file has been created, you can skip this step
 		export configs_DWI_skip_streamlines=true
         # Number of threads must be <= --ntasks-per-node of your Slurm jobs
