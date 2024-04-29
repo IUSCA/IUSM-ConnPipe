@@ -89,17 +89,22 @@ FileIn="${path_DWI_matrices}/rT1${pcname}.nii.gz"
 cmd="cp ${fileparcCORT} ${FileIn}"
 log $cmd
 eval $cmd 
-# call python script
-cmd="python ${EXEDIR}/src/func/add_parc.py \
-    ${FileIn} 1 \
-    ${fileparcSUBC}"
-log $cmd
-eval $cmd 2>&1 | tee -a ${logfile_name}.log
-cmd="python ${EXEDIR}/src/func/add_parc.py \
-    ${FileIn} 0 \
-    ${fileparcCRBLM}"
-log $cmd
-eval $cmd 2>&1 | tee -a ${logfile_name}.log
+
+if [[ "${cntsubc}" -ne 0 ]]
+    # call python script
+    cmd="python ${EXEDIR}/src/func/add_parc.py \
+        ${FileIn} 1 \
+        ${fileparcSUBC}"
+    log $cmd
+    eval $cmd 2>&1 | tee -a ${logfile_name}.log
+fi
+if [[ "${cntcrblm}" -ne 0 ]]
+    cmd="python ${EXEDIR}/src/func/add_parc.py \
+        ${FileIn} 0 \
+        ${fileparcCRBLM}"
+    log $cmd
+    eval $cmd 2>&1 | tee -a ${logfile_name}.log
+fi
 
 fileConnMatrix="${path_DWI_matrices}/${configs_DWI_sift_term_number}_2radial_density${pcname}.csv"
 

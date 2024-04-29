@@ -230,6 +230,9 @@ cmd="tcksift \
 log $cmd
 eval $cmd 
 
+## purge the all steamline trafile
+log "rm ${fileStreamlines}"
+eval "rm ${fileStreamlines}"
 
 if ${flag_HPC_modules}; then
     echo "Unloading HPC python loaded with MRtrix"

@@ -464,6 +464,8 @@ export DWI_B=false
 if $DWI_B; then
 
 	export flags_DWI_regT1=true
+	# apply existing transformations to parcellations
+	export flags_DWI_regParc=true
 	export flags_DWI_MRtrix=true
 		# if streamline file has been created, you can skip this step
 		export configs_DWI_skip_streamlines=true

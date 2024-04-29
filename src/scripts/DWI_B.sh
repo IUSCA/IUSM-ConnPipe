@@ -45,7 +45,7 @@ if [[ -d ${DWIpath} ]]; then
     fi
 ######################################################################################
     #### Registration of B0 to T1
-    if ${flags_DWI_regT1}; then
+    if ${flags_DWI_regT1} || ${flags_DWI_regParc}; then
 
         cmd="${EXEDIR}/src/scripts/DWI_B_regT12DWI.sh"
         echo $cmd
