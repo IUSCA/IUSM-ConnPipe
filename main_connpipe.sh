@@ -59,7 +59,7 @@ if [[ "${configs_T1_denoised}" == "ANTS" ]]; then
 elif [[ "${configs_T1_denoised}" == "SUSAN" ]]; then
 	export configs_fslanat="T1_denoised_SUSAN"
 elif [[ "${configs_T1_denoised}" == "NONE" ]]; then  # do not perform denoising 
-	export configs_fslanat="anat"
+	export configs_fslanat="T1_not_denoised"
 fi
 
 # Defining scanner specific header tags f_MRI_A and DWI_A.
