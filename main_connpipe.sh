@@ -10,17 +10,15 @@ fi
 config=$1
 subj2run=$2
 
-# # Location of package and scripts:
-#  export EXEDIR=$(dirname "$(readlink -f "$0")")
-
 source $config
 source ${EXEDIR}/src/func/bash_funcs.sh
 
 # Load packages/modules
 #===========================================================================
-module load ${fsl} #fsl/6.0.5.1  #module load fsl/6.0.5.2
-module load ${ants}  #ants/2.3.1  # module load ants/2.3.5
-if ${flag_HPC_python}; then
+module load ${fsl} 
+module load ${ants}
+
+if ${flag_HPC_modules}; then
     echo "Loading HPC native python"
     module load ${HPC_python}
 fi 

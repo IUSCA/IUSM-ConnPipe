@@ -27,11 +27,11 @@ export path2derivs="/N/path2project/derivatives"
 # Indicate what versions to use for each software package. 
 export fsl="fsl/6.0.5.1"  # Must be > 6.0.1  => 6.0.5.1 for colo nodes; 6.0.5.2 for quartz
 export ants="ants/2.3.1"  # Must be > 2.0  => 2.3.1 for colo nodes; 2.3.5 for quartz
-export mrtrix="mrtrix/3.0.4"  # Must be > 3.0  => mrtrix/3.0.4 for colo nodes; mrtrix3/3.0.4 for quartz
 
-## Indiacate if using HPC's native python and what python version should be loaded 
-export flag_HPC_python=false
+## Indiacate if using HPC's native python and mrtrix module, and what versions should be loaded 
+export flag_HPC_modules=true
 	export HPC_python="python/3.11.4"
+	export mrtrix="mrtrix/3.0.4"  # Must be > 3.0  => mrtrix/3.0.4 for colo nodes; mrtrix3/3.0.4 for quartz
 #### We recommned using the provided conda environment with stable python package versions.
 #    If using conda environment, activate env before running main_connpipe.sh
 #    To actvate conda env: 
@@ -129,7 +129,7 @@ if $T1_PREPARE_A; then
 	export flags_T1_applyDenoising=true
 
 	export flags_T1_anat=true # run FSL_anat
-		export configs_T1_bias=2 # 0 = no; 1 = weak; 2 = strong
+		export configs_T1_bias=1 # 0 = no; 1 = weak; 2 = strong
 		export configs_T1_crop=1 # 0 = no; 1 = yes (lots already done by dcm2niix)
 
 	export flags_T1_extract_and_mask=true # brain extraction and mask generation (only needed for double BET)
@@ -272,7 +272,7 @@ if $fMRI_A; then
 	#   Each flag (e.g. flag_EPI_*) is a boolean variable that should be used to indicate whether a particular
 	#	section of the pipeline should be executed or not. 
 	#   NOTE that, regardless of whether a section is being executed or not (i.e. the flag is set to false), 
-	#   the configuration parameters within all sections are being used by the pipeline to read/write file 
+	#   the configuration parameters within all sections are being used by the pipeline to read/write  
 	#   the intermediary output files. 
 	#   For example: if flags_EPI_NuisanceReg=false, but user intends to generate time-series for data processed
 	#   with AROMA, then user must be sure to set configs_NuisanceReg="AROMA" (assuming AROMA has been ran before).
@@ -452,6 +452,11 @@ if $DWI_A; then
 			export configs_DWI_MBjson=true # read the slices/MB-groups info from the json file (--json option)
 	export flags_DWI_DTIfit=true  # Tensor estimation and generation of scalar maps
 		export configs_DWI_DTIfitf='0.17' # brain extraction (FSL bet -f) parameter 
+		export configs_DWI_DTIfitargs=""     ## add any optional arguments to be included in DTIfit.
+													    #      arguments should include dashes (i.e. "--wls --kurt")   
+														#      leave empty quotes ("") if no optional arguments are to be included
+														#      See optional arguments at: 
+														#           https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FDT/UserGuide
 fi 
 
 export DWI_B=false

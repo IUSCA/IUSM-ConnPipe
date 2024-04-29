@@ -18,8 +18,11 @@ msg2file "=================================="
 msg2file "2. MRtrix Streamline Tractography"
 msg2file "=================================="
 
-module load ${mrtrix}  #mrtrix/3.0.4 #mrtrix3/3.0.4
-export MRTRIX_TMPFILE_DIR=${config_mrtrix_tmpdir}
+if ${flag_HPC_modules}; then
+    echo "Loading HPC module ${mrtrix}"
+    module load ${mrtrix}
+fi
+
 py_ver=$(python --version)
 log --no-datetime "****** ${py_ver} ******"
 py_which=$(which python)
@@ -231,11 +234,11 @@ eval $cmd
 log "rm ${fileStreamlines}"
 eval "rm ${fileStreamlines}"
 
-module unload ${mrtrix}  #mrtrix/3.0.4  #mrtrix3/3.0.4
-if ! ${flag_HPC_python}; then
+if ${flag_HPC_modules}; then
     echo "Unloading HPC python loaded with MRtrix"
-    module unload python
+    module unload ${mrtrix} 
 fi 
+
 py_ver=$(python --version)
 log "****** ${py_ver} ******"
 py_which=$(which python)
