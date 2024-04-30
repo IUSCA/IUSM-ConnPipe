@@ -16,21 +16,41 @@ source ${EXEDIR}/src/func/bash_funcs.sh
 
 ###############################################################################
 
+bidsT1="${SUBJ}_${SESS}_*T1w.nii.gz"
+found_file=$(find "$T1path_raw" -type f -name "$bidsT1")
+
+if [ -n "$found_file" ]; then
+
+	bidsT1="${found_file}"
+	log --no-datetime "T1 file to be processed: ${bidsT1}"
+
+else
+	echo "${bidsT1} T1 file not found in ${$T1path_raw}."
+	exit 1
+fi
+
+##### Apply fsl's robustfov ########
+if ${flags_T1_robustfov}; then
+
+	log --no-datetime "Applying fsl's robustfov"
+
+	T1filename=$(basename ${bidsT1})
+	T1fov="${T1filename%%.*}_fov.nii.gz"
+
+	cmd="robustfov -i ${bidsT1} -r $T1path/${T1fov}"
+	log $cmd
+	eval $cmd
+
+	bidsT1=$T1path/${T1fov}
+	log --no-datetime "New T1 file to be processed is ${bidsT1}"
+
+fi
 
 ##### T1 denoiser ######
 file4fslanat="$T1path/${configs_fslanat}"
 
 if ${flags_T1_applyDenoising}; then
 	log --no-datetime " -------- Denoising T1 -------- "
-
-	bidsT1="${SUBJ}_${SESS}_*T1w.nii.gz"
-	found_file=$(find "$T1path_raw" -type f -name "$bidsT1")
-	if [ -n "$found_file" ]; then
-    	bidsT1="${found_file}"
-	else
-    	echo "${bidsT1} Matching string file not found."
-		exit 1
-	fi
 	
 	if [[ "${configs_fslanat}" == "T1_denoised_ANTS" ]]; then 
 
