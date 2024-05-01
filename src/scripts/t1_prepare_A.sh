@@ -29,27 +29,28 @@ else
 	exit 1
 fi
 
-##### Apply fsl's robustfov ########
-if ${flags_T1_robustfov}; then
-
-	log --no-datetime "Applying fsl's robustfov"
-
-	T1filename=$(basename ${bidsT1})
-	T1fov="${T1filename%%.*}_fov.nii.gz"
-
-	cmd="robustfov -i ${bidsT1} -r $T1path/${T1fov}"
-	log $cmd
-	eval $cmd
-
-	bidsT1=$T1path/${T1fov}
-	log --no-datetime "New T1 file to be processed is ${bidsT1}"
-
-fi
 
 ##### T1 denoiser ######
 file4fslanat="$T1path/${configs_fslanat}"
 
 if ${flags_T1_applyDenoising}; then
+
+	##### Apply fsl's robustfov ########
+	if ${flags_T1_robustfov}; then
+
+		log --no-datetime "Applying fsl's robustfov"
+
+		T1filename=$(basename ${bidsT1})
+		T1fov="${T1filename%%.*}_fov.nii.gz"
+
+		cmd="robustfov -i ${bidsT1} -r $T1path/${T1fov}"
+		log $cmd
+		eval $cmd
+
+		bidsT1=$T1path/${T1fov}
+		log --no-datetime "New T1 file to be processed is ${bidsT1}"
+	fi
+
 	log --no-datetime " -------- Denoising T1 -------- "
 	
 	if [[ "${configs_fslanat}" == "T1_denoised_ANTS" ]]; then 
@@ -148,7 +149,7 @@ if ${flags_T1_extract_and_mask}; then
 
 	log "Brain Extraction and Masking"
 
-	fileIn="$T1path/T1_fov_denoised.nii"
+	T1denoised="$T1path/T1_fov_denoised.nii"
 	fileOutroot="$T1path/T1_"
 
 	if [[ ${configs_antsTemplate} == "MICCAI" ]]; then
@@ -190,57 +191,74 @@ if ${flags_T1_extract_and_mask}; then
 
 	fi 
 
-	if [[ -e "${fileIn}" ]]; then
-		fileIn2="$T1path/T1_brain_mask.nii.gz"
-		fileOut="$T1path/T1_brain.nii.gz"
+	if [[ -e "${T1denoised}" ]]; then
+		
+		T1brain="$T1path/T1_brain.nii.gz"
+		T1brainmask="$T1path/T1_brain_mask.nii.gz"
+		T1brainmask_filled="$T1path/T1_brain_mask_filled.nii.gz"
 
 		if [[ ${configs_antsTemplate} == "bet" ]]; then
-			cmd="bet ${fileIn} ${fileOut} \
+			cmd="bet ${T1denoised} ${T1brain} \
 			-B -m -f ${configs_T1_A_betF} -g ${configs_T1_A_betG}"
 			log --no-datetime $cmd
 			eval $cmd 
-			out=$?
 		else 
 			antsBrainExtraction="$( which antsBrainExtraction.sh )"
 			log --no-datetime "antsBrainExtraction path is $antsBrainExtraction"
 
 			ANTSlog="$T1path/ants_bet.log"
-			cmd="${antsBrainExtraction} -d 3 -a ${fileIn} \
+			cmd="${antsBrainExtraction} -d 3 -a ${T1denoised} \
 			-e ${fileTemplate} \
 			-m ${fileProbability} \
 			-o ${fileOutroot}"
 			log --no-datetime $cmd
-			eval $cmd 2>&1 | tee -a ${ANTSlog}			
+			eval $cmd 2>&1 | tee -a ${ANTSlog}		
 
-			cmd="mv $T1path/T1_BrainExtractionMask.nii.gz ${fileIn2}"
+			cmd="mv $T1path/T1_BrainExtractionBrain.nii.gz ${T1brain}"
 			log --no-datetime $cmd
 			eval $cmd 
-			cmd="mv $T1path/T1_BrainExtractionBrain.nii.gz ${fileOut}"
+			cmd="mv $T1path/T1_BrainExtractionMask.nii.gz ${T1brainmask}"
 			log --no-datetime $cmd
-			eval $cmd 					
-			out=$?
+			eval $cmd 
+					
 		fi
 
-		if [ -n "${config_brainmask_overlap_thr}" ]; then
+		if [[ -e ${T1brainmask} ]]; then
+			#fill holes in the brain mask
+			cmd="fslmaths ${T1brainmask} -fillh ${T1brainmask_filled}"
+			log $cmd
+			eval $cmd
+		else
+			log "WARNING ${T1brainmask} not found. Exiting... "
+			exit 1					
+		fi
+
+		if [ -n "${config_brainmask_overlap_thr}" ] && [ ${configs_antsTemplate} != "bet" ]; then
 			## For QC purposes, we run bet anyway, to compare the bet mask with the one from ANTS
-			
-			fileOut_bet="$T1path/T1_brain_betQC.nii.gz"
-			log "QC - bet will be run anyway for QC purposes - output is saved as ${fileOut_bet}"
 
-			cmd="bet ${fileIn} ${fileOut_bet} \
+			T1brain_betQC="$T1path/T1_brain_betQC.nii.gz"
+			T1brainmask_betQC="$T1path/T1_brain_betQC_mask.nii.gz"
+			T1brainmask_filled_betQC="$T1path/T1_brain_betQC_mask_filled.nii.gz"
+
+			log --no-datetime "QC - bet will be run anyway for QC purposes - output is saved as ${T1brain_betQC}"
+
+			cmd="bet ${T1denoised} ${T1brain_betQC} \
 			-B -m -f ${configs_T1_A_betF} -g ${configs_T1_A_betG}"
-			log --no-datetime $cmd
+			log $cmd
 			eval $cmd 
-			qc_out=$?
+
+			#fill holes in the brain mask
+			cmd="fslmaths ${T1brainmask_betQC} -fillh ${T1brainmask_filled_betQC}"
+			log $cmd
+			eval $cmd
 			
-			bet_mask="$T1path/T1_brain_betQC_mask.nii.gz"
 
-			if [[ -e ${bet_mask} ]]; then
+			if [[ -e ${T1brainmask_betQC} ]]; then
 
-				overlap_mask="$T1path/T1_overlap_mask.nii.gz"
-				qc "Computing the overlap between ANTS and bet brain masks"
+				overlap_mask="$T1path/T1_brain_overlap_mask.nii.gz"
+				qc "Computing the overlap between ANTS and bet filled brain masks"
 				## Find the overlap between the two masks - BET vs ANTS and compute the volume
-				cmd="fslmaths ${bet_mask} -mul ${fileIn2} -bin ${overlap_mask}"
+				cmd="fslmaths ${T1brainmask_filled_betQC} -mul ${T1brainmask_filled} -bin ${overlap_mask}"
 				log --no-datetime "$cmd"
 				eval $cmd
 
@@ -252,7 +270,7 @@ if ${flags_T1_extract_and_mask}; then
 				overlap_vol=`echo $out | awk -F' ' '{ print $2}'`
 
 				# Compute the volume of the ANTS mask 
-				cmd="fslstats ${fileIn2} -V"
+				cmd="fslstats ${T1brainmask_filled} -V"
 				log "$cmd"
 				out=`$cmd`
 				qc "fslstats - Volume of ANTS mask is $out"
@@ -263,65 +281,84 @@ if ${flags_T1_extract_and_mask}; then
 				qc "Proportion of the ANTS mask that overlaps with BET mask is ${match}"	
 
 				if (( $(echo "$match < ${config_brainmask_overlap_thr}" |bc -l) )); then
-					qc "WARNING the mismatch between the ANTS brain_mask and bet brain_mask is greater than 80%"
+					qc "WARNING the mismatch between ANTS and BET does not meet the specified overalp threashold of ${config_brainmask_overlap_thr}"
 					qc --no-datetime "QC is highly recommended. You may compare both masks with FSLeyes"
-					qc --no-datetime "ANTS mask is ${fileIn2}"
-					qc --no-datetime "BET mask is ${bet_mask}"
+					qc --no-datetime "ANTS mask is ${T1brainmask}"
+					qc --no-datetime "BET mask is ${T1brainmask_betQC}"
 					qc --no-datetime "The intersection of the masks is ${overlap_mask}"
-				fi 
-				
+				fi 		
 
 			else
 				log "WARNING: BET mask not generated.. skipping brain extraction QC"
 				log --no-datetime "WARNING: We recommend doing a visual inspection of the brain mask." 
 			fi
 		fi
+	else
+		log "WARNING ${T1denoised} not found. Exiting... "
+		exit 1					
+	fi
+fi
 
 
-		fileOut2="$T1path/T1_brain_mask_filled.nii.gz"
+if ${config_use_overlap_brainmask}; then 
 
-		if [[ -e ${fileIn2} ]]; then
-			#fill holes in the brain mask
-			cmd="fslmaths ${fileIn2} -fillh ${fileOut2}"
-			log $cmd
-			eval $cmd	
-			out=$?
-			if [[ $out == 0 ]] && [[ -e ${fileOut2} ]]; then
-				log --no-datetime "BET completed"
-			else
-				log "WARNING ${fileOut2} not created. Exiting... "
-				exit 1					
-			fi
-		else
-			log "WARNING ${fileIn2} not found. Exiting... "
-			exit 1					
-		fi
+	overlap_mask="$T1path/T1_brain_overlap_mask.nii.gz"
+	T1brain="$T1path/T1_brain.nii.gz"
+	T1brainmask="$T1path/T1_brain_mask.nii.gz"
+	T1brainmask_filled="$T1path/T1_brain_mask_filled.nii.gz"
+
+	if [[ -e ${overlap_mask} ]]; then
+		# rename files
+		log --no-datetime "WARNING: overlap brain mask will be renamed"
+
+		cmd="mv ${T1brain} $T1path/T1_BrainExtractionBrain.nii.gz "
+		log --no-datetime $cmd
+		eval $cmd 
+		cmd="mv ${T1brainmask} $T1path/T1_BrainExtractionMask.nii.gz"
+		log --no-datetime $cmd
+		eval $cmd 
+		cmd="mv ${T1brainmask_filled} $T1path/T1_BrainExtractionMask_filled.nii.gz "
+		log --no-datetime $cmd
+		eval $cmd 
+
+		cmd="mv ${overlap_mask} ${T1brainmask}"
+		log --no-datetime $cmd
+		eval $cmd		
+
+		#fill holes in the brain mask, just in case...
+		cmd="fslmaths ${T1brainmask} -fillh ${T1brainmask_filled}"
+		log $cmd
+		eval $cmd	
+
+		qc "WARNING: overlap mask has been set as the default mask"
+
 
 	else
-		log "WARNING ${fileIn} not found. Exiting... "
+		log "WARNING ${overlap_mask} not found. Exiting... "
+		log --no-datetime "Check that mask overlap calculations have been performed:"
+		log --no-datetime "-- check that the config config_brainmask_overlap_thr is set to a value < 1"
 		exit 1					
 	fi
 
-fi
+fi 
 
 ##### T1 Brain Re-Extract ######
 if ${flags_T1_re_extract}; then
-	fileIn="$T1path/T1_fov_denoised.nii"
-	fileMask="$T1path/T1_brain_mask_filled.nii.gz"
-	fileOut="$T1path/T1_brain.nii.gz"
+	T1denoised="$T1path/T1_fov_denoised.nii"
+	T1brainmask_filled="$T1path/T1_brain_mask_filled.nii.gz"
+	T1brain="$T1path/T1_brain.nii.gz"
 
-	if [[ -e "$fileIn" ]] && [[ -e "$fileMask" ]]; then
-		cmd="fslmaths ${fileIn} -mul ${fileMask} ${fileOut}"
+	if [[ -e "$T1denoised" ]] && [[ -e "$T1brainmask_filled" ]]; then
+		cmd="fslmaths ${T1denoised} -mul ${T1brainmask_filled} ${T1brain}"
 		log "$cmd"
 		eval $cmd
 		out=$?
-		if [[ $out == 0 ]] && [[ -e ${fileOut} ]]; then
-			log --no-datetime "${fileOut} created"
+		if [[ $out == 0 ]] && [[ -e ${T1brain} ]]; then
+			log --no-datetime "${T1brain} created"
 		else
-			log "WARNING ${fileOut} not created. Exiting... "
+			log "WARNING ${T1brain} not created. Exiting... "
 			exit 1					
 		fi
 
 	fi
 fi
-
