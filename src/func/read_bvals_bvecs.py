@@ -64,6 +64,14 @@ if bvecs.shape[0] > 3:
 
 #DWIp=''.join([p,'/',fileNifti,'.gz'])
 DWI=nib.load(fileNifti)  
+DWI = np.asanyarray(DWI.dataobj)
+
+# print('DWI.shape ',DWI.shape)
+
+if DWI.ndim < 4:
+    DWI = DWI.reshape(DWI.shape + (1,))
+
+# print('DWI.shape ',DWI.shape)
 
 # print('bvals.shape[1] ',bvals.shape[1])
 # print('bvecs.shape[1] ',bvecs.shape[1])
