@@ -459,6 +459,9 @@ if $DWI_A; then
 		export flags_EDDY_run=true # Runs EDDY openmp
 			export configs_DWI_repolON=true # use eddy_repol to interpolate missing/outlier data
 			export configs_DWI_MBjson=true # read the slices/MB-groups info from the json file (--json option)
+			export configs_DWI_EDDYargs=""   ## add any optional arguments to be included in eddy_openmp.
+													    #      arguments should include dashes (i.e. "--data_is_shelled")   
+														#      leave empty quotes ("") if no optional arguments are to be included	
 	export flags_DWI_DTIfit=true  # Tensor estimation and generation of scalar maps
 		export configs_DWI_DTIfitf='0.17' # brain extraction (FSL bet -f) parameter 
 		export configs_DWI_DTIfitargs=""     ## add any optional arguments to be included in DTIfit.
