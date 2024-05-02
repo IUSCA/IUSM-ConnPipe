@@ -277,11 +277,18 @@ if ${flags_EDDY_run}; then
         cmd+="$cmdJ"
     fi
 
+    if [[ -n ${configs_DWI_EDDYargs} ]]; then
+        cmdArgs=" \
+        ${configs_DWI_EDDYargs}"
+        cmd+="$cmdArgs"
+    fi
+
     cmdO=" \
     --out=${fileOut}"
     cmd+="$cmdO"
+
     log $cmd
-    eval $cmd
+    eval $cmd 2>&1 | tee -a ${logfile_name}.log
 
     # For QC purpoces this created a difference (Delta image) between raw
     # and EDDY corrected diffusion data.
