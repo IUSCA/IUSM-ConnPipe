@@ -118,15 +118,19 @@ export configs_T1_addcrblm=true
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export T1_PREPARE_A=false
+export T1_PREPARE_A=true
 
 if $T1_PREPARE_A; then
-		
+
 	# IF NO DENOSING IS REQUIRED:
 	  ## SET flags_T1_applyDenoising=true AND configs_T1_denoised="NONE"
     # IF DENOISING HAS ALREADY BEEN APPLYIED AND THUS THE PROCESS CAN BE SKIPPED:
 	  ## SET flags_T1_applyDenoising=false AND configs_T1_denoised="ANTS"/"SUSAN" 
 	export flags_T1_applyDenoising=true
+    	# FSL's robustfov option, performed before denoising. 
+		# May improve brain masking, in particular with ants.
+		# We do not recommend using robustfov dcm2niix cropping has been applied. 
+		export flags_T1_robustfov=true
 
 	export flags_T1_anat=true # run FSL_anat
 		export configs_T1_bias=1 # 0 = no; 1 = weak; 2 = strong
@@ -142,6 +146,11 @@ if $T1_PREPARE_A; then
 		export config_brainmask_overlap_thr="0.9"  
 		# USER if runnign ANTS, bet will be ran anyway as a QC check for the brain masks.
 		# QC output will be printed out in the QC file for each subject. 
+		
+	### Sometimes, the best mask results from the overlap between ANTS and bet masks. 
+	#   This config option will make the overlap mask the new T1_brain_mask, which will 
+	#   be filled and then used in the next step to generate the brain mask	
+	export config_use_overlap_brainmask=true
 	 
 	# Re-extract the brain using brain_mask_filled (usefull if mask was manually edited or replaced)
 	export flags_T1_re_extract=true; # brain extraction with mask
@@ -450,6 +459,9 @@ if $DWI_A; then
 		export flags_EDDY_run=true # Runs EDDY openmp
 			export configs_DWI_repolON=true # use eddy_repol to interpolate missing/outlier data
 			export configs_DWI_MBjson=true # read the slices/MB-groups info from the json file (--json option)
+			export configs_DWI_EDDYargs=""   ## add any optional arguments to be included in eddy_openmp.
+													    #      arguments should include dashes (i.e. "--data_is_shelled")   
+														#      leave empty quotes ("") if no optional arguments are to be included	
 	export flags_DWI_DTIfit=true  # Tensor estimation and generation of scalar maps
 		export configs_DWI_DTIfitf='0.17' # brain extraction (FSL bet -f) parameter 
 		export configs_DWI_DTIfitargs=""     ## add any optional arguments to be included in DTIfit.

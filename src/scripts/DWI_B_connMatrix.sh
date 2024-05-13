@@ -90,7 +90,7 @@ cmd="cp ${fileparcCORT} ${FileIn}"
 log $cmd
 eval $cmd 
 
-if [[ "${cntsubc}" -ne 0 ]]
+if [[ "${cntsubc}" -ne 0 ]]; then
     # call python script
     cmd="python ${EXEDIR}/src/func/add_parc.py \
         ${FileIn} 1 \
@@ -98,7 +98,8 @@ if [[ "${cntsubc}" -ne 0 ]]
     log $cmd
     eval $cmd 2>&1 | tee -a ${logfile_name}.log
 fi
-if [[ "${cntcrblm}" -ne 0 ]]
+
+if [[ "${cntcrblm}" -ne 0 ]]; then
     cmd="python ${EXEDIR}/src/func/add_parc.py \
         ${FileIn} 0 \
         ${fileparcCRBLM}"
