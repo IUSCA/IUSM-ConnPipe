@@ -25,8 +25,8 @@ export path2derivs="/N/path2project/derivatives"
 
 #########################  SOFTWARE SETTINGS  #################################
 # Indicate what versions to use for each software package. 
-export fsl="fsl/6.0.5.1"  # Must be > 6.0.1  => 6.0.5.1 for colo nodes; 6.0.5.2 for quartz
-export ants="ants/2.3.1"  # Must be > 2.0  => 2.3.1 for colo nodes; 2.3.5 for quartz
+export fsl="fsl/6.0.7"  # Must be > 6.0.1  => 6.0.5.1 for colo nodes; 6.0.5.2 for quartz
+export ants="ants/2.3.5"  # Must be > 2.0  => 2.3.1 for colo nodes; 2.3.5 for quartz
 
 ## Indiacate if using HPC's native python and mrtrix module, and what versions should be loaded 
 export flag_HPC_modules=true

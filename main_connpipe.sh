@@ -13,30 +13,6 @@ subj2run=$2
 source $config
 source ${EXEDIR}/src/func/bash_funcs.sh
 
-# Load packages/modules
-#===========================================================================
-module load ${fsl} 
-module load ${ants}
-
-if ${flag_HPC_modules}; then
-    echo "Loading HPC native python"
-    module load ${HPC_python}
-fi 
-
-py_ver=$(python --version)
-echo "****** ${py_ver} ******"
-py_which=$(which python)
-echo "****** ${py_which} ******"
-
-
-# If FSL is not in the path, exit now
-if [[ -n "${FSLDIR}" ]]; then
-    echo "FSLDIR is ${FSLDIR}"
-else
-    echo -e "\033[33m#  ERROR. FSLDIR is not set. Exiting \033[0m"
-    exit 1
-fi
-
 # Exporting path/file dependencies.
 #============================================================================
 export pathMNItmplates="${pathSM}/MNI_templates"

@@ -10,33 +10,33 @@ acct = 'r00216'; % this is Jenya's carbonate connproc acct
 
 %% resources requested:
 ppn = '8';
-walltime = '10:00:00';
+walltime = '6:00:00';
 vmem = '32G';
 
 %% data
 % path to bids project
-path2deriv='/N/project/kbase-imaging/kbase1-bids/derivatives/connpipe';
+path2deriv='/N/project/HCPaging/iadrc2024q3/derivatives/connpipe';
 % path to raw data
-path2data='/N/project/kbase-imaging/kbase1-bids/raw';
+path2data='/N/project/HCPaging/iadrc2024q3/raw';
 % number of subjects per job
-nS = 5; 
+nS = 8; 
 
 % where to write job, log, and error files
-batch_path = '/N/project/kbase-imaging/batch_files';
+batch_path = '/N/project/HCPaging/iadrc2024q3/batch_files';
 
 %% pipeline
 % pipeline directory
-connPipe = '/N/project/kbase-imaging/IUSM-ConnPipe';
+connPipe = '/N/u/echumin/Quartz/img_proc_tools/IUSM-ConnPipe';
 
 % config file
-config = '/N/project/kbase-imaging/batch_files/config_dwiB_all.sh';
+config = '//N/project/HCPaging/iadrc2024q3/config.sh';
 
 %% building subject list 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 % build a list of subjID and session pairs from a connpipe derivative
 %  directory
-subj=dir([path2deriv '/sub-*']);
+subj=dir([path2data '/sub-*']);
 subj2run=cell.empty;
 
 for ss=1:length(subj)
@@ -51,7 +51,7 @@ end
 
 tS=size(subj2run,1); % total subjects
 nJ = ceil(tS/nS);   % number of jobs
-rt='dwi_b_s200fsl';
+rt='run3t1_ab_fsl607';
 
 for j = 1:nJ
     sS=(j*nS)-nS+1; % starting subject
