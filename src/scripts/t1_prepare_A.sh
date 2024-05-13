@@ -53,6 +53,7 @@ else
 	exit 1
 fi
 
+
 ##### T1 denoiser ######
 file4fslanat="$T1path/${configs_fslanat}"
 
