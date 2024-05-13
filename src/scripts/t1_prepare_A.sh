@@ -40,6 +40,19 @@ echo "****** ${py_which} ******"
 
 ###############################################################################
 
+bidsT1="${SUBJ}_${SESS}_*T1w.nii.gz"
+found_file=$(find "$T1path_raw" -type f -name "$bidsT1")
+
+if [ -n "$found_file" ]; then
+
+	bidsT1="${found_file}"
+	log --no-datetime "T1 file to be processed: ${bidsT1}"
+
+else
+	echo "${bidsT1} T1 file not found in ${$T1path_raw}."
+	exit 1
+fi
+
 ##### T1 denoiser ######
 file4fslanat="$T1path/${configs_fslanat}"
 
