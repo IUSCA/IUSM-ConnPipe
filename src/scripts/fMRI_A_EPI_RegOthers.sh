@@ -25,25 +25,6 @@ fi
 
 #-------------------------------------------------------------------------#
 
-# brain 
-fileIn="${T1path}/T1_brain.nii.gz"
-fileRef="${EPIrun_out}/2_epi_meanvol_mask.nii.gz"
-fileOut="${EPIrun_out}/rT1_brain_dof6bbr.nii.gz"
-fileInit="${EPIrun_out}/T1_2_epi_dof6_bbr.mat"
-cmd="flirt -in ${fileIn} \
-    -ref ${fileRef} \
-    -out ${fileOut} \
-    -applyxfm -init ${fileInit} \
-    -interp spline -nosearch"
-log $cmd
-eval $cmd 
-
-# Compute the volume 
-cmd="fslstats ${fileOut} -V"
-qc "$cmd"
-out=`$cmd`
-qc "Number of voxels in ${fileOut} :  $out"
-
 # brain mask
 fileIn="${T1path}/T1_brain_mask_filled.nii.gz"
 fileRef="${EPIrun_out}/2_epi_meanvol_mask.nii.gz"
