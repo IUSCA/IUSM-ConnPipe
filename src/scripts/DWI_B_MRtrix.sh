@@ -12,22 +12,21 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
-############################################################################### 
-
-msg2file "=================================="
-msg2file "2. MRtrix Streamline Tractography"
-msg2file "=================================="
-
-if ${flag_HPC_modules}; then
-    echo "Loading HPC module ${mrtrix}"
-    module load ${mrtrix}
-fi
+# Load packages/modules
+#===========================================================================
+module load ${mrtrix} 
+module load ${fsl}
 
 py_ver=$(python --version)
 log --no-datetime "****** ${py_ver} ******"
 py_which=$(which python)
 log --no-datetime "****** ${py_which} ******"
 
+############################################################################### 
+
+msg2file "=================================="
+msg2file "2. MRtrix Streamline Tractography"
+msg2file "=================================="
 
 if [[ ! -d "${path_DWI_mrtrix}" ]]; then
     cmd="mkdir ${path_DWI_mrtrix}"

@@ -12,6 +12,11 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
+# Load packages/modules
+#===========================================================================
+module load ${fsl}
+module load ${ants}
+
 ############################################################################### 
 
 if ${flags_DWI_regT1}; then

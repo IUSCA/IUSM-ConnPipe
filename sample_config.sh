@@ -25,13 +25,13 @@ export path2derivs="/N/path2project/derivatives"
 
 #########################  SOFTWARE SETTINGS  #################################
 # Indicate what versions to use for each software package. 
-export fsl="fsl/6.0.7"  # Must be > 6.0.1  => 6.0.5.1 for colo nodes; 6.0.5.2 for quartz
+export fsl="fsl/6.0.7"  # Must be > 6.0.1  => 6.0.5.1 for colo nodes; 6.0.7 for quartz
 export ants="ants/2.3.5"  # Must be > 2.0  => 2.3.1 for colo nodes; 2.3.5 for quartz
 
 ## Indiacate if using HPC's native python and mrtrix module, and what versions should be loaded 
 export flag_HPC_modules=true
 	export HPC_python="python/3.11.4"
-	export mrtrix="mrtrix/3.0.4"  # Must be > 3.0  => mrtrix/3.0.4 for colo nodes; mrtrix3/3.0.4 for quartz
+	export mrtrix="mrtrix/3.0.4"  # Must be > 3.0  => mrtrix/3.0.4 for colo nodes; mrtrix3 for quartz
 #### We recommned using the provided conda environment with stable python package versions.
 #    If using conda environment, activate env before running main_connpipe.sh
 #    To actvate conda env: 
@@ -479,17 +479,19 @@ if $DWI_B; then
 	# apply existing transformations to parcellations
 	export flags_DWI_regParc=true
 	export flags_DWI_MRtrix=true
+		# path to dir for holding temporary mrtrix directories
+		export config_mrtrix_tmpdir="/N/PATH/USER/"
 		# if streamline file has been created, you can skip this step
 		export configs_DWI_skip_streamlines=true
         # Number of threads must be <= --ntasks-per-node of your Slurm jobs
         export configs_DWI_nthreads=4 # for mrtrix tckgen
 		export configs_DWI_seeding="wm" # 'wm'-white matter OR 'dyn'-dynamic
 			# For WM seeding option, specify number of seeds/voxel
-		    export configs_DWI_Nseeds="1000"
+		    export configs_DWI_Nseeds="10M"
         # tracking options
         export configs_DWI_step_sizes="1 1.5 2"
         export configs_DWI_max_angles="30 45 60" # fine coverage if you ask me!
 		# filtering options
-		export configs_DWI_sift_term_number="1000" 
+		export configs_DWI_sift_term_number="1M" 
 	export flags_DWI_connMatrix=true # generate connectivity matrices  
 fi 
