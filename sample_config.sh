@@ -448,7 +448,8 @@ fi
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
 export DWI_A=false
-
+# Number of threads must be <= --ntasks-per-node of your Slurm jobs
+        export configs_DWI_nthreads=8 # for eddy (fsl6.0.7) and mrtrix tckgen
 if $DWI_A; then
 
 	export flags_DWI_topup=true # FSL topup destortion field estimation
@@ -483,8 +484,8 @@ if $DWI_B; then
 		export config_mrtrix_tmpdir="/N/PATH/USER/"
 		# if streamline file has been created, you can skip this step
 		export configs_DWI_skip_streamlines=true
-        # Number of threads must be <= --ntasks-per-node of your Slurm jobs
-        export configs_DWI_nthreads=4 # for mrtrix tckgen
+
+        
 		export configs_DWI_seeding="wm" # 'wm'-white matter OR 'dyn'-dynamic
 			# For WM seeding option, specify number of seeds/voxel
 		    export configs_DWI_Nseeds="10M"
