@@ -12,6 +12,10 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
+# Load packages/modules
+#===========================================================================
+module load ${fsl}
+
 ############################################################################### 
 
 msg2file "=================================="

@@ -13,6 +13,30 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
+# Load packages/modules
+#===========================================================================
+module load ${fsl} 
+module load ${mrtrix}
+
+# fsl607 hpc module has python3.11 contained in it.
+#if ${flag_HPC_modules}; then
+#    echo "Loading HPC native python"
+#    module load ${HPC_python}
+#fi 
+
+# If FSL is not in the path, exit now
+if [[ -n "${FSLDIR}" ]]; then
+    echo "FSLDIR is ${FSLDIR}"
+else
+    echo -e "\033[33m#  ERROR. FSLDIR is not set. Exiting \033[0m"
+    exit 1
+fi
+
+py_ver=$(python --version)
+echo "****** ${py_ver} ******"
+py_which=$(which python)
+echo "****** ${py_which} ******"
+
 ############################################################################### 
 
 msg2file "=================================="

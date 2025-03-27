@@ -12,6 +12,10 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
+# Load packages/modules
+#===========================================================================
+module load ${fsl}
+
 ############################################################################### 
 
 msg2file "=================================="
@@ -86,8 +90,8 @@ if ${flags_EDDY_prep}; then
         eval $cmd 
 
         ## Inputs if topup was not done
-        fileIn="${path_DWI_EDDY}/all_b0_raw.nii.gz"
-        fileMean="${path_DWI_EDDY}/meanb0.nii.gz"
+        fileIn="${EDDYpath}/all_b0_raw.nii.gz"
+        fileMean="${EDDYpath}/meanb0.nii.gz"
     fi 
 
     # Generate mean B0 image
@@ -246,13 +250,14 @@ if ${flags_EDDY_run}; then
 
     fileOut="${EDDYpath}/eddy_output"
 
-    cmd="eddy_openmp \
+    cmd="eddy_cpu \
     --imain=${fileIn} \
     --mask=${fileInMask} \
     --bvecs=${fileInBvec} \
     --bvals=${fileInBval} \
     --index=${fileInIndex} \
-    --acqp=${fileInAcqp}"
+    --acqp=${fileInAcqp} \
+    --nthr=${configs_DWI_nthreads}"
 
     if [[ -d "${TOPUPpath}" ]] && [[ -e "${TOPUPpath}/topup_results_fieldcoef.nii.gz" ]]; then
         cmdT=" \

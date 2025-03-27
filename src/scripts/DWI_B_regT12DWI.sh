@@ -12,6 +12,11 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
+# Load packages/modules
+#===========================================================================
+module load ${fsl}
+module load ${ants}
+
 ############################################################################### 
 
 if ${flags_DWI_regT1}; then
@@ -20,33 +25,56 @@ if ${flags_DWI_regT1}; then
     msg2file "1. Registration of T1 to b0"
     msg2file "=================================="
 
-    # check paths
-    log --no-datetime "path_DWI_EDDY is ${path_DWI_EDDY}"
-    log --no-datetime "path_DWI_DTIfit is ${path_DWI_DTIfit}"
-
-    # up-sample FA image
-    fileFA2mm="${path_DWI_DTIfit}/3_DWI_FA.nii.gz"
     fileFA1mm="${path_DWI_DTIfit}/3_DWI_FA_1mm.nii.gz"
-
-    cmd="flirt -in ${fileFA2mm} \
-        -ref ${fileFA2mm} \
-        -out ${fileFA1mm} \
-        -applyisoxfm 1"
-    log $cmd
-    eval $cmd
-
-    # register T1 brain to FA via suick ants linear+nonlinear registration
-    log "DWI_B: Ants SyN registration T1 -> FA_1mm"
-    fileIn="${T1path}/T1_brain.nii.gz"
     prefixOut="${DWIpath}/rT1_qSyn_"
 
-    cmd="antsRegistrationSyNQuick.sh -d 3 \
-        -n ${configs_DWI_nthreads} \
-        -f ${fileFA1mm} \
-        -m ${fileIn} \
-        -o ${prefixOut}"
-    log --no-datetime $cmd
-    eval $cmd
+    if [[ $configs_DWI_useExistingMats && -e "${fileFA1mm}" ]]; then  # check for existing transformation and reference
+
+        warp="${prefixOut}1Warp.nii.gz"
+        affine="${prefixOut}0GenericAffine.mat"
+
+        check_inputs "affine" "warp"	
+        checkcode=$?	
+
+        if [[ $checkcode -eq 1 ]]; then
+            log --no-datetime "MISSING required transformation matrices: running reg2DWI"
+            configs_DWI_useExistingMats=false
+            log --no-datetime "useExistingMats is ${configs_DWI_useExistingMats}"
+        fi
+    else
+        log --no-datetime "WARNING ${fileFA1mm} not found. Running reg2DWI"
+        configs_T1_useExistingMats=false
+        log --no-datetime "Resetting useExistingMats = ${configs_DWI_useExistingMats}"   
+    fi 
+
+    if ! ${configs_DWI_useExistingMats}; then      
+        # up-sample FA image
+        fileFA2mm="${path_DWI_DTIfit}/3_DWI_FA.nii.gz"
+
+        # check paths
+        log --no-datetime "path_DWI_EDDY is ${path_DWI_EDDY}"
+        log --no-datetime "path_DWI_DTIfit is ${path_DWI_DTIfit}"
+
+        cmd="flirt -in ${fileFA2mm} \
+            -ref ${fileFA2mm} \
+            -out ${fileFA1mm} \
+            -applyisoxfm 1"
+
+        log $cmd
+        eval $cmd
+
+        # register T1 brain to FA via suick ants linear+nonlinear registration
+        log "DWI_B: Ants SyN registration T1 -> FA_1mm"
+        fileIn="${T1path}/T1_brain.nii.gz"
+
+        cmd="antsRegistrationSyNQuick.sh -d 3 \
+            -n ${configs_DWI_nthreads} \
+            -f ${fileFA1mm} \
+            -m ${fileIn} \
+            -o ${prefixOut}"
+        log --no-datetime $cmd
+        eval $cmd
+    fi
 
     # for white matter seeding register WM mask to DWI
     if [[ ${configs_DWI_seeding} == "wm" ]]; then
@@ -59,8 +87,37 @@ if ${flags_DWI_regT1}; then
             -t ${prefixOut}1Warp.nii.gz \
             -t ${prefixOut}0GenericAffine.mat \
             -o ${fileWMdwi} -v"
+
         log $cmd
         eval $cmd
+
+        # register T1 brain to FA via suick ants linear+nonlinear registration
+        log "DWI_B: Ants SyN registration T1 -> FA_1mm"
+        fileIn="${T1path}/T1_brain.nii.gz"
+        prefixOut="${DWIpath}/rT1_qSyn_"
+
+        cmd="antsRegistrationSyNQuick.sh -d 3 \
+            -n ${configs_DWI_nthreads} \
+            -f ${fileFA1mm} \
+            -m ${fileIn} \
+            -o ${prefixOut}"
+        log --no-datetime $cmd
+        eval $cmd
+
+        # for white matter seeding register WM mask to DWI
+        if [[ ${configs_DWI_seeding} == "wm" ]]; then
+            fileWM="${T1path}/T1_WM_mask.nii.gz"
+            fileWMdwi="${DWIpath}/rT1_WM_mask.nii.gz"
+            cmd="antsApplyTransforms -d 3 \
+                -i ${fileWM} \
+                -r ${fileFA1mm} \
+                -n GenericLabel \
+                -t ${prefixOut}1Warp.nii.gz \
+                -t ${prefixOut}0GenericAffine.mat \
+                -o ${fileWMdwi} -v"
+            log $cmd
+            eval $cmd
+        fi
     fi
 fi
 
