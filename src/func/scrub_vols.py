@@ -5,46 +5,48 @@ import numpy as np
 import nibabel as nib
 from scipy.io import savemat
 
-###### print to log files #######
-logfile_name = ''.join([os.environ['logfile_name'],'.log'])
-flog=open(logfile_name, "a+")
+print("\n *** python scrub_vols.py **** ")
 
 EPIpath=os.environ['EPIrun_out']
 print("EPIpath ",EPIpath)
-PhReg_path=sys.argv[1]
-print("PhReg_path ",PhReg_path)
+
+NuisancePhysReg_out=os.environ['NuisancePhysReg_out']
+print("NuisancePhysReg_out ",NuisancePhysReg_out)
 
 nR=os.environ['nR']
 print("nR ",nR)
-resting_file=os.environ['configs_EPI_resting_file']
-print("resting_file ",resting_file)
-dvars_scrub=os.environ['configs_EPI_despiked']
-flog.write("\n dvars_scrub "+ dvars_scrub)
 
-resting_file=os.environ['configs_EPI_resting_file']
-flog.write("\n resting_file "+ resting_file)
+configs_scrub=os.environ['configs_scrub']
+print("configs_scrub "+ configs_scrub)
 
 # load resting vol image to use header for saving new image. 
+resting_file=os.environ['configs_EPI_resting_file']
 resting_file = ''.join([EPIpath,resting_file])    
+print("resting_file "+ resting_file)
 resting = nib.load(resting_file)
 
+fileIn=sys.argv[1]
+print("fileIn ",fileIn)
+fileOut=sys.argv[2]
+print("fileOut ",fileOut)
 
-fname = ''.join([PhReg_path,'/NuisanceRegression_',nR,'.npz'])
-data = np.load(fname) 
-resid=data['resid']
+# fname = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',nR,'.npz'])
+data = np.load(fileIn) 
+resid=data['resid']   # load non-despiked residuals
 
-[sizeX,sizeY,sizeZ,numTimePoints] = resid[0].shape
-print("resid[0].shape ", sizeX,sizeY,sizeZ,numTimePoints)
+[sizeX,sizeY,sizeZ,numTimePoints] = resid.shape
+print("resid.shape ", sizeX,sizeY,sizeZ,numTimePoints)
 
 # load DVARS / FD
-if 'DVARS_Inference_Hprac' in data:
-    flog.write("\n *** python dvars-based scrubbbing **** ")
+# if 'DVARS_Inference_Hprac' in data:
+if configs_scrub == "stat_DVARS":
+    print("*** Scrubbing with Statisitical DVARS **** \n")
     dvars=data['DVARS_Inference_Hprac']
     print("DVARS: ",dvars)
     goodvols = np.ones(numTimePoints, dtype=int)
     goodvols[dvars]=0
-else:
-    flog.write("\n *** fsl based scrubbing using dvars and fd *** ")
+elif configs_scrub == "fsl_fd_dvars":
+    print("*** Scrubbing with FSL's dvars and fd *** \n")
     fname=''.join([EPIpath,'/scrubbing_goodvols.npz'])  
     goodvols = np.load(fname) 
     goodvols = goodvols['good_vols'] 
@@ -52,31 +54,30 @@ else:
 # remove "bad vols"
 print("Volumes to remove ",np.count_nonzero(goodvols==0))
 print("shape resid before scrubbing ", resid.shape)
-resid = resid[:,:,:,:,goodvols==1]
+resid = resid[:,:,:,goodvols==1]
 print("shape resid after scrubbing ", resid.shape)
 
-for pc in range(0,len(resid)):
+# for pc in range(0,len(resid)):
 
-    if len(resid)==1:
-        fileNii = "/8_epi_%s_scrubbed.nii.gz" % nR 
-    else:
-        fileNii = "/8_epi_%s%d_scrubbed.nii.gz" % (nR,pc)
+    # if len(resid)==1:
+fileNii = "/6_epi_%s_scrubbed.nii.gz" % nR 
+    # else:
+    #     fileNii = "/6_epi_%s%d_scrubbed.nii.gz" % (nR,pc)
 
-    fileNii = ''.join([PhReg_path,fileNii])
-    print("Nifti file to be saved is: ",fileNii)
+fileNii = ''.join([NuisancePhysReg_out,fileNii])
+print("Nifti file to be saved is: ",fileNii)
 
-    # save new resting file
-    resting_new = nib.Nifti1Image(resid[pc].astype(np.float32),resting.affine,resting.header)
-    nib.save(resting_new,fileNii) 
+# save new resting file
+resting_new = nib.Nifti1Image(resid.astype(np.float32),resting.affine,resting.header)
+nib.save(resting_new,fileNii) 
 
 ## save data 
-fileOut = ''.join([PhReg_path,'/NuisanceRegression_',nR,'_scrubbed.npz'])
-np.savez(fileOut,resid=resid)
+# fileOut = ''.join([NuisancePhysReg_out,'/NuisanceRegression_',nR,'_scrubbed.npz'])
+ff = ''.join([fileOut,'.npz'])
+np.savez(ff,resid=resid)
 print("Saved Scrubbed residuals")
 
-fileOut = ''.join([PhReg_path,'/NuisanceRegression_',nR,'_scrubbed.mat'])
-print("savign MATLAB file ", fileOut)
-mdic = {"resid" : resid[0]}
-savemat(fileOut, mdic)
-
-flog.close()
+ff = ''.join([fileOut,'.mat'])
+print("savign MATLAB file ", ff)
+mdic = {"resid" : resid}
+savemat(ff, mdic)

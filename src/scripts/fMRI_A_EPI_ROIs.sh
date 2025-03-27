@@ -18,8 +18,6 @@ msg2file "# =========================================================="
 msg2file "# 8. ROIs. "
 msg2file "# =========================================================="
 
-PhReg_path="${EPIrun_out}/${regPath}"   
-
 if ${configs_T1_addsubcort} && ! ${configs_T1_subcortUser}; then  # default FSL subcortical
 
     if [[ -e "${EPIrun_out}/rT1_GM_parc_FSLsubcort_clean.nii.gz" ]]; then 
@@ -41,6 +39,27 @@ if ${configs_T1_addsubcort} && ! ${configs_T1_subcortUser}; then  # default FSL 
     fi
 fi
 
-cmd="python ${EXEDIR}/src/func/ROI_TS.py ${PhReg_path}"
+
+log "nR is ${nR}"
+
+# Identify what files to load
+
+if [[ ${configs_scrub} == "no_scrub" ]]; then
+
+    fileIn="${NuisancePhysReg_out}/NuisanceRegression_${nR}.npz"
+
+elif [[ ${configs_scrub} == "stat_DVARS" ]] || [[ ${configs_scrub} == "fsl_fd_dvars" ]] ; then
+    if ! ${configs_EPI_despike}; then
+        fileIn="${NuisancePhysReg_out}/NuisanceRegression_${nR}_scrubbed.npz"
+    else 
+        fileIn="${NuisancePhysReg_out}/NuisanceRegression_${nR}.npz"
+    fi 
+fi 
+
+log --no-datetime "Computing ROI Time Series on ${fileIn}"
+
+checkisfile ${fileIn}    
+
+cmd="python ${EXEDIR}/src/func/ROI_TS.py ${fileIn}"
 log $cmd
-eval $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log

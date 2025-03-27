@@ -25,17 +25,12 @@ if [[ ! -e "${EPIrun_out}/4_epi.nii.gz" ]]; then
 
 fi
 
-HMPpath="${EPIrun_out}/${flags_NuisanceReg}"
-if [[ ! -d ${HMPpath} ]]; then
-    cmd="mkdir ${HMPpath}"
-    log --no-datetime $cmd
-    eval $cmd 
-fi
+HMPpath="${EPIrun_out}/${configs_NuisanceReg}"
 
 # load 6 motion regressors and get derivatives
-cmd="python ${EXEDIR}/src/func/load_motion_reg.py ${HMPpath} ${configs_EPI_numReg}"
+cmd="python ${EXEDIR}/src/func/load_motion_reg.py ${HMPpath} ${configs_EPI_numHMP}"
 log $cmd
-eval $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log
 if [ $? -eq 0 ]; then
     log --no-datetime "Saved motion regressors and temporal derivatives"
     log --no-datetime "Saved quadratics of motion and its derivatives"

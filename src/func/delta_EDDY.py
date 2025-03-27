@@ -15,12 +15,12 @@ print('dwifile',dwifile)
 #fname=''.join([DWIpath,'/',dwifile,'.nii.gz'])
 print('DWI file is:', dwifile)
 DWI=nib.load(dwifile)  
-DWI_vol = np.asanarray(DWI.dataobj)
+DWI_vol = np.asanyarray(DWI.dataobj)
 
 fname=''.join([fileOut,'.nii.gz'])
 print('corrDWI file is:', fname)
 corrDWI=nib.load(fname)
-corrDWI_vol = np.asanarry(corrDWI.dataobj)
+corrDWI_vol = np.asanyarray(corrDWI.dataobj)
 
 corrDWI_vol = corrDWI_vol - DWI_vol
 

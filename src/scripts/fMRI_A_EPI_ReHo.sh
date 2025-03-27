@@ -21,12 +21,10 @@ log "# =========================================================="
 log "# 9. EXTRAS - ReHo. "
 log "# =========================================================="
 
-PhReg_path="${EPIpath}/${regPath}"     
-
-fileFC="${EPIpath}/rT1_brain_mask_FC.nii.gz"
+fileFC="${EPIrun_out}/rT1_brain_mask_FC.nii.gz"
 fileT1brain="${T1path}/T1_brain.nii.gz"
 
-path2ReHo="${PhReg_path}/${configs_ReHo_dirName}"
+path2ReHo="${NuisancePhysReg_out}/${configs_ReHo_dirName}"
 if [[ ! -d ${path2ReHo} ]]; then
     mkdir ${path2ReHo}
 else 
@@ -49,7 +47,7 @@ log "Using ${configs_ReHo_mask} as mask"
 
 #Compute Kendall's W coefficients
 cmd="3dReHo -prefix ${path2ReHo}/ReHo \
-    -inset ${PhReg_path}/${configs_ReHo_input} \
+    -inset ${NuisancePhysReg_out}/${configs_ReHo_input} \
     ${configs_ReHo_neigh} -mask ${configs_ReHo_mask}"
 log $cmd
 eval $cmd
@@ -87,7 +85,7 @@ log "Above command is executed directly from terminal"
 
 
 # Filter results through grey matter mask
-fileGMmask="${EPIpath}/rT1_GM_mask.nii.gz"
+fileGMmask="${EPIrun_out}/rT1_GM_mask.nii.gz"
 cmd="3dcalc -a ${path2ReHo}/ReHo+orig. -b ${fileGMmask} -expr '(a*b)' -prefix ${path2ReHo}/ReHo_GM"
 log $cmd
 3dcalc -a ${path2ReHo}/ReHo+orig. -b ${fileGMmask} -expr '(a*b)' -prefix ${path2ReHo}/ReHo_GM 
@@ -123,7 +121,7 @@ cd ${EXEDIR}
 fileIn=${path2ReHo}/ReHo_normalized.nii 
 fileOut=${path2ReHo}/ReHo_normalized_MNI_${configs_ReHo_MNIres}mm.nii.gz
 cmd="${EXEDIR}/src/func/transform_epi2MNI.sh \
-    ${EPIpath} ${T1path}/registration \
+    ${EPIrun_out} ${T1path}/registration \
     ${fileIn} ${fileOut} ${configs_ReHo_MNIres}"
 log $cmd
 eval $cmd
@@ -153,7 +151,7 @@ fi
 fileIn=${path2ReHo}/ReHo_normalized_GM.nii 
 fileOut=${path2ReHo}/ReHo_normalized_GM_MNI_${configs_ReHo_MNIres}mm.nii.gz
 cmd="${EXEDIR}/src/func/transform_epi2MNI.sh \
-    ${EPIpath} ${T1path}/registration \
+    ${EPIrun_out} ${T1path}/registration \
     ${fileIn} ${fileOut} ${configs_ReHo_MNIres}"
 log $cmd
 eval $cmd

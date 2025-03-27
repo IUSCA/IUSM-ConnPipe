@@ -12,6 +12,10 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
+# Load packages/modules
+#===========================================================================
+module load ${fsl}
+
 ############################################################################### 
 
 msg2file "=================================="
@@ -86,8 +90,8 @@ if ${flags_EDDY_prep}; then
         eval $cmd 
 
         ## Inputs if topup was not done
-        fileIn="${path_DWI_EDDY}/all_b0_raw.nii.gz"
-        fileMean="${path_DWI_EDDY}/meanb0.nii.gz"
+        fileIn="${EDDYpath}/all_b0_raw.nii.gz"
+        fileMean="${EDDYpath}/meanb0.nii.gz"
     fi 
 
     # Generate mean B0 image
@@ -142,7 +146,7 @@ if ${flags_EDDY_prep}; then
         # Index file
         cmd="python ${EXEDIR}/src/func/get_B0_temporal_info.py ${fileIn} ${B0_indices}"
         log $cmd
-        eval $cmd
+        eval $cmd 2>&1 | tee -a ${logfile_name}.log
         fileInIndex="${EDDYpath}/index.txt"
 
     ## If there are two full reverse phase encoding runs
@@ -201,7 +205,7 @@ if ${flags_EDDY_prep}; then
         # Index file
         cmd="python ${EXEDIR}/src/func/get_B0_temporal_info.py ${fileIn} ${B0_indices}"
         log $cmd
-        eval $cmd
+        eval $cmd 2>&1 | tee -a ${logfile_name}.log
         fileInIndex="${EDDYpath}/index.txt"
     fi
 fi
@@ -246,13 +250,14 @@ if ${flags_EDDY_run}; then
 
     fileOut="${EDDYpath}/eddy_output"
 
-    cmd="eddy_openmp \
+    cmd="eddy_cpu \
     --imain=${fileIn} \
     --mask=${fileInMask} \
     --bvecs=${fileInBvec} \
     --bvals=${fileInBval} \
     --index=${fileInIndex} \
-    --acqp=${fileInAcqp}"
+    --acqp=${fileInAcqp} \
+    --nthr=${configs_DWI_nthreads}"
 
     if [[ -d "${TOPUPpath}" ]] && [[ -e "${TOPUPpath}/topup_results_fieldcoef.nii.gz" ]]; then
         cmdT=" \
@@ -277,11 +282,18 @@ if ${flags_EDDY_run}; then
         cmd+="$cmdJ"
     fi
 
+    if [[ -n ${configs_DWI_EDDYargs} ]]; then
+        cmdArgs=" \
+        ${configs_DWI_EDDYargs}"
+        cmd+="$cmdArgs"
+    fi
+
     cmdO=" \
     --out=${fileOut}"
     cmd+="$cmdO"
+
     log $cmd
-    eval $cmd
+    eval $cmd 2>&1 | tee -a ${logfile_name}.log
 
     # For QC purpoces this created a difference (Delta image) between raw
     # and EDDY corrected diffusion data.
@@ -295,7 +307,7 @@ if ${flags_EDDY_run}; then
         log "Computing Delta Eddy image"
         cmd="python ${EXEDIR}/src/func/delta_EDDY.py ${fileOut} ${fileIn}"
         log $cmd
-        eval $cmd
+        eval $cmd 2>&1 | tee -a ${logfile_name}.log
         log "Delta Eddy saved"
     fi 
 fi

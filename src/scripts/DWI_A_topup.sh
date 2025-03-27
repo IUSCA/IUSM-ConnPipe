@@ -12,6 +12,10 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
+# Load packages/modules
+#===========================================================================
+module load ${fsl}
+
 ############################################################################### 
 
 msg2file "=================================="
@@ -35,8 +39,8 @@ fi
 
 cmd="python ${EXEDIR}/src/func/index_b0_images.py \
      ${DWIpath} ${fileBval} ${configs_DWI_b0cut} "AP""
-        log $cmd
-        eval $cmd
+log $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log
 
 log "AP B0 indices identified: "
 B0_indices="${DWIpath}/b0indicesAP.txt"
@@ -57,16 +61,16 @@ done < "$B0_indices"
 if [[ "$rtag" -eq 1 ]]; then
     cmd="python ${EXEDIR}/src/func/index_b0_images.py \
      ${DWIpath} ${fileBvalPA} ${configs_DWI_b0cut} "PA""
-        log $cmd
-        eval $cmd
-        export PAnifti="${fileNiftiPA}"
+    log $cmd
+    eval $cmd 2>&1 | tee -a ${logfile_name}.log
+    export PAnifti="${fileNiftiPA}"
 
 elif [[ "$rtag" -eq 2 ]]; then
     cmd="python ${EXEDIR}/src/func/index_b0_images.py \
      ${DWIpath} ${fileBvalb0PA} ${configs_DWI_b0cut} "PA""
-        log $cmd
-        eval $cmd
-        export PAnifti="${fileNiftib0PA}"
+    log $cmd
+    eval $cmd 2>&1 | tee -a ${logfile_name}.log
+    export PAnifti="${fileNiftib0PA}"
 fi
 
 log "PA B0 indices identified: "

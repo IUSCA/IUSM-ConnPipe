@@ -129,8 +129,7 @@ if ${flags_EPI_RunTopup}; then
                 --fout=${fileOutField} \
                 --iout=${fileOutUnwarped}"
                 log $cmd
-                eval $cmd 
-                echo $?
+                eval $cmd 2>&1 | tee -a ${logfile_name}.log
 
                 if [[ ! -e "${fileOutUnwarped}.nii.gz" ]]; then  # check that topup has been completed
                     log "ERROR Topup output not created. Exiting... "
@@ -169,8 +168,8 @@ if [[ -f "${EPIfile}" ]] && [[ -f "${acqparams}" ]] && [[ -f "${fileOutCoefName}
     --topup=${fileOutName} \
     --out=${fileOut} --method=jac"
 
-    log --no-datetime $cmd 
-    eval $cmd 
+    log $cmd 
+    eval $cmd 2>&1 | tee -a ${logfile_name}.log
     exitcode=$?
 
     if [[ $exitcode -eq 0 ]]; then
@@ -178,6 +177,9 @@ if [[ -f "${EPIfile}" ]] && [[ -f "${acqparams}" ]] && [[ -f "${fileOutCoefName}
     fi
 
 else
-    log "APPYTOPUP FAILED: MISSING AT LEAST ONE OF THE INPUT FILES."
+    log "APPYTOPUP FAILED: MISSING AT LEAST ONE OF THE INPUT FILES:"
+    log --no-datetime "${EPIfile}" 
+    log --no-datetime "${acqparams}"
+    log --no-datetime "${fileOutCoefName}"
     exit 1 
 fi

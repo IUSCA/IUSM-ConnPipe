@@ -79,5 +79,5 @@ fi
 
 log "calling python script get_motion_outliers:"
 cmd="python ${EXEDIR}/src/func/get_motion_outliers.py ${EPIpath} ${numTimePoints}"
-log --no-datetime $cmd
-eval $cmd
+log $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log

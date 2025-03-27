@@ -20,7 +20,7 @@ subjectList = dir(fullfile(path2data,'Subj0*'));   % e.g. All subjects in path2d
 % These variables should be set up to match the config.sh settings
 EPIdir_name = 'EPI1'
 path2reg = 'AROMA_HMP/aCompCor'; %other options may be: 'AROMA/aCompCorr', HMPreg/PhysReg, AROMA/PhysReg;
-pre_nR = 'aroma_hmp12_pca5_Gs4_DCT'; % This should match the regression parameters of your 8_epi_*.nii.gz image; 
+pre_nR = 'aroma_hmp12_pca5_Gs4_DCT'; % This should match the regression parameters of your 6_epi_*.nii.gz image; 
                                     % other options may be: 'aroma_pca3_Gs2_DCT' if only running AROMA, or 'hmp12_pca5_Gs4_DCT' if only running HMP;     
 DVARS = true; 
 % postregression parameters
@@ -148,10 +148,10 @@ for i=1:length(subjectList)
         % nodal-only excluding subcortical-only parcellation
         if parcs.pnodal(p).true == 1 && parcs.psubcortonly(p).true ~= 1
             roi_series = fullfile(path2regressors,timeseriesDir,...
-                sprintf('8_epi_%s_ROIs.mat',parcs.plabel(p).name));
+                sprintf('6_epi_%s_ROIs.mat',parcs.plabel(p).name));
             try
                 roi_data = load(roi_series);
-                disp(strcat('Loaded: 8_epi_', parcs.plabel(p).name, '_ROIs.mat'))
+                disp(strcat('Loaded: 6_epi_', parcs.plabel(p).name, '_ROIs.mat'))
                 parc_data{p} = roi_data.restingROIs;
                 parc_label(p) = parcs.plabel(p).name;
             catch
@@ -692,7 +692,7 @@ for i=1:length(subjectList)
     
     % =========================================================================
 
-    resting_file=fullfile(path2regressors,sprintf('7_epi_%s.nii.gz',pre_nR));
+    resting_file=fullfile(path2regressors,sprintf('5_epi_%s.nii.gz',pre_nR));
     V1 = load_untouch_nii(resting_file);
     V2 = V1.img;
     X0 = size(V2,1); Y0 = size(V2,2); Z0 = size(V2,3); T0 = size(V2,4);

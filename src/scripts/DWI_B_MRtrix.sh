@@ -12,6 +12,16 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
+# Load packages/modules
+#===========================================================================
+module load ${mrtrix} 
+module load ${fsl}
+
+py_ver=$(python --version)
+log --no-datetime "****** ${py_ver} ******"
+py_which=$(which python)
+log --no-datetime "****** ${py_which} ******"
+
 ############################################################################### 
 
 msg2file "=================================="
@@ -48,8 +58,8 @@ cmd="dwi2response tournier \
     -force -mask ${maskIN} \
     -nthreads ${configs_DWI_nthreads} \
     -fslgrad ${bvecIN} ${bvalIN} ${dataIN} ${fileResponse}"
-log --no-datetime $cmd
-#eval $cmd 
+log $cmd
+eval $cmd 
 
 ################################################################################
   ## constrained shperical deconvolution
@@ -63,20 +73,24 @@ cmd="dwi2fod csd -force \
     -fslgrad ${bvecIN} ${bvalIN} \
     -nthreads ${configs_DWI_nthreads} \
     -mask ${maskIN} ${dataIN} ${fileResponse} ${fileFOD}"
-log --no-datetime $cmd
-#eval $cmd 
+log $cmd
+eval $cmd 
 
 ################################################################################
   ## ACT tissue-type volume generation
 log "2.3 Anatomically Constrained Tractography"
 
-brainIN="${DWIpath}/rT1_dof6.nii.gz"
+#=============================================================================
+# brainIN FILE DOES NOT EXIST. CONNPIPE WILL FAIL FROM HERE ON. 
+#=============================================================================
+brainIN="${DWIpath}/rT1_qSyn_Warped.nii.gz"
+
 file5tt="${path_DWI_mrtrix}/fsl5tt.nii.gz"
     # act needs distortion corrected data; should work with no dist corr,
     # but with nonlinear reg, but I havent tried it.
 cmd="5ttgen fsl -force -nthreads ${configs_DWI_nthreads} -premasked ${brainIN} ${file5tt}"
-log --no-datetime $cmd
-#eval $cmd 
+log $cmd
+eval $cmd 
 
 ################################################################################
   ## generate streamlines
@@ -86,7 +100,7 @@ log "2.4 Generating Streamlines"
 #configs_DWI_step_sizes=(1 1.5 2)
 #configs_DWI_max_angles=(30 45 60)
 fileStreamlines="${path_DWI_mrtrix}/combo_streamlines.tck"
-
+log "Streamlines file: ${fileStreamlines}"
 #while read -r nmbr; do
 #    step_sizes+=("$nmbr")
 #done <<< "$configs_DWI_step_sizes"
@@ -98,12 +112,22 @@ fileStreamlines="${path_DWI_mrtrix}/combo_streamlines.tck"
 IFS=' ' read -r -a step_sizes <<< "$configs_DWI_step_sizes"
 IFS=' ' read -r -a max_angles <<< "$configs_DWI_max_angles"
 
-echo $step_sizes
-echo $max_angles
+log --no-datetime "step sizes: ${step_sizes[@]}"
+log --no-datetime "max angles: ${max_angles[@]}"
 
-if [[ ! -e ${fileStreamlines} ]] ; then 
+if [[ ! -e ${fileStreamlines} ]]; then 
+    create_streamlines=true
+    log --no-datetime "combo_streamlines.tck does not exists. Running Tractography."
+elif [[ -e ${fileStreamlines} ]] && [[ ${configs_DWI_skip_streamlines} == "true" ]]; then
+    create_streamlines=false
+    log --no-datetime "combo_streamlines.tck exists. User does not want tractography done."
+else
+    create_streamlines=true
+    log --no-datetime "combo_streamlines.tck does not exists. Running Tractography."
+fi    
+
+if ${create_streamlines}; then 
     combo_list="" 
-    echo $fileStreamlines
 
     for (( sDx=0 ; sDx<${#step_sizes[@]} ; sDx++ )) ; do
        # echo ${configs_DWI_step_sizes[sDx]}
@@ -112,14 +136,18 @@ if [[ ! -e ${fileStreamlines} ]] ; then
             l_step="${step_sizes[$sDx]}"
             l_angle="${max_angles[$mDx]}"
 
-            echo "$sDx $mDx"
+            echo "indices: [$sDx $mDx]"
             echo "running step size: $l_step, angle size: $l_angle"
 
             outstr=$(echo "ss$l_step-ma$l_angle" | sed s,\\.,p,)
+            echo "outstr: ${outstr}"
             outFile=${path_DWI_mrtrix}/tracks_${outstr}.tck
-            
+            echo "outFile: ${outFile}"
+
             trk_start=`date +%s`
+
             if [[ ${configs_DWI_seeding} == "dyn" ]]; then
+
                 cmd="tckgen ${fileFOD} ${outFile} \
                     -act ${file5tt} \
                     -seed_dynamic ${fileFOD} \
@@ -135,8 +163,11 @@ if [[ ! -e ${fileStreamlines} ]] ; then
                     -algorithm iFOD2 \
                     -select 1M \
                     -nthreads ${configs_DWI_nthreads}"
+
             elif [[ ${configs_DWI_seeding} == "wm" ]]; then
+
                 seedImage="${DWIpath}/rT1_WM_mask.nii.gz"
+
                 cmd="tckgen ${fileFOD} ${outFile} \
                     -act ${file5tt} \
                     -seeds ${configs_DWI_Nseeds} \
@@ -152,8 +183,9 @@ if [[ ! -e ${fileStreamlines} ]] ; then
                     -downsample 2 \
                     -algorithm iFOD2 \
                     -nthreads ${configs_DWI_nthreads}"
-                    echo $cmd
+
             fi
+
             log $cmd
             eval $cmd 
             combo_list="$combo_list ${outFile}"
@@ -176,16 +208,14 @@ if [[ ! -e ${fileStreamlines} ]] ; then
 	echo $cmd
 	log $cmd
 	eval $cmd
-
-else
-    echo "combo_streamlines.tck exists. No tractography done."
+   
 fi
 ## purge the intermediate tracking files
 log "rm ${combo_list}"
 eval "rm ${combo_list}"
 
 ## filter streamlines
-echo "2.5 Running SIFT Filtering"
+log "2.5 Running SIFT Filtering"
 
 fileFiltStreamlines="${path_DWI_mrtrix}/${configs_DWI_sift_term_number}_sift_streamlines.tck"
     # For SIFT ACT is pretty much a requirement, so if ACT cant be done, then 
@@ -198,3 +228,17 @@ cmd="tcksift \
     ${fileStreamlines} ${fileFOD} ${fileFiltStreamlines}"
 log $cmd
 eval $cmd 
+
+## purge the all steamline trafile
+log "rm ${fileStreamlines}"
+eval "rm ${fileStreamlines}"
+
+if ${flag_HPC_modules}; then
+    echo "Unloading HPC python loaded with MRtrix"
+    module unload ${mrtrix} 
+fi 
+
+py_ver=$(python --version)
+log "****** ${py_ver} ******"
+py_which=$(which python)
+log "****** ${py_which} ******"

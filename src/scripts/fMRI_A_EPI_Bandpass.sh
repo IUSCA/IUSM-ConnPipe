@@ -18,25 +18,19 @@ log --no-datetime "# =========================================================="
 log --no-datetime "# 6. Demean, Detrend, Bandpass "
 log --no-datetime "# =========================================================="
 
-PhReg_path="${EPIrun_out}/${regPath}"
 if [[ $nR == *_BPF ]]; then
     # Crop out "_BPF" and save the new string into nRc
     nRc="${nR%_BPF}"
-    if ${configs_EPI_despike}; then
-        fileIn="${PhReg_path}/NuisanceRegression_${nRc}_despiked.npz"
-        fileOut="${PhReg_path}/NuisanceRegression_${nR}_despiked"
-    else
-        fileIn="${PhReg_path}/NuisanceRegression_${nRc}.npz"
-        fileOut="${PhReg_path}/NuisanceRegression_${nR}"
-    fi
+    fileIn="${NuisancePhysReg_out}/NuisanceRegression_${nRc}.npz"
+    fileOut="${NuisancePhysReg_out}/NuisanceRegression_${nR}"
 fi
 
 if [[ ! -e "${fileIn}" ]]; then  
-    log " WARNING ${fileIn} not found. Exiting..."
+    log " WARNING ${fileIn} not found. Regression might have failed at fMRI_A_EPI_ApplyReg.sh. Exiting..."
     exit 1    
 fi 
 
 cmd="python ${EXEDIR}/src/func/dm_dt_bandpass.py \
-     ${fileIn} ${fileOut} ${PhReg_path} ${TR}"
+     ${fileIn} ${fileOut}"
 log $cmd
-eval $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log

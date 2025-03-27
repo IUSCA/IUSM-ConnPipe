@@ -12,6 +12,10 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
+# Load packages/modules
+#===========================================================================
+module load ${fsl} 
+
 ###############################################################################
 
 
@@ -25,7 +29,7 @@ if [[ -d ${DWIpath_raw} ]]; then
     declare -a dwiList
     while IFS= read -r -d $'\0' REPLY; do 
         dwiList+=( "$REPLY" )
-    done < <(find ${DWIpath_raw} -maxdepth 1 -type f -iname "*_dir-*nii.gz" -print0 | sort -z)
+    done < <(find ${DWIpath_raw} -maxdepth 1 -type f -iname "*_dir-*.nii.gz" -print0 | sort -z)
     
     if [ ${#dwiList[@]} -eq 0 ]; then 
         echo "No raw dwi files with _dir- tag found for subject ${SUBJ}_${SESS}. Check that dir- Phase Encoding is in bids naming."
@@ -86,7 +90,7 @@ if [[ -d ${DWIpath_raw} ]]; then
     done
 
     if [ -n "$AP" ]; then
-        FileRaw="${AP%???????}"
+        FileRaw="${AP%%.*}" # remove extension after first . (works for .nii and .nii.gz)
 
         PhaseEncodingDirection=`cat ${FileRaw}.json | ${EXEDIR}/src/func/jq-linux64 '.PhaseEncodingDirection'`
         echo "PhaseEncodingDirection from ${FileRaw}.json is ${PhaseEncodingDirection}"  
@@ -101,7 +105,7 @@ if [[ -d ${DWIpath_raw} ]]; then
             fi        
 
         if [ -n "$PA" ]; then
-            FileRawPA="${PA%???????}"
+            FileRawPA="${PA%%.*}"
             export rtag=1
 
             PhaseEncodingDirection=`cat ${FileRawPA}.json | ${EXEDIR}/src/func/jq-linux64 '.PhaseEncodingDirection'`
@@ -122,8 +126,8 @@ if [[ -d ${DWIpath_raw} ]]; then
                 exit 1
             fi  
 
-        elif [ -n  "$b0PA" ]; then
-            FileRawb0="$b0PA%???????"
+        elif [ -n "$b0PA" ]; then
+            FileRawb0=${b0PA%%.*}
             export rtag=2
 
             PhaseEncodingDirection=`cat ${FileRawb0}.json | ${EXEDIR}/src/func/jq-linux64 '.PhaseEncodingDirection'`
@@ -170,6 +174,7 @@ export fileBvec="${FileRaw}.bvec"
 export fileNifti="${FileRaw}.nii.gz"
 export fileJson="${FileRaw}.json"
 
+
 if [[ ! -e "${fileBval}" ]] && [[ ! -e "${fileBvec}" ]]; then
     log "WARNING Bvec and/or Bval files do not exist. Skipping further analyses"
     exit 1
@@ -177,7 +182,14 @@ else
     cmd="python ${EXEDIR}/src/func/read_bvals_bvecs.py \
      ${fileBval} ${fileBvec} ${fileNifti} ${DWIpath}"
     log $cmd
-    eval $cmd
+    eval $cmd 2>&1 | tee -a ${logfile_name}.log
+
+    if [ $? -eq 0 ]; then
+        echo "bvals and bvecs read and stored as ${DWIpath}/0_DWI.bval and ${DWIpath}/0_DWI.bvec"
+    else
+        echo "Unable to wrtie bvals/bvecs to ${DWIpath}/0_DWI.bval and ${DWIpath}/0_DWI.bvec. Exiting..."
+        exit 1
+    fi
 
     export fileBval="${DWIpath}/0_DWI.bval"
     export fileBvec="${DWIpath}/0_DWI.bvec"
@@ -189,13 +201,20 @@ if [[ "$rtag" -eq 1 ]]; then
     export fileNiftiPA="${FileRawPA}.nii.gz"
 
     if [[ ! -e "${fileBvalPA}" ]] && [[ ! -e "${fileBvecPA}" ]]; then
-        log "WARNING Bvec and/or Bval PA files do not exist. Skipping further analyses"
+        log "WARNING Bvec and/or Bval or PA files do not exist. Skipping further analyses"
         exit 1
     else
         cmd="python ${EXEDIR}/src/func/read_bvals_bvecs.py \
          ${fileBvalPA} ${fileBvecPA} ${fileNiftiPA} ${DWIpath} "PA""
         log $cmd
-        eval $cmd
+        eval $cmd 2>&1 | tee -a ${logfile_name}.log
+
+        if [ $? -eq 0 ]; then
+            echo "bvals and bvecs read and stored as ${DWIpath}/0_DWI_PA.bval and ${DWIpath}/0_DWI_PA.bvec"
+        else
+            echo "Unable to wrtie bvals/bvecs to ${DWIpath}/0_DWI_PA.bval and ${DWIpath}/0_DWI_PA.bvec. Exiting..."
+            exit 1
+        fi
 
         export fileBvalPA="${DWIpath}/0_DWI_PA.bval"
         export fileBvecPA="${DWIpath}/0_DWI_PA.bvec"
@@ -261,7 +280,7 @@ if ${flags_DWI_DTIfit}; then
     eval $cmd
     exitcode=$?
 
-    if [[ ${exitcode} -ne 0 ]] ; then
+    if [[ ${exitcode} -ne 0 ]]; then
         echoerr "problem at DWI_A_eddy. exiting."
         exit 1
     fi  

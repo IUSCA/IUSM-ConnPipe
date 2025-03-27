@@ -13,6 +13,30 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
+# Load packages/modules
+#===========================================================================
+module load ${fsl} 
+module load ${mrtrix}
+
+# fsl607 hpc module has python3.11 contained in it.
+#if ${flag_HPC_modules}; then
+#    echo "Loading HPC native python"
+#    module load ${HPC_python}
+#fi 
+
+# If FSL is not in the path, exit now
+if [[ -n "${FSLDIR}" ]]; then
+    echo "FSLDIR is ${FSLDIR}"
+else
+    echo -e "\033[33m#  ERROR. FSLDIR is not set. Exiting \033[0m"
+    exit 1
+fi
+
+py_ver=$(python --version)
+echo "****** ${py_ver} ******"
+py_which=$(which python)
+echo "****** ${py_which} ******"
+
 ############################################################################### 
 
 msg2file "=================================="
@@ -89,24 +113,35 @@ FileIn="${path_DWI_matrices}/rT1${pcname}.nii.gz"
 cmd="cp ${fileparcCORT} ${FileIn}"
 log $cmd
 eval $cmd 
-# call python script
-cmd="python ${EXEDIR}/src/func/add_parc.py \
-    ${FileIn} 1 \
-    ${fileparcSUBC}"
-log $cmd
-eval $cmd
-cmd="python ${EXEDIR}/src/func/add_parc.py \
-    ${FileIn} 0 \
-    ${fileparcCRBLM}"
-log $cmd
-eval $cmd
 
-fileConnMatrix="${path_DWI_matrices}/1M_2radial_density${pcname}.csv"
+if [[ "${cntsubc}" -ne 0 ]]; then
+    # call python script
+    cmd="python ${EXEDIR}/src/func/add_parc.py \
+        ${FileIn} 1 \
+        ${fileparcSUBC}"
+    log $cmd
+    eval $cmd 2>&1 | tee -a ${logfile_name}.log
+fi
+
+if [[ "${cntcrblm}" -ne 0 ]]; then
+    cmd="python ${EXEDIR}/src/func/add_parc.py \
+        ${FileIn} 0 \
+        ${fileparcCRBLM}"
+    log $cmd
+    eval $cmd 2>&1 | tee -a ${logfile_name}.log
+fi
+
+fileConnMatrix="${path_DWI_matrices}/${configs_DWI_sift_term_number}_2radial_density${pcname}.csv"
 
 # CONFIG assignment_radial_search can be user set
 # CONFIG scale_invnodevol: other options are available for edge assignment
 # CONFIG symmetric could be optional, but its good practive to have it
 # CONFIG: zero_diagonal can be optional
+
+if ${flag_HPC_modules}; then
+    echo "Loading HPC module ${mrtrix}"
+    module load ${mrtrix}
+fi 
 
 cmd="tck2connectome -assignment_radial_search 2 \
     -scale_invnodevol -symmetric \
@@ -114,3 +149,14 @@ cmd="tck2connectome -assignment_radial_search 2 \
     -force ${fileFiltStreamlines} ${FileIn} ${fileConnMatrix}"
 log $cmd
 eval $cmd
+
+ 
+if ${flag_HPC_modules}; then
+    echo "Unloading HPC python loaded with MRtrix"
+    module unload ${mrtrix} 
+fi 
+
+py_ver=$(python --version)
+log "****** ${py_ver} ******"
+py_which=$(which python)
+log "****** ${py_which} ******"

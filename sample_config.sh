@@ -4,36 +4,38 @@
 ################################################################################
 ## GLOBALS & dependencies
 
-# source bash funcs
-source ${EXEDIR}/src/func/bash_funcs.sh
-
-## Path to Supplementary Materials. Please download from: 
-# https://drive.google.com/drive/folders/1b7S9UcWDeDXVx3NUjuO8NJxxmChgNQ1G?usp=sharing 
 export pathSM="/N/project/connpipe/fMRI_proc_utils"
 
-################################################################################
+# Location where IUSM-ConnPipe package has been installed/cloned:
+#    setting this path allows user to run pipeline from any path
+ export EXEDIR="/N/path2connpipe_install/IUSM-ConnPipe"  #$(dirname "$(readlink -f "$0")")
+
+	# # source bash funcs (do not change this)
+	# source ${EXEDIR}/src/func/bash_funcs.sh
+
 #########################  SET DATA VARIABLES  #################################
 
 # USER INSTRUCTIONS- Set these paths to your bids rawdata directory and your derivatives directory.
 #	path2data directory must contain subject subdirectories in BIDS-compliant format. 
 #   path2derivs directory is where a "connpipe" directory will be created (if it doesn't exist already)
 #               connpipe will create a subdirectory path2derivs/connpipe/sub-ID/ses-ID to store all output
-export path2data="/N/project/connpipe/Data/rawdata"
+export path2data="/N/path2project/rawdata"
 
-export path2derivs="/N/project/connpipe/Data/derivatives"
+export path2derivs="/N/path2project/derivatives"
 
-# USER INSTRUCTIONS- Please set this to the bids style session name you want to run.
-# "ses-"" is the BIDS standard tag 
-# export configs_session="ses-test"  
+#########################  SOFTWARE SETTINGS  #################################
+# Indicate what versions to use for each software package. 
+export fsl="fsl/6.0.7"  # Must be > 6.0.1  => 6.0.5.1 for colo nodes; 6.0.7 for quartz
+export ants="ants/2.3.5"  # Must be > 2.0  => 2.3.1 for colo nodes; 2.3.5 for quartz
 
-################################################################################
-#####################  SET UP DIRECTORY STRUCTURE  #############################
-
-export configs_dcmFiles="dcm" # dicoms extension if there is reliance on source data.
-
-export configs_grefmFolder="GREFM"  # Reserved for Gradient Field Mapping series
-	export configs_GREmagdcm="MAG_DICOMS" # Gradient echo FM magnitude series
-	export configs_GREphasedcm="PHASE_DICOMS" # Gradient echo FM phase map series
+## Indiacate if using HPC's native python and mrtrix module, and what versions should be loaded 
+export flag_HPC_modules=true
+	export HPC_python="python/3.11.4"
+	export mrtrix="mrtrix/3.0.4"  # Must be > 3.0  => mrtrix/3.0.4 for colo nodes; mrtrix3 for quartz
+#### We recommned using the provided conda environment with stable python package versions.
+#    If using conda environment, activate env before running main_connpipe.sh
+#    To actvate conda env: 
+#		conda activate /N/project/connpipe/fMRI_proc_utils/python-envs/env_fmri_proc_py311
 
 ################################################################################
 ################################ PARCELLATIONS #################################
@@ -116,18 +118,22 @@ export configs_T1_addcrblm=true
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export T1_PREPARE_A=false
+export T1_PREPARE_A=true
 
 if $T1_PREPARE_A; then
-		
+
 	# IF NO DENOSING IS REQUIRED:
 	  ## SET flags_T1_applyDenoising=true AND configs_T1_denoised="NONE"
     # IF DENOISING HAS ALREADY BEEN APPLYIED AND THUS THE PROCESS CAN BE SKIPPED:
 	  ## SET flags_T1_applyDenoising=false AND configs_T1_denoised="ANTS"/"SUSAN" 
 	export flags_T1_applyDenoising=true
+    	# FSL's robustfov option, performed before denoising. 
+		# May improve brain masking, in particular with ants.
+		# We do not recommend using robustfov dcm2niix cropping has been applied. 
+		export flags_T1_robustfov=true
 
 	export flags_T1_anat=true # run FSL_anat
-		export configs_T1_bias=2 # 0 = no; 1 = weak; 2 = strong
+		export configs_T1_bias=1 # 0 = no; 1 = weak; 2 = strong
 		export configs_T1_crop=1 # 0 = no; 1 = yes (lots already done by dcm2niix)
 
 	export flags_T1_extract_and_mask=true # brain extraction and mask generation (only needed for double BET)
@@ -140,6 +146,11 @@ if $T1_PREPARE_A; then
 		export config_brainmask_overlap_thr="0.9"  
 		# USER if runnign ANTS, bet will be ran anyway as a QC check for the brain masks.
 		# QC output will be printed out in the QC file for each subject. 
+		
+	### Sometimes, the best mask results from the overlap between ANTS and bet masks. 
+	#   This config option will make the overlap mask the new T1_brain_mask, which will 
+	#   be filled and then used in the next step to generate the brain mask	
+	export config_use_overlap_brainmask=true
 	 
 	# Re-extract the brain using brain_mask_filled (usefull if mask was manually edited or replaced)
 	export flags_T1_re_extract=true; # brain extraction with mask
@@ -191,7 +202,7 @@ fi
 
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL CONFIGURATION PARAMETERS ARE SET TO RECOMMENDED DEFAULT SETTINGS
-export fMRI_A=true
+export fMRI_A=false
 
 if $fMRI_A; then
 
@@ -206,7 +217,7 @@ if $fMRI_A; then
 	export configs_EPI_runMax= # maximum run-# to be processed
 
 	# Obtain pertinent scan information from json file.
-	export flags_EPI_ReadJson=false
+	export flags_EPI_ReadJson=true
 		# If there is no json file with the functional data: 
 		# set flag to false and run the pipeline to receive instructions to manually enter epi acquisition parameters
 	#==============================================================================#
@@ -217,7 +228,7 @@ if $fMRI_A; then
 	# 2) Gradient echo field maps -- uses FUGE
 	
 	#============================ OPTION 1: SPIN ECO UNWARP =======================#
-	export flags_EPI_SpinEchoUnwarp=false # Requires raw fmap directory and approporiate files.
+	export flags_EPI_SpinEchoUnwarp=true # Requires raw fmap directory and approporiate files.
 		## FSL-topup
 		export flags_EPI_RunTopup=true # 1=Run topup (1st pass), 0=Run applyTopup only. (saves time if topup output exists). 
 
@@ -249,52 +260,55 @@ if $fMRI_A; then
 	#==================================================================================#
 	#==================================================================================#
 
-	export flags_EPI_SliceTimingCorr=false		
+	export flags_EPI_SliceTimingCorr=true		
 		export configs_EPI_minTR=1.6   # perform Slice Timing correction only if TR > configs_EPI_minTR
 		export configs_EPI_UseTcustom=1   # 1: use header-extracted slice times (suggested)
 
-	export flags_EPI_MotionCorr=false   # head motion estimation with FSL's mcflirt; generates 6 motion param for each BOLD image
+	export flags_EPI_MotionCorr=true   # head motion estimation with FSL's mcflirt; generates 6 motion param for each BOLD image
 
-	export flags_EPI_RegT1=false
+	export flags_EPI_RegT1=true
 		export configs_EPI_epibetF=0.3000;
 
-	export flags_EPI_RegOthers=false
+	export flags_EPI_RegOthers=true
 		export configs_EPI_GMprobthr=0.2 # Threshold the GM probability image; change from 0.25 to 0.2 or 0.15										
 		export configs_EPI_minVoxelsClust=8 
 
-	export flags_EPI_IntNorm4D=false # Intensity normalization to global 4D mean of 1000
+	export flags_EPI_IntNorm4D=true # Intensity normalization to global 4D mean of 1000
 
 	#=================================================================================================#
 	#=================================================================================================#
-	# RECOMMENDED TO RUN [NuisanceReg, PhysiolReg, regressOthers, ApplyReg, postRegress, and ROIs] TOGETHER.
-	# There is interdependence among them and it will mitigate chance of error to run them together.
-
-	# If running them in pieces, make sure that the subflags under each section are set to the options,
-	# which have already been ran and for which you want the time series extracted.
+	### The following sectin has been designed to allow the user to test various processing configuraitons.
+	#   Each flag (e.g. flag_EPI_*) is a boolean variable that should be used to indicate whether a particular
+	#	section of the pipeline should be executed or not. 
+	#   NOTE that, regardless of whether a section is being executed or not (i.e. the flag is set to false), 
+	#   the configuration parameters within all sections are being used by the pipeline to read/write  
+	#   the intermediary output files. 
+	#   For example: if flags_EPI_NuisanceReg=false, but user intends to generate time-series for data processed
+	#   with AROMA, then user must be sure to set configs_NuisanceReg="AROMA" (assuming AROMA has been ran before).
 	#================================== MOTION AND OUTLIER CORRECTION ================================#
 	export flags_EPI_NuisanceReg=true
-	## Nuisance Regressors. There are three options that user can select from to set the flags_NuisanceReg variable:
-	# 1) flags_NuisanceReg="AROMA": ICA-based denoising; WARNING: This will smooth your data.
-	# 2) flags_NuisanceReg="HMPreg": Head Motion Parameter Regression.  
-	# 3) flags_NuisanceReg="AROMA_HMP": apply ICA-AROMA followed by HMPreg. 
+	## Nuisance Regressors. There are three options that user can select from to set the configs_NuisanceReg variable:
+	# 1) configs_NuisanceReg="AROMA": ICA-based denoising; WARNING: This will smooth your data.
+	# 2) configs_NuisanceReg="HMPreg": Head Motion Parameter Regression.  
+	# 3) configs_NuisanceReg="AROMA_HMP": apply ICA-AROMA followed by HMPreg. 
 
-		export flags_NuisanceReg="AROMA_HMP"
+		export configs_NuisanceReg="AROMA_HMP"
 
 			# if using ICA-AROMA or ICA-AROMA followed by HMP 
-			if [[ ${flags_NuisanceReg} == "AROMA" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then 
+			if [[ ${configs_NuisanceReg} == "AROMA" ]] || [[ ${configs_NuisanceReg} == "AROMA_HMP" ]]; then 
 				## USER: by default, ICA_AROMA will estimate the dimensionality (i.e. num of independent components) for you; however, for higher multiband
 				## factors with many time-points and high motion subjects, it may be useful for the user to set the dimensionality. THis can be done by
 				## setting the desired number of componenets in the following config flag. Leave undefined for automatic estimation 
-				export flag_AROMA_dim=
+				export config_AROMA_dim=
 
 				# If AROMA has already been run, save computation time by skipping this step. 
 				export run_AROMA=true
 			fi
 
 			# if using Head Motion Parameters or ICA-AROMA followed by HMP
-			if [[ ${flags_NuisanceReg} == "HMPreg" ]] || [[ ${flags_NuisanceReg} == "AROMA_HMP" ]]; then   
+			if [[ ${configs_NuisanceReg} == "HMPreg" ]] || [[ ${configs_NuisanceReg} == "AROMA_HMP" ]]; then   
 					
-				export configs_EPI_numReg=24  # define the number of regressors Head Motion regressors. 
+				export configs_EPI_numHMP=24  # define the number of regressors Head Motion regressors. 
 										      # options are: 12 (6 orig + 6 deriv) or 24 (+sq of 12)
 
 			fi
@@ -302,17 +316,17 @@ if $fMRI_A; then
 	#================================ PHYSIOLOGICAL REGRESSORS =================================#
 	export flags_EPI_PhysiolReg=true
 	# Two options that the user can select from:
-	# 1) flags_PhysiolReg="aCompCorr" - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
-	# 2) flags_PhysiolReg=meanPhysReg - mean WM and CSF signal regression
-		export flags_PhysiolReg="aCompCor"  
+	# 1) configs_PhysiolReg="aCompCorr" - aCompCorr; PCA based CSF and WM signal regression (up to 5 components)
+	# 2) configs_PhysiolReg=meanPhysReg - mean WM and CSF signal regression
+		export configs_PhysiolReg="aCompCor"  
 
-			if [[ ${flags_PhysiolReg} == "aCompCor" ]]; then  ### if using aCompCorr
+			if [[ ${configs_PhysiolReg} == "aCompCor" ]]; then  ### if using aCompCorr
 
 				export configs_EPI_numPhys=5   # defind the number of Principal Components to be used in regression. 
 											   # Options are: 1 - 5 PC's. We recommend 5 components. 
 											   # Set this option to 6 to include running regression with 1, 2, 3, 4 and 5 PC's. 
 
-			elif [[ ${flags_PhysiolReg} == "meanPhysReg" ]]; then  ### if using WM and CSF mean signal regression
+			elif [[ ${configs_PhysiolReg} == "meanPhysReg" ]]; then  ### if using WM and CSF mean signal regression
 
 				export configs_EPI_numPhys=2  # define how many regressors to use. 
 										      # options are: 2-mean signal; 4-mean signal+derivatives; 8-mean signal+derivatives+sq
@@ -320,56 +334,78 @@ if $fMRI_A; then
 			fi
 	
 	#================================ GLOBAL SIGNAL REGRESSION =================================#
-	export flags_EPI_GS=false # include global signal regression 
+	export flags_EPI_GS=true # compute global signal regressors 
 			
 		export configs_EPI_numGS=4 # define number of global signal regressors
-										# Options are: 1-mean signal; 2-mean signal+deriv; 4-mean signal+deriv+sq
+										# Options are  
+										#			0 - No global signal regression.
+										#           1 - regress mean signal; 
+										#           2 - regress mean signal+deriv; 
+										#           4 - regress mean signal+deriv+sq
 
-	#================================ FREQUENCY FILTERING =================================#
-	# Frequiency filtering can be acomplished with discrete cosine transfrom for a high-pass filter OR
-	# with a bandpass butterworth filter. 
-	export flags_EPI_FreqFilt=false
+	#================================ FREQUENCY FILTERING =================================# 
+	export flags_EPI_FreqFilt=true  # compute Frequency filtering
 
-		export flags_FreqFilt="BPF"
+		export configs_FreqFilt="DCT"   # Options are one of the following:
+		#										DCT - Discrete Cosine Transfrom for a high-pass filter 
+	    # 										BPF - Bandpass Butterworth Filter 
 
-		# Perform highpass filtering within regression using Discrete Cosine Transforms.
-				if [[ ${flags_FreqFilt} == "DCT" ]]; then 
+				# DCT: Perform highpass filtering within regression using Discrete Cosine Transforms.
+				if [[ ${configs_FreqFilt} == "DCT" ]]; then 
 					export configs_EPI_dctfMin=0.009  # Specify level of high-pass filtering in Hz, 
 												# i.e. the lowest frequency signals that will be retained 
 												# The appropriate number (k) of DCT bases will be determined as follows:
 												# k = fMin * 2 * TR * numTimePoints 
 				fi
 
-				# Demeans and detrends the data.
-				# Performs Butterworth filtering on residuals. Post regression filtering can potentially 
-				# reintroduce artifacts to the signal - see Lindquist et al. 2019 Hum Brain Mapp 
-				## WARNING BandPass cannot be applied if DCTs were included in regression.
-				if [[ ${flags_FreqFilt} == "BPF" ]]; then   
+				# Demeans and detrends the data. Performs Butterworth filtering on residuals
+				## NOTE that BPF will be applied to residuals AFTER the regression step (ApplyReg).
+				# Post regression filtering can potentially reintroduce artifacts to the signal 
+				#  		=> see Lindquist et al. 2019 Hum Brain Mapp 
+				if [[ ${configs_FreqFilt} == "BPF" ]]; then   
 					export configs_EPI_fMin=0.009
 					export configs_EPI_fMax=0.08
 				fi
 
     #==================================== APPLY REGRESSION ===================================#
 	## Apply regression using all previously specified regressors
-	export flags_EPI_ApplyReg=false
-		# Despike and Scrub are mutually exculise!!! IF both are set to true, scrubbing will only be done on NONdespiked data with despike=false.
-		export configs_EPI_despike=true # dual-approach regression (Mejia 2023) based on statistical DVARS selection (Afyouni & Nichols 2018)
-									   
+	export flags_EPI_ApplyReg=true
+		
+		export configs_EPI_despike=true # Dual-approach regression (Mejia 2023) 
+										# based on statistical DVARS selection (Afyouni & Nichols 2018)
+										# WARNING: Despike and Scrub are mutually exculise!!! 
+										# IF both are set to true, scrubbing will be skipped.
+
+	#### We've designed the pipeline so that various configurations can be tested without needing to rerun everything.
+	#### If user wants to test both approaches, despiking and scrubbing, run the regression first (flags_EPI_ApplyReg=true)  
+	#	 with configs_EPI_despike=true and configs_scrub="no_scrub". Then, to generate scrubbed (non-despiked) data
+	#	 simply set flags_EPI_FreqFilt=false, flags_EPI_ApplyReg=false (i.e no need to repeat regression and filtering),
+	#	 configs_EPI_despike=false (no despiking) and set flags_EPI_scrub=true and select the desired configs_scrub option
+
 	#=============================== POST REGRESSION SCRUBBING =================================# 
-	
-	export flags_EPI_scrub=false # delaults to statisitical DVARS; if not done then scrubbing is based on FSL's FD & DVARS 		
+	## Run one of the scrubbing methods
+	export flags_EPI_scrub=false 
+		export configs_scrub="no_scrub"   # User can select scrubbing based on:
+											#    stat_DVARS: statisitical DVARS (Afyouni & Nichols 2018)
+											#    fsl_fd_dvars: FSL's FD & DVARS 	
+											#	 no_scrub: data will not be scrubbed. 	
+	# WARNING: Scrubbing and Despiking are mutually exclusive. If configs_EPI_despike=true, then scrubbing will not be applied. 
+	#		   The flag flags_EPI_scrub indicates whether or not to run the scrubbing step. The value of the config variable
+	#		   configs_scrub is always used by the ROIs step (below) to find the approprate time-series file, even when
+	#		   flags_EPI_scrub=false. Therefore, configs_scrub must be set to "no_scrub" if user does not want scrubbed data. 
 
-	#================ COMPUTE ROI TIME-SERIES FOR EACH NODAL PARCELLATION ===================#
+
+	#================ COMPUTE ROI TIME-SERIES FOR EACH NODAL PARCELLATION ======================#
 	# Make sure the parcellation relevant multi-seciton flags at the top are set as desired. 
-	export flags_EPI_ROIs=false
+	export flags_EPI_ROIs=true
 
 #=================================================================================================#
 #=================================================================================================#
-
+		
 	#=======################################ EXTRAS ###############################=========#
 	
 	export flags_EPI_ReHo=false  # COMPUTE ReHo	
-		export configs_ReHo_input="7_epi_hmp24_mPhys2_Gs2.nii.gz"
+		export configs_ReHo_input="5_epi_hmp24_mPhys2_Gs2.nii.gz"
 		export configs_ReHo_neigh="-neigh_RAD 3"  # Specify the neighborhood in voxels or in millimiters. Options are:
 										# " "  Leave string empty (e.g. "") for default, 27 voxels (face/edge/corner)
 										# "-nneigh 7"  face adjacent voxels
@@ -386,7 +422,7 @@ if $fMRI_A; then
 
 
 	export flags_EPI_ALFF=false  # COMPUTE ALFF/fALFFo	
-		export configs_ALFF_input="7_epi_hmp24_mPhys2.nii.gz"
+		export configs_ALFF_input="5_epi_hmp24_mPhys2.nii.gz"
 
 		export configs_ALFF_blur="-blur 6"  # Specify size of smoothing kernel. 
 												# Leave string empty (e.g. "") for no blurying
@@ -412,36 +448,28 @@ fi
 ## USER INSTRUCTIONS - SET THIS FLAG TO "false" IF YOU WANT TO SKIP THIS SECTION
 ## ALL FLAGS ARE SET TO DEFAULT SETTINGS
 export DWI_A=false
-
+# Number of threads must be <= --ntasks-per-node of your Slurm jobs
+        export configs_DWI_nthreads=8 # for eddy (fsl6.0.7) and mrtrix tckgen
 if $DWI_A; then
 
-	export scanner="SIEMENS" #  SIEMENS or GE
-	log "SCANNER ${scanner}"
-
-	if [[ ${scanner} == "SIEMENS" ]]; then
-		export scanner_param_EffectiveEchoSpacing="EffectiveEchoSpacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
-		export scanner_param_slice_fractimes="SliceTiming"  # "SliceTiming" for Siemens; "slice_timing" for GE
-		export scanner_param_TotalReadoutTime="TotalReadoutTime"
-		export scammer_param_AcquisitionMatrix="AcquisitionMatrixPE"
-		export scanner_param_PhaseEncodingDirection="PhaseEncodingDirection"
-	elif [[ ${scanner} == "GE" ]]; then
-		export scanner_param_EffectiveEchoSpacing="effective_echo_spacing"  # "EffectiveEchoSpacing" for Siemens; "effective_echo_spacing" for GE
-		export scanner_param_slice_fractimes="slice_timing"  # "SliceTiming" for Siemens; "slice_timing" for GE
-		export scanner_param_TotalReadoutTime="TotalReadoutTime"
-		export scammer_param_AcquisitionMatrix="acquisition_matrix"
-		export scanner_param_PhaseEncodingDirection="phase_encode_direction"
-	fi
-	
-	export flags_DWI_topup=false # FSL topup destortion field estimation
+	export flags_DWI_topup=true # FSL topup destortion field estimation
 		export configs_DWI_b0cut=1 # maximum B-value to be considered B0
-	export flags_DWI_eddy=false # FSL EDDY distortion correction
-		export flags_EDDY_prep=false # Generatates eddy input files
+	export flags_DWI_eddy=true # FSL EDDY distortion correction
+		export flags_EDDY_prep=true # Generatates eddy input files
 			export configs_DWI_EDDYf='0.17' # fsl bet threshold for b0 brain mask used by EDDY
 		export flags_EDDY_run=true # Runs EDDY openmp
 			export configs_DWI_repolON=true # use eddy_repol to interpolate missing/outlier data
 			export configs_DWI_MBjson=true # read the slices/MB-groups info from the json file (--json option)
+			export configs_DWI_EDDYargs=""   ## add any optional arguments to be included in eddy_openmp.
+													    #      arguments should include dashes (i.e. "--data_is_shelled")   
+														#      leave empty quotes ("") if no optional arguments are to be included	
 	export flags_DWI_DTIfit=true  # Tensor estimation and generation of scalar maps
 		export configs_DWI_DTIfitf='0.17' # brain extraction (FSL bet -f) parameter 
+		export configs_DWI_DTIfitargs=""     ## add any optional arguments to be included in DTIfit.
+													    #      arguments should include dashes (i.e. "--wls --kurt")   
+														#      leave empty quotes ("") if no optional arguments are to be included
+														#      See optional arguments at: 
+														#           https://fsl.fmrib.ox.ac.uk/fsl/fslwiki/FDT/UserGuide
 fi 
 
 export DWI_B=false
@@ -453,14 +481,21 @@ if $DWI_B; then
 
 	export flags_DWI_regT1=true
 		export configs_DWI_useExistingMats=true
-	export flags_DWI_MRtrix=false
+		# apply existing transformations to parcellations
+		export flags_DWI_regParc=true
+
+	export flags_DWI_MRtrix=true
+		# path to dir for holding temporary mrtrix directories
+		export config_mrtrix_tmpdir="/N/PATH/USER/"
+		# if streamline file has been created, you can skip this step
+		export configs_DWI_skip_streamlines=true
 		export configs_DWI_seeding="wm" # 'wm'-white matter OR 'dyn'-dynamic
 			# For WM seeding option, specify number of seeds/voxel
-		    export configs_DWI_Nseeds="1000"
+		    export configs_DWI_Nseeds="10M"
         # tracking options
         export configs_DWI_step_sizes="1 1.5 2"
         export configs_DWI_max_angles="30 45 60" # fine coverage if you ask me!
 		# filtering options
-		export configs_DWI_sift_term_number="1000" 
+		export configs_DWI_sift_term_number="1M" 
 	export flags_DWI_connMatrix=true # generate connectivity matrices  
 fi 

@@ -66,8 +66,8 @@ cmd="flirt -in ${fileT1} \
 -omat ${filedof12mat} \
 -dof 12 -cost mutualinfo \
 -interp spline -out ${filedof12img}"
-log --no-datetime $cmd
-eval $cmd 
+log $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log
 
 fileWarpImg="${AROMAreg_path}/rT1_warped_2mm.nii.gz"
 fileWarpField="${AROMAreg_path}/T1_2_MNI2mm_warpfield.nii.gz" 
@@ -79,7 +79,7 @@ cmd="fnirt \
 --iout=${fileWarpImg} \
 --cout=${fileWarpField}"
 log $cmd
-eval $cmd 
+eval $cmd 2>&1 | tee -a ${logfile_name}.log
 
 # 6mm FWHM EPI data smoothing
 log "### Smoothing EPI data by 6mm FWHM"
@@ -89,8 +89,9 @@ fileSmooth="${AROMApath}/s6_4_epi.nii.gz"
 cmd="fslmaths ${fileEPI} \
 -kernel gauss 2.547965400864057 \
 -fmean ${fileSmooth}"
-log --no-datetime $cmd
+log $cmd
 eval $cmd 
+
 
 # mcFLIRT realignment parameters 
 log "#### mcFLIRT realignment parameters"
@@ -106,6 +107,10 @@ fi
 
 log "## Starting ICA-AROMA"
 
+cmd="which python"
+echo $cmd
+eval $cmd
+
 AROMAout="${AROMApath}/AROMA-output"
 
 if [[ -d "${AROMAout}" ]]; then
@@ -115,14 +120,14 @@ if [[ -d "${AROMAout}" ]]; then
 fi
 
 # set number of components if user doesn't want automatic estimation
-if [[ ! -z "${flag_AROMA_dim}" ]]; then
+if [[ ! -z "${config_AROMA_dim}" ]]; then
 
     re='^[0-9]+$'
 
-    if [[ ${flag_AROMA_dim} =~ $re ]] ; then  # check that it is a number 
-        AROMA_dim="-dim ${flag_AROMA_dim}"
+    if [[ ${config_AROMA_dim} =~ $re ]] ; then  # check that it is a number 
+        AROMA_dim="-dim ${config_AROMA_dim}"
     else
-        log "WARNING flag_AROMA_dim should be a number; running AROMA with automatic estimation of number of components."
+        log "WARNING config_AROMA_dim should be a number; running AROMA with automatic estimation of number of components."
         AROMA_dim=" "
     fi
 else
@@ -136,8 +141,8 @@ cmd="${run_ICA_AROMA} \
 -affmat ${fileMat} \
 -warp ${fileWarpField} ${AROMA_dim}"
 log $cmd 
-out=`$cmd`
-log "$out"
+eval $cmd 2>&1 | tee -a ${logfile_name}.log
+
 
 if [[ ! -e "${AROMAout}/denoised_func_data_nonaggr.nii.gz" ]]; then
 
@@ -156,5 +161,6 @@ motionICs="${AROMAout}/classified_motion_ICs.txt"
 
 cmd="python ${EXEDIR}/src/func/percent_variance.py \
     ${ICstats} ${motionICs}"
-log --no-datetime $cmd
-eval $cmd
+log $cmd
+eval $cmd 2>&1 | tee -a ${logfile_name}.log
+

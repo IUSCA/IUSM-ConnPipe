@@ -10,61 +10,73 @@ acct = 'r00216'; % this is Jenya's carbonate connproc acct
 
 %% resources requested:
 ppn = '1';
-walltime = '6:00:00';
-vmem = '6G';
+walltime = '2:00:00';
+vmem = '12G';
 
 %% data
 % path to bids project
-path2deriv='/N/project/adniCONN/iadrc-2024/iadrc-bids/derivatives/connpipe';
+path2deriv='/N/project/HCPaging/iadrc2024q3/derivatives/connpipe';
 % path to raw data
-path2data='/N/project/adniCONN/iadrc-2024/iadrc-bids/raw';
+path2data='/N/project/HCPaging/iadrc2024q3/raw';
 % number of subjects per job
-nS = 90; 
+nS = 4; 
 
 % where to write job, log, and error files
-batch_path = '/N/project/adniCONN/iadrc-2024/iadrc-bids/batch_jobs';
+batch_path = '/N/project/HCPaging/iadrc2024q3/batch_files';
 
 %% pipeline
 % pipeline directory
 connPipe = '/N/u/echumin/Quartz/img_proc_tools/IUSM-ConnPipe';
 
 % config file
-config = '/N/u/echumin/Quartz/img_proc_tools/IUSM-ConnPipe/config_iadrc.sh';
+config = '/N/project/HCPaging/iadrc2024q3/config.sh';
 
 %% building subject list 
 
-subjALL = subj2run_hpc;
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% just for me
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 % build a list of subjID and session pairs from a connpipe derivative
-% directory
-% subj=dir('/N/project/adniCONN/iadrc-2024/iadrc-bids/derivatives/connpipe/sub-*');
-% subj2run=cell.empty;
-% 
-% for ss=1:length(subj)
-%     ses=dir(fullfile(subj(ss).folder,subj(ss).name,'ses*'));
-%     for ee=1:length(ses)
-%         subj2run{end+1,1}=subj(ss).name;
-%         subj2run{end,2}=ses(ee).name;
-%     end
-%     clear ses
-% end
+%  directory
+subj=dir([path2data '/sub-*']);
+subj2run=cell.empty;
+
+for ss=1:length(subj)
+    ses=dir(fullfile(subj(ss).folder,subj(ss).name,'ses*'));
+    for ee=1:length(ses)
+        %subj2run{end+1,1}=subj(ss).name;
+        %subj2run{end,2}=ses(ee).name;
+        %-------------------------------------------------%
+        % if exist([ses(ee).folder '/' ses(ee).name '/func'],'dir') && ~exist([ses(ee).folder '/' ses(ee).name '/fmap'],'dir')
+        % % ADDING CHECK THAT FUNC EXISTS BUT FMAP DOES NOT
+        % subj2run{end+1,1}=subj(ss).name;
+        % subj2run{end,2}=ses(ee).name;
+        % end
+        %-------------------------------------------------%
+        %-------------------------------------------------%
+        if ~exist([path2deriv '/' subj(ss).name '/' ses(ee).name '/anat/T1_WM_mask.nii.gz'],'file')
+        % ADDING CHECK THAT T1_WM_MASK 
+        subj2run{end+1,1}=subj(ss).name;
+        subj2run{end,2}=ses(ee).name;
+        end
+        %-------------------------------------------------%
+    end
+    clear ses
+end
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-tS=size(subjALL,1); % total subjects
+tS=size(subj2run,1); % total subjects
 nJ = ceil(tS/nS);   % number of jobs
-rt='t1b_parc';
+rt='fmri_preproc_fsl607';
 
 for j = 1:nJ
     sS=(j*nS)-nS+1; % starting subject
     eS=j*nS;        % ending subject
     if eS<=tS
-        s2r=subjALL(sS:eS,:);
+        s2r=subj2run(sS:eS,:);
     else
-        s2r=subjALL(sS:end,:);
+        s2r=subj2run(sS:end,:);
     end
-    subj2run = [batch_path '/subj2run_' rt '_' num2str(j) 'of' num2str(nJ) '.txt'];
-    writecell(s2r,subj2run,'Delimiter',' ')
+    subj2run_file = [batch_path '/subj2run_' rt '_' num2str(j) 'of' num2str(nJ) '.txt'];
+    writecell(s2r,subj2run_file,'Delimiter',' ')
     clear s2r
 
     %% build slurm job file
@@ -84,7 +96,7 @@ for j = 1:nJ
     fprintf(fidslurm, ['#SBATCH --mem=' vmem '\n']);
 
     fprintf(fidslurm, ['cd ' connPipe '\n\n']);        
-    fprintf(fidslurm, ['./hpc_main_new.sh ' config ' ' subj2run]); %!!!!!!!!!!!!!!!!
+    fprintf(fidslurm, ['./main_connpipe.sh ' config ' ' subj2run_file]); 
     fclose(fidslurm);
 end
 

@@ -5,35 +5,15 @@ import numpy as np
 import nibabel as nib
 from scipy.io import savemat
 
-###### print to log files #######
-QCfile_name = ''.join([os.environ['QCfile_name'],'.log'])
-fqc=open(QCfile_name, "a+")
-logfile_name = ''.join([os.environ['logfile_name'],'.log'])
-flog=open(logfile_name, "a+")
 
-
-def get_ts(vol,numTP,rest):
-    numVoxels = np.count_nonzero(vol)
-    print("numVoxels - ",numVoxels)
-    mask = np.nonzero(vol != 0)
-    ts = np.zeros((numVoxels,numTP))
-    for ind in range(0,numTP):
-        rvol = rest[:,:,:,ind]
-        rvals = rvol[mask[0],mask[1],mask[2]]
-        ts[:,ind] = rvals
-    return ts,mask
-
-
-flog.write("\n *** python time_series **** ")
-EPIpath=os.environ['EPIrun_out']
+print("\n *** python DCT regressors **** ")
+# EPIpath=os.environ['EPIrun_out']
 fileIN=sys.argv[1]
-flog.write("\n"+"fileIN "+ fileIN)
-PhReg_path=sys.argv[2]
-flog.write("\n PhReg_path "+ PhReg_path)
-configs_EPI_numGS=int(os.environ['configs_EPI_numGS'])
-flog.write("\n configs_EPI_numGS "+ str(configs_EPI_numGS))
+print("fileIN ", fileIN)
+NuisancePhysReg_out=sys.argv[2]
+print("\n NuisancePhysReg_out ", NuisancePhysReg_out)
 configs_EPI_dctfMin=float(os.environ['configs_EPI_dctfMin'])
-flog.write("\n configs_EPI_dctfMin "+ str(configs_EPI_dctfMin))
+print("\n configs_EPI_dctfMin ", configs_EPI_dctfMin)
 
 ### load data and masks
 resting = nib.load(fileIN)
@@ -50,10 +30,10 @@ if 0 < configs_EPI_dctfMin:
     # compute K for kDCT bases to filter fMin Hertz -- k = fMin * 2 * TR * numTimePoints
     numDCT = int(np.ceil(configs_EPI_dctfMin * 2 * TR * numTimePoints))
     print("numDCT is ",numDCT)
-    flog.write("\n numDCT "+ str(numDCT))
+    print("\n numDCT ",numDCT)
     actualFmin = numDCT/(2*TR*numTimePoints)
     print("actualFmin is ",actualFmin)
-    flog.write("\n actualFmin "+ str(actualFmin)+"\n")
+    print("\n actualFmin ",actualFmin)
 
     dct = np.zeros((numTimePoints,numDCT))
     print("dct shape is ",dct.shape)
@@ -64,16 +44,18 @@ if 0 < configs_EPI_dctfMin:
 
 
     # save the data
-    fname = ''.join([PhReg_path,'/dataDCT.npz'])
+    fname = ''.join([NuisancePhysReg_out,'/dataDCT.npz'])
     np.savez(fname,dct=dct,numDCT=numDCT,actualFmin=actualFmin)
-    fname = ''.join([PhReg_path,'/dataDCT.mat'])
+    fname = ''.join([NuisancePhysReg_out,'/dataDCT.mat'])
     print("savign MATLAB file ", fname)
     mdic = {"dct" : dct, "numDCT":numDCT,"actualFmin":actualFmin}
     savemat(fname, mdic)
     print("saved DCT bases") 
 
 
-fqc.close()
-flog.close()
+else:
+    print("ERROR - CANNOT COMPUTE DCT WITH configs_EPI_dctfMin = ",configs_EPI_dctfMin)
+
+
 
 

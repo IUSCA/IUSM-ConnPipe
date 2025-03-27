@@ -12,12 +12,6 @@ shopt -s nullglob # No-match globbing expands to null
 
 source ${EXEDIR}/src/func/bash_funcs.sh
 
-###############################################################################
-# Load IU Quartz supercomuter modules
-module load ants/2.3.5
-module load mrtrix3/3.0.4
-module load python/3.11.4
-
 # define the number of threads you want mrtrix to use
     # setting environmentally to avoid accidentally using all cores
     export MRTRIX_NTHREADS=$configs_DWI_nthreads
@@ -45,7 +39,7 @@ if [[ -d ${DWIpath} ]]; then
     fi
 ######################################################################################
     #### Registration of B0 to T1
-    if ${flags_DWI_regT1}; then
+    if ${flags_DWI_regT1} || ${flags_DWI_regParc}; then
 
         cmd="${EXEDIR}/src/scripts/DWI_B_regT12DWI.sh"
         echo $cmd
