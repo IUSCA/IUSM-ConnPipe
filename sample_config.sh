@@ -475,17 +475,20 @@ fi
 export DWI_B=false
 
 if $DWI_B; then
+	# Number of threads for parallel processing for ants and mrtrix
+	# Number of threads must be <= --ntasks-per-node of your Slurm jobs
+	export configs_DWI_nthreads=6 
 
 	export flags_DWI_regT1=true
-	# apply existing transformations to parcellations
-	export flags_DWI_regParc=true
+		export configs_DWI_useExistingMats=true
+		# apply existing transformations to parcellations
+		export flags_DWI_regParc=true
+
 	export flags_DWI_MRtrix=true
 		# path to dir for holding temporary mrtrix directories
 		export config_mrtrix_tmpdir="/N/PATH/USER/"
 		# if streamline file has been created, you can skip this step
 		export configs_DWI_skip_streamlines=true
-
-        
 		export configs_DWI_seeding="wm" # 'wm'-white matter OR 'dyn'-dynamic
 			# For WM seeding option, specify number of seeds/voxel
 		    export configs_DWI_Nseeds="10M"
